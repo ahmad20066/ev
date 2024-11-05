@@ -1,0 +1,192 @@
+{
+    "info": {
+        "_postman_id": "f7a5ec76-674b-4f76-b1f7-df5f2f9e0e30",
+        "name": "Exercise CRUD Collection",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "item": [
+        {
+            "name": "Create Exercise",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "multipart/form-data",
+                        "type": "text"
+                    }
+                ],
+                "body": {
+                    "mode": "formdata",
+                    "formdata": [
+                        {
+                            "key": "name",
+                            "value": "Push Ups",
+                            "type": "text"
+                        },
+                        {
+                            "key": "description",
+                            "value": "A basic push-up exercise",
+                            "type": "text"
+                        },
+                        {
+                            "key": "duration",
+                            "value": "30",
+                            "type": "text"
+                        },
+                        {
+                            "key": "image",
+                            "type": "file",
+                            "src": "/path/to/image.jpg"
+                        },
+                        {
+                            "key": "target_muscles_image",
+                            "type": "file",
+                            "src": "/path/to/target_muscle_image.jpg"
+                        },
+                        {
+                            "key": "video_url",
+                            "type": "file",
+                            "src": "/path/to/video.mp4"
+                        }
+                    ]
+                },
+                "url": {
+                    "raw": "http://localhost:3000/api/exercises",
+                    "protocol": "http",
+                    "host": [
+                        "localhost"
+                    ],
+                    "port": "3000",
+                    "path": [
+                        "api",
+                        "exercises"
+                    ]
+                }
+            },
+            "response": []
+        },
+        {
+            "name": "Get Exercise",
+            "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "http://localhost:3000/api/exercises/:id",
+                    "protocol": "http",
+                    "host": [
+                        "localhost"
+                    ],
+                    "port": "3000",
+                    "path": [
+                        "api",
+                        "exercises",
+                        ":id"
+                    ],
+                    "variable": [
+                        {
+                            "key": "id",
+                            "value": "1"
+                        }
+                    ]
+                }
+            },
+            "response": []
+        },
+        {
+            "name": "Update Exercise",
+            "request": {
+                "method": "PUT",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "multipart/form-data",
+                        "type": "text"
+                    }
+                ],
+                "body": {
+                    "mode": "formdata",
+                    "formdata": [
+                        {
+                            "key": "name",
+                            "value": "Updated Push Ups",
+                            "type": "text"
+                        },
+                        {
+                            "key": "description",
+                            "value": "An updated push-up exercise",
+                            "type": "text"
+                        },
+                        {
+                            "key": "duration",
+                            "value": "45",
+                            "type": "text"
+                        },
+                        {
+                            "key": "image",
+                            "type": "file",
+                            "src": "/path/to/new_image.jpg"
+                        },
+                        {
+                            "key": "target_muscles_image",
+                            "type": "file",
+                            "src": "/path/to/new_target_muscle_image.jpg"
+                        },
+                        {
+                            "key": "video_url",
+                            "type": "file",
+                            "src": "/path/to/new_video.mp4"
+                        }
+                    ]
+                },
+                "url": {
+                    "raw": "http://localhost:3000/api/exercises/:id",
+                    "protocol": "http",
+                    "host": [
+                        "localhost"
+                    ],
+                    "port": "3000",
+                    "path": [
+                        "api",
+                        "exercises",
+                        ":id"
+                    ],
+                    "variable": [
+                        {
+                            "key": "id",
+                            "value": "1"
+                        }
+                    ]
+                }
+            },
+            "response": []
+        },
+        {
+            "name": "Delete Exercise",
+            "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                    "raw": "http://localhost:3000/api/exercises/:id",
+                    "protocol": "http",
+                    "host": [
+                        "localhost"
+                    ],
+                    "port": "3000",
+                    "path": [
+                        "api",
+                        "exercises",
+                        ":id"
+                    ],
+                    "variable": [
+                        {
+                            "key": "id",
+                            "value": "1"
+                        }
+                    ]
+                }
+            },
+            "response": []
+        }
+    ]
+}
