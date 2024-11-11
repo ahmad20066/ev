@@ -235,7 +235,7 @@ exports.verifyOtp = async (req, res, next) => {
         next(error);
     }
 };
-exports.setNewWeight = (req, res, next) => {
+exports.setNewWeight = async (req, res, next) => {
     try {
         const { weight } = req.body
         const user_id = req.userId
@@ -243,6 +243,7 @@ exports.setNewWeight = (req, res, next) => {
             user_id,
             weight
         })
+        await weightRecord.save()
         res.status(200).json({
             Message: "Weight Set Successfully"
         })

@@ -23,6 +23,9 @@ const Chat = require('./chat/chat');
 const Message = require('./chat/message');
 const User = require('./user');
 const WeightRecord = require('./weight_record');
+const WorkoutAttendance = require('./fitness/workout_attendance');
+const WorkoutCompletion = require('./fitness/workout_completion');
+const ExerciseCompletion = require('./fitness/exercise_completion');
 // Package.hasMany(Workout, { foreignKey: "package_id" });
 // Workout.belongsTo(Package, { foreignKey: "package_id" });
 
@@ -35,8 +38,8 @@ const WeightRecord = require('./weight_record');
 Workout.belongsTo(sequelize.models.User, { foreignKey: "user_id" });
 Package.hasMany(Subscription, { foreignKey: "package_id" });
 Package.hasMany(PricingModel, { foreignKey: "package_id", as: "pricings" })
-Subscription.belongsTo(Package, { foreignKey: "package_id" });
-
+Subscription.belongsTo(Package, { foreignKey: "package_id", as: "package" });
+Subscription.belongsTo(PricingModel, { foreignKey: "pricing_id", as: "pricing" });
 MealSubscription.belongsTo(MealPlan, { foreignKey: "meal_plan_id", as: "meal_plan" });
 MealPlan.hasMany(MealSubscription, { foreignKey: "meal_plan_id", as: "subscriptions" });
 
@@ -50,4 +53,13 @@ Chat.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
 Chat.belongsTo(User, { foreignKey: 'coach_id', as: 'coach' });
 
 WeightRecord.belongsTo(User, { foreignKey: "user_id" })
-User.hasMany(WeightRecord, { foreignKey: "user_id", as: "weight" })
+User.hasMany(WeightRecord, { foreignKey: "user_id", as: "weight-record" })
+
+User.hasMany(Subscription, { foreignKey: "user_id", as: "fitness_subscriptions" })
+Subscription.belongsTo(User, { foreignKey: "user_id", as: "user" })
+User.hasMany(MealSubscription, { foreignKey: "user_id", as: "diet_subscriptions" })
+MealSubscription.belongsTo(User, { foreignKey: "user_id", as: "user" });
+User.hasMany(WorkoutAttendance, { foreignKey: "user_id", as: "workout_attendances" })
+User.hasMany(WorkoutCompletion, { foreignKey: "user_id", as: "workouts_completed" })
+WorkoutCompletion.belongsTo(Workout, { foreignKey: "workout_id", as: "workout" })
+User.hasMany(ExerciseCompletion, { foreignKey: "user_id", as: "exercises_completed" })

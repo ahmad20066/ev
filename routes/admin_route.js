@@ -6,7 +6,9 @@ const healthGoalController = require('../controllers/health_goal_controller');
 const imageMiddleWare = require('../middlewares/multer');
 const fitnessController = require("../controllers/admin/admin_fitness_controller")
 const packageController = require("../controllers/admin/admin_package_controller");
-const mealPlanController = require("../controllers/admin/admin_diet_controller")
+const mealPlanController = require("../controllers/admin/admin_diet_controller");
+const subscriptionController = require('../controllers/admin/admin_subscription_controller');
+const { body, param, validationResult, query } = require("express-validator");
 
 // CRUD Routes for ActivityLevel
 router.post('/activity-level', activityLevelController.createActivityLevel);
@@ -58,4 +60,17 @@ router.get('/meal-plans', mealPlanController.getAllMealPlans);
 router.get('/meal-plans/:id', mealPlanController.getMealPlanById);
 router.put('/meal-plans/:id', mealPlanController.updateMealPlan);
 router.delete('/meal-plans/:id', mealPlanController.deleteMealPlan);
+
+router.get("/subscriptions", subscriptionController.getSubscriptions)
+router.get("/meal-subscriptions", query('type').optional()
+    .isIn(['weekly', 'monthly'])
+    .withMessage("Invalid type. please enter a valid type"), (req, res, next) => {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            const error = new Error(errors.array()[0].msg);
+            error.statusCode = 422;
+            next(error);
+        }
+        subscriptionController.getMealSubscriptions(req, res, next);
+    })
 module.exports = router;

@@ -2,7 +2,12 @@ const Workout = require('../../models/fitness/workout')
 
 const Exercise = require('../../models/fitness/exercise')
 const WorkoutExercise = require('../../models/fitness/workout_exercise')
-const User = require("../../models/user")
+const ExerciseCompletion = require("../../models/fitness/exercise_completion");
+const WorkoutAttendance = require("../../models/fitness/workout_attendance");
+const WorkoutCompletion = require("../../models/fitness/workout_completion");
+const MealSubscription = require("../../models/meals/meal_subscription");
+const Subscription = require("../../models/subscription");
+const User = require("../../models/user");
 const { Op } = require("sequelize");
 const WeightRecord = require('../../models/weight_record');
 exports.createWorkout = async (req, res, next) => {
@@ -278,3 +283,52 @@ exports.searchUser = (req, res, next) => {
             next(error);
         });
 };
+exports.getUserDetails = async (req, res, next) => {
+    const { id } = req.params;
+    try {
+        const user = await User.findByPk(id, {
+            where: {
+                role: "consumer"
+            },
+            include: [
+                {
+                    model: Subscription,
+                    as: "fitness_subscriptions"
+                },
+                {
+                    model: MealSubscription,
+                    as: "diet_subscriptions"
+                },
+                {
+                    model: WorkoutAttendance,
+                    as: "workout_attendances"
+                },
+                {
+                    model: WorkoutCompletion,
+                    as: "workouts_completed",
+                    include: [
+                        {
+                            model: Workout,
+                            as: "workout"
+                        }
+                    ]
+                },
+                {
+                    model: ExerciseCompletion,
+                    as: "exercises_completed"
+                },
+
+                {
+                    model: WeightRecord,
+                    as: "weight-record"
+                }
+            ]
+        })
+        if (!user) {
+            throw new Error("User not found")
+        }
+        res.status(200).json(user)
+    } catch (e) {
+        next(e)
+    }
+}

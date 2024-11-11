@@ -51,6 +51,16 @@ const Subscription = sequelize.define("Subscription", {
         get() {
             return this.package_id === 1 ? 'group' : this.package_id === 2 ? 'personalized' : 'unknown';
         }
+    },
+    days_left: {
+        type: Sequelize.VIRTUAL,
+        get() {
+            const currentDate = new Date();
+            const endDate = new Date(this.end_date);
+            const timeDiff = endDate.getTime() - currentDate.getTime();
+            const diffDays = Math.ceil(timeDiff / (1000 * 3600 * 24));
+            return diffDays;
+        }
     }
 }, {
     tableName: "subscriptions",

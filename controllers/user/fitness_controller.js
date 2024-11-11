@@ -5,7 +5,8 @@ const Package = require('../../models/package');
 const PricingModel = require('../../models/pricing_model');
 const WorkoutAttendance = require('../../models/fitness/workout_attendance');
 const ExerciseCompletion = require('../../models/fitness/exercise_completion');
-const WorkoutExercise = require("../../models/fitness/workout_exercise")
+const WorkoutExercise = require("../../models/fitness/workout_exercise");
+const WorkoutCompletion = require('../../models/fitness/workout_completion');
 exports.getWorkoutsByDate = async (req, res, next) => {
     try {
         const date = req.query.date;
@@ -85,7 +86,12 @@ exports.subscribeToPackage = async (req, res, next) => {
             error.statusCode = 404;
             throw error;
         }
-        const pricing = await PricingModel.findOne({ package_id: package_id, id: pricing_id })
+        const pricing = await PricingModel.findOne({ where: { package_id: package_id, id: pricing_id } })
+        if (!pricing) {
+            const error = new Error("Pricing not found")
+            error.statusCode = 404;
+            throw error;
+        }
         const startDate = new Date();
         let endDate = new Date(startDate);
         endDate.setDate(startDate.getDate() + pricing.number_of_days + 1);
@@ -174,6 +180,21 @@ exports.markExerciseDone = async (req, res, next) => {
         if (!e.statusCode) {
             e.statusCode = 500
         }
+        next(e)
+    }
+}
+exports.markWorkoutDone = async (req, res, next) => {
+    try {
+        const { workout_id } = req.body;
+        const workoutCompletion = new WorkoutCompletion({
+            workout_id,
+            user_id: req.userId
+        })
+        await workoutCompletion.save()
+        res.status(201).json({
+            Message: "Workout Marked Complete"
+        })
+    } catch (e) {
         next(e)
     }
 }
