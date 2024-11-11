@@ -50,7 +50,7 @@ app.use((error, req, res, next) => {
 sequelize.sync({
     // force: true
 }).then((result) => {
-    app.listen(8080)
+    app.listen(3001)
     io.on('connection', (socket) => {
         console.log('A user connected');
 
@@ -62,7 +62,7 @@ sequelize.sync({
             console.log('User disconnected');
         });
     });
-    console.log("Listening to port 8080")
+    console.log("Listening to port ")
 
 }).catch((e) => {
     console.log(e)

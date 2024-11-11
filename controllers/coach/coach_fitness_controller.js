@@ -1,5 +1,4 @@
 const Workout = require('../../models/fitness/workout')
-
 const Exercise = require('../../models/fitness/exercise')
 const WorkoutExercise = require('../../models/fitness/workout_exercise')
 const ExerciseCompletion = require("../../models/fitness/exercise_completion");
@@ -317,7 +316,6 @@ exports.getUserDetails = async (req, res, next) => {
                     model: ExerciseCompletion,
                     as: "exercises_completed"
                 },
-
                 {
                     model: WeightRecord,
                     as: "weight-record"
