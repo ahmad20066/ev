@@ -136,3 +136,4 @@ exports.reactivateUser = async (req, res, next) => {
         next(error);
     }
 };
+exports.createAdmin = (req, res, next) => { }

@@ -69,12 +69,12 @@ exports.register = async (req, res, next) => {
     const { name, email, phone, password, role } = req.body;
 
     try {
-        if (role != "coach" && role != "consumer") {
-            const error = new Error("Please Enter a valid role")
-            error.statusCode = 422;
-            next(error)
-            return
-        }
+        // if (role != "coach" && role != "consumer") {
+        //     const error = new Error("Please Enter a valid role")
+        //     error.statusCode = 422;
+        //     next(error)
+        //     return
+        // }
         const existingUser = await User.findOne({ where: { email: email } });
         if (existingUser) {
             if (!existingUser.is_active) {

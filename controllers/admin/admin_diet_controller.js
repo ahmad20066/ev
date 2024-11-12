@@ -1,6 +1,5 @@
 const MealPlan = require('../../models/meals/meal_plan');
 
-// Create a new Meal Plan
 exports.createMealPlan = async (req, res, next) => {
     try {
         const { title, calories, price_weekly, price_monthly } = req.body;
@@ -13,7 +12,6 @@ exports.createMealPlan = async (req, res, next) => {
     }
 };
 
-// Retrieve all Meal Plans
 exports.getAllMealPlans = async (req, res, next) => {
     try {
         const mealPlans = await MealPlan.findAll();
@@ -24,7 +22,6 @@ exports.getAllMealPlans = async (req, res, next) => {
     }
 };
 
-// Retrieve a specific Meal Plan by ID
 exports.getMealPlanById = async (req, res, next) => {
     try {
         const { id } = req.params;
