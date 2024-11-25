@@ -7,38 +7,67 @@ const WorkoutAttendance = require('../../models/fitness/workout_attendance');
 const ExerciseCompletion = require('../../models/fitness/exercise_completion');
 const WorkoutExercise = require("../../models/fitness/workout_exercise");
 const WorkoutCompletion = require('../../models/fitness/workout_completion');
+const { Op } = require('sequelize');
+const Answer = require('../../models/survey/answer');
+const Survey = require('../../models/survey/survey');
+const Question = require('../../models/survey/question');
+
+
 exports.getWorkoutsByDate = async (req, res, next) => {
     try {
-        const date = req.query.date;
+        let date = req.query.date;
+
+        // Default to today's date if no date is provided
         if (!date) {
-            const err = new Error("Please add a date")
-            err.statusCode = 422;
-            throw err;
+            date = new Date().toISOString().split("T")[0];
         }
+
+        // Validate date format
+        if (isNaN(Date.parse(date))) {
+            const error = new Error("Invalid date format. Use YYYY-MM-DD.");
+            error.statusCode = 422;
+            throw error;
+        }
+
+        // Ensure user has an active subscription
         const subscription = await Subscription.findOne({
             where: {
                 user_id: req.userId,
                 is_active: true
-            }
-        })
-        console.log(subscription)
+            },
+            include: {
+                model: Package,
+                as: 'package',
+                attributes: ['type'],
+            },
+        });
+
         if (!subscription) {
-            const error = new Error("You have no active subscription")
+            const error = new Error("You have no active subscription");
             error.statusCode = 400;
             throw error;
         }
-        const formattedDate = Date.parse(date)
-        const type = subscription.package_id === 1 ? "group" : "personalized"
-        const where = type === "group" ? {
-            date: formattedDate,
-            type
-        } : {
-            date: formattedDate,
-            type,
-            user_id: req.userId
-        }
+        console.log(subscription)
+        const type = subscription.package_type;
 
-        Workout.findAll({
+
+        const where = type === "group"
+            ? {
+                date: {
+                    [Op.eq]: date
+                },
+                type
+            }
+            : {
+                date: {
+                    [Op.eq]: date
+                },
+                type,
+                user_id: req.userId
+            };
+        console.log("***************")
+        console.log(where)
+        const workouts = await Workout.findAll({
             where: where,
             include: {
                 model: Exercise,
@@ -48,21 +77,19 @@ exports.getWorkoutsByDate = async (req, res, next) => {
                     as: "stats"
                 }
             }
-        }).then(workouts => {
-            res.status(200).json(workouts)
-        }).catch(e => {
-            if (!e.statusCode) {
-                e.statusCode = 500
-            }
-            next(e)
         });
+
+        // Log and return results
+        console.log("Fetched workouts:", workouts);
+        res.status(200).json(workouts);
     } catch (e) {
         if (!e.statusCode) {
-            e.statusCode = 500
+            e.statusCode = 500;
         }
-        next(e)
+        next(e);
     }
-}
+};
+
 exports.subscribeToPackage = async (req, res, next) => {
     try {
         const { package_id, pricing_id } = req.body
@@ -105,8 +132,8 @@ exports.subscribeToPackage = async (req, res, next) => {
 
         await subscription.save();
         res.status(201).json({
-            Message: "Subscription Successful",
-            subscription
+            message: "Subscription Successful",
+            // subscription
         })
     } catch (e) {
         if (!e.statusCode) {
@@ -136,7 +163,7 @@ exports.joinWorkout = async (req, res, next) => {
         })
         await attendance.save()
         res.status(201).json({
-            Message: "Workout Joined",
+            message: "Workout Joined",
         })
     } catch (e) {
         if (!e.statusCode) {
@@ -174,7 +201,7 @@ exports.markExerciseDone = async (req, res, next) => {
         })
         await exerciseCompletion.save()
         res.status(201).json({
-            Message: "Exercise Done"
+            message: "Exercise Done"
         })
     } catch (e) {
         if (!e.statusCode) {
@@ -192,10 +219,100 @@ exports.markWorkoutDone = async (req, res, next) => {
         })
         await workoutCompletion.save()
         res.status(201).json({
-            Message: "Workout Marked Complete"
+            message: "Workout Marked Complete"
         })
     } catch (e) {
         next(e)
     }
 }
+exports.submitAnswers = async (req, res) => {
+    try {
+        const { answers } = req.body;
+        const userId = req.userId;
+
+        // Retrieve the user's subscription
+        const userSubscription = await Subscription.findOne({
+            where: { user_id: userId, is_active: true }
+        });
+
+        if (!userSubscription) {
+            const error = new Error("You cannot answer this survey. No active subscription found.");
+            error.statusCode = 403;
+            throw error;
+        }
+
+        const questionId = answers[0]?.question_id;
+        const question = await Question.findByPk(questionId)
+        if (!question) {
+            const error = new Error("Question not found");
+            error.statusCode = 404;
+            throw error;
+        }
+        const surveyId = question.survey_id;
+        const survey = await Survey.findByPk(surveyId);
+
+        if (!survey) {
+            const error = new Error("The survey does not exist.");
+            error.statusCode = 404;
+            throw error;
+        }
+
+        if (userSubscription.package_id !== survey.package_id) {
+            const error = new Error("You cannot answer this survey as it is not part of your subscription package.");
+            error.statusCode = 403;
+            throw error;
+        }
+
+
+        if (!Array.isArray(answers) || answers.length === 0) {
+            return res.status(400).json({ message: "Invalid input, 'answers' must be a non-empty array." });
+        }
+
+
+        const savedAnswers = answers.map(answer => ({
+            question_id: answer.question_id,
+            answer: answer.answer,
+            user_id: userId
+        }));
+
+        const result = await Answer.bulkCreate(savedAnswers);
+
+        res.status(201).json({
+            message: "Answers submitted successfully",
+        });
+    } catch (error) {
+        res.status(error.statusCode || 500).json({ error: error.message });
+    }
+};
+exports.getSurvey = async (req, res, next) => {
+    try {
+        const userId = req.userId
+        const userSubscription = await Subscription.findOne({
+            where: { user_id: userId, is_active: true }
+        });
+        if (!userSubscription) {
+            const error = new Error("You have no active subscription");
+            error.statusCode = 403;
+            throw error;
+        }
+        const survey = await Survey.findOne({
+            where: {
+                package_id: userSubscription.package_id
+            },
+            include: {
+                model: Question,
+                as: "questions"
+            }
+        })
+        if (!survey) {
+            const error = new Error("No Survey For This pacakge");
+            error.statusCode = 404;
+            throw error;
+        }
+        res.status(200).json(survey)
+    } catch (e) {
+        next(e)
+    }
+}
+
 // exports.renewSubscription = (req,res,next) => {}

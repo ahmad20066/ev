@@ -5,7 +5,7 @@ module.exports = (req, res, next) => {
         console.log(authHeader);
         if (!authHeader || !authHeader.startsWith("Bearer ")) {
             return res.status(401).json({
-                Message: "unAuthenticated"
+                message: "unAuthenticated"
             })
         }
         const token = authHeader.split(" ")[1]
@@ -17,7 +17,7 @@ module.exports = (req, res, next) => {
     } catch (e) {
         console.log(e)
         return res.status(401).json({
-            Message: "unAuthenticated"
+            message: "unAuthenticated"
         })
     }
 }

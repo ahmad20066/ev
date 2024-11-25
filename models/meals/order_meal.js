@@ -1,10 +1,9 @@
 const { DataTypes } = require('sequelize');
-const sequelize = require('./index');
+const sequelize = require('../index');
 const Order = require('./order');
 const Meal = require('./meal');
 
 const OrderMeal = sequelize.define('OrderMeal', {
-
     order_id: {
         type: DataTypes.INTEGER,
         allowNull: false,
@@ -23,12 +22,6 @@ const OrderMeal = sequelize.define('OrderMeal', {
         },
         onDelete: 'CASCADE',
     },
-    quantity: {
-        type: DataTypes.INTEGER,
-        allowNull: false,
-        defaultValue: 1,
-    },
-
 },);
 
 module.exports = OrderMeal;

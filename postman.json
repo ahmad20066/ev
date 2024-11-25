@@ -1,192 +1,81 @@
 {
     "info": {
-        "_postman_id": "f7a5ec76-674b-4f76-b1f7-df5f2f9e0e30",
-        "name": "Exercise CRUD Collection",
+        "name": "Survey API Collection",
+        "description": "CRUD for surveys, questions, and answers",
         "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
     },
     "item": [
         {
-            "name": "Create Exercise",
+            "name": "Create Survey",
             "request": {
                 "method": "POST",
-                "header": [
-                    {
-                        "key": "Content-Type",
-                        "value": "multipart/form-data",
-                        "type": "text"
-                    }
-                ],
+                "url": "{{url}}/surveys",
                 "body": {
-                    "mode": "formdata",
-                    "formdata": [
-                        {
-                            "key": "name",
-                            "value": "Push Ups",
-                            "type": "text"
-                        },
-                        {
-                            "key": "description",
-                            "value": "A basic push-up exercise",
-                            "type": "text"
-                        },
-                        {
-                            "key": "duration",
-                            "value": "30",
-                            "type": "text"
-                        },
-                        {
-                            "key": "image",
-                            "type": "file",
-                            "src": "/path/to/image.jpg"
-                        },
-                        {
-                            "key": "target_muscles_image",
-                            "type": "file",
-                            "src": "/path/to/target_muscle_image.jpg"
-                        },
-                        {
-                            "key": "video_url",
-                            "type": "file",
-                            "src": "/path/to/video.mp4"
-                        }
-                    ]
-                },
-                "url": {
-                    "raw": "http://localhost:3000/api/exercises",
-                    "protocol": "http",
-                    "host": [
-                        "localhost"
-                    ],
-                    "port": "3000",
-                    "path": [
-                        "api",
-                        "exercises"
-                    ]
+                    "mode": "raw",
+                    "raw": "{\n  \"title\": \"Customer Satisfaction\",\n  \"package_id\": 1\n}"
                 }
-            },
-            "response": []
+            }
         },
         {
-            "name": "Get Exercise",
+            "name": "Get All Surveys",
             "request": {
                 "method": "GET",
-                "header": [],
-                "url": {
-                    "raw": "http://localhost:3000/api/exercises/:id",
-                    "protocol": "http",
-                    "host": [
-                        "localhost"
-                    ],
-                    "port": "3000",
-                    "path": [
-                        "api",
-                        "exercises",
-                        ":id"
-                    ],
-                    "variable": [
-                        {
-                            "key": "id",
-                            "value": "1"
-                        }
-                    ]
-                }
-            },
-            "response": []
+                "url": "{{url}}/surveys"
+            }
         },
         {
-            "name": "Update Exercise",
+            "name": "Get Survey",
+            "request": {
+                "method": "GET",
+                "url": "{{url}}/surveys/:id"
+            }
+        },
+        {
+            "name": "Update Survey",
             "request": {
                 "method": "PUT",
-                "header": [
-                    {
-                        "key": "Content-Type",
-                        "value": "multipart/form-data",
-                        "type": "text"
-                    }
-                ],
+                "url": "{{url}}/surveys/:id",
                 "body": {
-                    "mode": "formdata",
-                    "formdata": [
-                        {
-                            "key": "name",
-                            "value": "Updated Push Ups",
-                            "type": "text"
-                        },
-                        {
-                            "key": "description",
-                            "value": "An updated push-up exercise",
-                            "type": "text"
-                        },
-                        {
-                            "key": "duration",
-                            "value": "45",
-                            "type": "text"
-                        },
-                        {
-                            "key": "image",
-                            "type": "file",
-                            "src": "/path/to/new_image.jpg"
-                        },
-                        {
-                            "key": "target_muscles_image",
-                            "type": "file",
-                            "src": "/path/to/new_target_muscle_image.jpg"
-                        },
-                        {
-                            "key": "video_url",
-                            "type": "file",
-                            "src": "/path/to/new_video.mp4"
-                        }
-                    ]
-                },
-                "url": {
-                    "raw": "http://localhost:3000/api/exercises/:id",
-                    "protocol": "http",
-                    "host": [
-                        "localhost"
-                    ],
-                    "port": "3000",
-                    "path": [
-                        "api",
-                        "exercises",
-                        ":id"
-                    ],
-                    "variable": [
-                        {
-                            "key": "id",
-                            "value": "1"
-                        }
-                    ]
+                    "mode": "raw",
+                    "raw": "{\n  \"title\": \"Updated Survey Title\"\n}"
                 }
-            },
-            "response": []
+            }
         },
         {
-            "name": "Delete Exercise",
+            "name": "Delete Survey",
             "request": {
                 "method": "DELETE",
-                "header": [],
-                "url": {
-                    "raw": "http://localhost:3000/api/exercises/:id",
-                    "protocol": "http",
-                    "host": [
-                        "localhost"
-                    ],
-                    "port": "3000",
-                    "path": [
-                        "api",
-                        "exercises",
-                        ":id"
-                    ],
-                    "variable": [
-                        {
-                            "key": "id",
-                            "value": "1"
-                        }
-                    ]
+                "url": "{{url}}/surveys/:id"
+            }
+        },
+        {
+            "name": "Create Question",
+            "request": {
+                "method": "POST",
+                "url": "{{url}}/questions",
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"title\": \"What is your favorite color?\",\n  \"image\": null,\n  \"survey_id\": 1\n}"
                 }
-            },
-            "response": []
+            }
+        },
+        {
+            "name": "Get Questions for Survey",
+            "request": {
+                "method": "GET",
+                "url": "{{url}}/surveys/:surveyId/questions"
+            }
+        },
+        {
+            "name": "Submit Answer",
+            "request": {
+                "method": "POST",
+                "url": "{{url}}/answers",
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"question_id\": 1,\n  \"answer\": \"Blue\"\n}"
+                }
+            }
         }
     ]
 }

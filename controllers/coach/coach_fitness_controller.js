@@ -9,12 +9,24 @@ const Subscription = require("../../models/subscription");
 const User = require("../../models/user");
 const { Op } = require("sequelize");
 const WeightRecord = require('../../models/weight_record');
+const Package = require('../../models/package');
 exports.createWorkout = async (req, res, next) => {
     try {
-        const { title, type, user_id, description, duration, exercises, difficulty_level, calories_burned, date } = req.body;
+        const { title, user_id, description, duration, exercises, difficulty_level, calories_burned, date, package_id } = req.body;
         const coach = req.userId;
         const parsedDate = Date.parse(date);
-
+        const package = await Package.findByPk(package_id)
+        if (!package) {
+            const error = new Error("Package not found")
+            error.statusCode = 404
+            throw error;
+        }
+        const type = package.type
+        if (type == "personalized" && !user_id) {
+            const error = new Error("Personalized workouts require a user id")
+            error.statusCode = 422
+            throw error;
+        }
         const workout = await Workout.create({
             title,
             description,
@@ -25,6 +37,7 @@ exports.createWorkout = async (req, res, next) => {
             coach,
             date: parsedDate,
             user_id: user_id,
+            package_id
         });
 
         await Promise.all(exercises.map(async (exercise) => {
@@ -141,7 +154,7 @@ exports.getWorkout = async (req, res, next) => {
 exports.updateWorkout = async (req, res, next) => {
     try {
         const workoutId = req.params.id;
-        const { title, type, description, duration, difficulty_level, calories_burned, date, exercises } = req.body;
+        const { title, type, description, duration, difficulty_level, calories_burned, date, exercises, package_id } = req.body;
         const parsedDate = Date.parse(date);
 
         const workout = await Workout.findByPk(workoutId);
@@ -156,6 +169,7 @@ exports.updateWorkout = async (req, res, next) => {
         workout.duration = duration || workout.duration;
         workout.difficulty_level = difficulty_level || workout.difficulty_level;
         workout.calories_burned = calories_burned || workout.calories_burned;
+        workout.package_id = package_id || workout.package_id;
         workout.date = parsedDate || workout.date;
 
         await workout.save();
@@ -330,3 +344,113 @@ exports.getUserDetails = async (req, res, next) => {
         next(e)
     }
 }
+exports.getUserWorkoutLogs = async (req, res, next) => {
+    try {
+        const { userId } = req.params;
+        const { page = 1, limit = 10 } = req.query;
+        const attendedWorkouts = await WorkoutAttendance.findAll({
+            where: { user_id: userId },
+            include: [
+                {
+                    model: Workout,
+                    as: 'workout',
+                    attributes: ['id', 'title', 'type', 'difficulty_level', 'date', 'duration'],
+                },
+            ],
+        });
+
+        const completedWorkouts = await WorkoutCompletion.findAll({
+            where: { user_id: userId },
+            include: [
+                {
+                    model: Workout,
+                    as: 'workout',
+                    attributes: ['id', 'title', 'type', 'difficulty_level', 'date', 'duration'],
+                },
+            ],
+        });
+
+        const attendanceLogs = await Promise.all(
+            attendedWorkouts.map(async (attendance) => {
+                const workoutExercises = await WorkoutExercise.findAll({
+                    where: { workout_id: attendance.workout_id },
+                    include: [
+                        {
+                            model: Exercise,
+                            as: 'exercise',
+                            attributes: ['id', 'name'],
+                        },
+                    ],
+                });
+
+                return {
+                    type: 'attendance',
+                    workoutId: attendance.workout_id,
+                    title: attendance.workout.title,
+                    typeOfWorkout: attendance.workout.type,
+                    difficultyLevel: attendance.workout.difficulty_level,
+                    date: attendance.createdAt,
+                    duration: attendance.workout.duration,
+                    exercises: workoutExercises.map((we) => ({
+                        exerciseId: we.exercise_id,
+                        name: we.exercise.name,
+                        sets: we.sets,
+                        reps: we.reps,
+                    })),
+                };
+            })
+        );
+
+        const completionLogs = await Promise.all(
+            completedWorkouts.map(async (completion) => {
+                const workoutExercises = await WorkoutExercise.findAll({
+                    where: { workout_id: completion.workout_id },
+                    include: [
+                        {
+                            model: Exercise,
+                            as: 'exercise',
+                            attributes: ['id', 'name'],
+                        },
+                    ],
+                });
+
+                return {
+                    type: 'completion',
+                    workoutId: completion.workout_id,
+                    title: completion.workout.title,
+                    typeOfWorkout: completion.workout.type,
+                    difficultyLevel: completion.workout.difficulty_level,
+                    date: completion.createdAt,
+                    exercises: workoutExercises.map((we) => ({
+                        exerciseId: we.exercise_id,
+                        name: we.exercise.name,
+                        sets: we.sets,
+                        reps: we.reps,
+                    })),
+                };
+            })
+        );
+
+        const combinedLogs = [...attendanceLogs, ...completionLogs].sort(
+            (a, b) => new Date(b.date) - new Date(a.date)
+        );
+
+        const startIndex = (page - 1) * limit;
+        const endIndex = startIndex + parseInt(limit);
+        const paginatedLogs = combinedLogs.slice(startIndex, endIndex);
+
+        const totalLogs = combinedLogs.length;
+
+        res.status(200).json({
+            totalLogs,
+            currentPage: parseInt(page),
+            totalPages: Math.ceil(totalLogs / limit),
+            logs: paginatedLogs,
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+
+

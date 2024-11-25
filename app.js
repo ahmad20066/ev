@@ -35,7 +35,7 @@ app.use('/admin', adminRouter)
 app.use('/coach', isAuth, isCoach, coachRouter)
 app.use('/diet', dietRouter)
 app.use('/fitness', isAuth, fitnessRouter)
-app.use('/stats', isAuth, isCoach, statsRouter)
+app.use('/stats', isAuth, statsRouter)
 app.use('/chat', isAuth, chatRouter)
 
 app.use((error, req, res, next) => {
@@ -50,7 +50,7 @@ app.use((error, req, res, next) => {
 sequelize.sync({
     // force: true
 }).then((result) => {
-    app.listen(3001)
+    app.listen(8080)
     io.on('connection', (socket) => {
         console.log('A user connected');
 

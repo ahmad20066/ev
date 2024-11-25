@@ -26,6 +26,15 @@ const WeightRecord = require('./weight_record');
 const WorkoutAttendance = require('./fitness/workout_attendance');
 const WorkoutCompletion = require('./fitness/workout_completion');
 const ExerciseCompletion = require('./fitness/exercise_completion');
+const WorkoutExercise = require('./fitness/workout_exercise');
+const Meal = require('./meals/meal');
+const UserMealSelection = require('./meals/user_meal_selection');
+const Type = require('./meals/type');
+const MealPlanType = require('./meals/meal_plan_type');
+const MealType = require('./meals/meal_type');
+const MealDay = require('./meals/meal_day');
+const Question = require('./survey/question');
+const Survey = require('./survey/survey');
 // Package.hasMany(Workout, { foreignKey: "package_id" });
 // Workout.belongsTo(Package, { foreignKey: "package_id" });
 
@@ -62,4 +71,36 @@ MealSubscription.belongsTo(User, { foreignKey: "user_id", as: "user" });
 User.hasMany(WorkoutAttendance, { foreignKey: "user_id", as: "workout_attendances" })
 User.hasMany(WorkoutCompletion, { foreignKey: "user_id", as: "workouts_completed" })
 WorkoutCompletion.belongsTo(Workout, { foreignKey: "workout_id", as: "workout" })
+WorkoutAttendance.belongsTo(Workout, { foreignKey: "workout_id", as: "workout" })
 User.hasMany(ExerciseCompletion, { foreignKey: "user_id", as: "exercises_completed" })
+WorkoutExercise.belongsTo(Exercise, { foreignKey: "exercise_id", as: "exercise" })
+
+
+Meal.hasMany(UserMealSelection, { as: "selections", foreignKey: 'meal_id' });
+UserMealSelection.belongsTo(Meal, { as: "meal", foreignKey: 'meal_id' });
+
+
+
+Meal.hasMany(MealType, { as: 'mealTypes', foreignKey: 'meal_id' });
+MealType.belongsTo(Meal, { as: 'meal', foreignKey: 'meal_id' });
+
+Type.hasMany(MealType, { as: 'mealTypes', foreignKey: 'type_id' });
+MealType.belongsTo(Type, { as: 'type', foreignKey: 'type_id' });
+
+// One-to-Many: Type -> MealPlanType
+Type.hasMany(MealPlanType, { as: 'mealPlanTypes', foreignKey: 'type_id' });
+MealPlanType.belongsTo(Type, { as: 'type', foreignKey: 'type_id' });
+
+MealPlan.hasMany(MealPlanType, { as: 'mealPlanTypes', foreignKey: 'meal_plan_id' });
+MealPlanType.belongsTo(MealPlan, { as: 'mealPlan', foreignKey: 'meal_plan_id' });
+
+MealPlan.belongsToMany(Type, { through: MealPlanType, as: 'types', foreignKey: 'meal_plan_id' });
+Type.belongsToMany(MealPlan, { through: MealPlanType, as: 'mealPlans', foreignKey: 'type_id' });
+
+Meal.belongsToMany(Type, { through: MealType, as: 'types', foreignKey: 'meal_id' });
+Type.belongsToMany(Meal, { through: MealType, as: 'meals', foreignKey: 'type_id' });
+
+Meal.hasMany(MealDay, { as: "meal", foreignKey: "meal_id" })
+MealDay.belongsTo(Meal, { as: "meal", foreignKey: "meal_id" })
+
+Survey.hasMany(Question, { as: "questions", foreignKey: "survey_id" })

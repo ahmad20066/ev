@@ -127,7 +127,7 @@ exports.register = async (req, res, next) => {
         // otpStore[email] = { otp, expiry };
 
         // await sendOtp(email, otp);
-        const token = jwt.sign({ userId: newUser.id, role: newUser.role, is_set_up: newUser.is_set_up }, JWT_SECRET, { expiresIn: "1h" })
+        const token = jwt.sign({ userId: newUser.id, role: newUser.role, is_set_up: newUser.is_set_up }, JWT_SECRET, { expiresIn: "7d" })
         res.status(201).json({
             message: "User registered successfully. OTP sent to your email.",
             user: { email: newUser.email },
@@ -160,7 +160,7 @@ exports.login = async (req, res, next) => {
 
         const userWithoutPassword = user.toJSON();
         delete userWithoutPassword.password;
-        const token = jwt.sign({ userId: user.id, role: user.role, is_set_up: user.is_set_up }, JWT_SECRET, { expiresIn: "1h" });
+        const token = jwt.sign({ userId: user.id, role: user.role, is_set_up: user.is_set_up }, JWT_SECRET, { expiresIn: "7d" });
         if (!user.is_set_up && user.role != "admin") {
             return res.status(409).json({
                 Message: "Please setup your profile",

@@ -3,10 +3,10 @@ const PricingModel = require("../../models/pricing_model");
 
 exports.createPackage = async (req, res, next) => {
     try {
-        const { name, description, prices } = req.body;
+        const { name, description, prices, type } = req.body;
 
 
-        const newPackage = await Package.create({ name, description });
+        const newPackage = await Package.create({ name, description, type });
 
         if (prices && prices.length > 0) {
             const pricingData = prices.map(price => ({
@@ -63,7 +63,7 @@ exports.getPackageById = async (req, res, next) => {
 exports.updatePackage = async (req, res, next) => {
     try {
         const { id } = req.params;
-        const { name, description, prices } = req.body;
+        const { name, description, prices, type } = req.body;
 
         const package = await Package.findByPk(id);
         if (!package) {
@@ -73,7 +73,7 @@ exports.updatePackage = async (req, res, next) => {
             return;
         }
 
-        await package.update({ name, description });
+        await package.update({ name, description, type });
 
         if (prices && prices.length > 0) {
             await PricingModel.destroy({ where: { package_id: id } });

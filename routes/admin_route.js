@@ -8,6 +8,9 @@ const fitnessController = require("../controllers/admin/admin_fitness_controller
 const packageController = require("../controllers/admin/admin_package_controller");
 const mealPlanController = require("../controllers/admin/admin_diet_controller");
 const subscriptionController = require('../controllers/admin/admin_subscription_controller');
+const typeController = require("../controllers/admin/admin_type_controller")
+const mealController = require("../controllers/admin/meals_controller")
+const surveyController = require("../controllers/admin/admin_survey_controller")
 const { body, param, validationResult, query } = require("express-validator");
 
 // CRUD Routes for ActivityLevel
@@ -72,5 +75,34 @@ router.get("/meal-subscriptions", query('type').optional()
             next(error);
         }
         subscriptionController.getMealSubscriptions(req, res, next);
-    })
+    });
+
+router.post('/types', typeController.createType);
+router.get('/types', typeController.getAllTypes);
+router.get('/types/:id', typeController.getTypeById);
+router.put('/types/:id', typeController.updateType);
+router.delete('/types/:id', typeController.deleteType);
+
+router.post("/meals", imageMiddleWare.uploadSingleImage("image"), mealController.createMeal);
+router.get("/meals", mealController.getMeals);
+router.get("/meals/:id", mealController.showMeal);
+router.put("/meals/:id", mealController.updateMeal);
+router.delete("/meals/:id", mealController.deleteMeal);
+
+
+router.get("/week", mealController.getUpcomingWeek);
+router.post("/assign-meals", mealController.assignMealsToDays);
+router.get("/week-meals", mealController.getMealsForWeek);
+
+//Surveys
+router.post("/surveys", surveyController.createSurvey);
+router.get("/surveys", surveyController.getSurveys);
+router.get("/surveys/:id", surveyController.getSurvey);
+router.put("/surveys/:id", surveyController.updateSurvey);
+router.delete("/surveys/:id", surveyController.deleteSurvey);
+
+// Question routes
+router.post("/questions", imageMiddleWare.uploadSingleImage("image"), surveyController.createQuestion);
+router.get("/surveys/:surveyId/questions", surveyController.getQuestions);
+
 module.exports = router;

@@ -1,20 +1,55 @@
 const MealPlan = require('../../models/meals/meal_plan');
+const MealPlanType = require('../../models/meals/meal_plan_type');
+const Type = require('../../models/meals/type');
 
 exports.createMealPlan = async (req, res, next) => {
     try {
-        const { title, calories, price_weekly, price_monthly } = req.body;
+        const { title, calories, price_weekly, price_monthly, types } = req.body;
         const image = req.file.path;
-        const newMealPlan = await MealPlan.create({ title, calories, image, price_monthly, price_weekly });
-        res.status(201).json(newMealPlan);
+
+        const newMealPlan = await MealPlan.create({
+            title,
+            calories,
+            image,
+            price_monthly,
+            price_weekly
+        });
+        console.log(types)
+        if (types && Array.isArray(types) && types.length > 0) {
+            for (const typeId of types) {
+                console.log(typeId)
+                await MealPlanType.create({
+                    meal_plan_id: newMealPlan.id,
+                    type_id: typeId
+                });
+            }
+        }
+
+        const mealPlanWithTypes = await MealPlan.findByPk(newMealPlan.id, {
+            include: {
+                model: Type,
+                as: "types",
+                through: { attributes: [] }
+            }
+        });
+
+        res.status(201).json(mealPlanWithTypes);
     } catch (error) {
         error.statusCode = 500;
         next(error);
     }
 };
 
+
 exports.getAllMealPlans = async (req, res, next) => {
     try {
-        const mealPlans = await MealPlan.findAll();
+        const mealPlans = await MealPlan.findAll({
+            include: {
+                model: Type,
+                as: "types",
+                through: { attributes: [] }
+            }
+        });
         res.status(200).json(mealPlans);
     } catch (error) {
         error.statusCode = 500;
@@ -41,7 +76,6 @@ exports.getMealPlanById = async (req, res, next) => {
     }
 };
 
-// Update a Meal Plan by ID
 exports.updateMealPlan = async (req, res, next) => {
     try {
         const { id } = req.params;
@@ -64,7 +98,6 @@ exports.updateMealPlan = async (req, res, next) => {
     }
 };
 
-// Delete a Meal Plan by ID
 exports.deleteMealPlan = async (req, res, next) => {
     try {
         const { id } = req.params;
@@ -85,5 +118,6 @@ exports.deleteMealPlan = async (req, res, next) => {
         next(error);
     }
 };
+
 
 

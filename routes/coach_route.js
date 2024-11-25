@@ -9,9 +9,7 @@ router.post("/workout", [
     body("title")
         .notEmpty()
         .withMessage("Title is required"),
-    body("type")
-        .notEmpty()
-        .withMessage("Type is required"),
+
     body("description")
         .optional()
         .isString()
@@ -88,7 +86,7 @@ router.delete("/workout/:id", [
     controller.deleteWorkout(req, res, next);
 });
 
-router.get("/users", controller.searchUser);
+
 
 //////exercises
 router.post('/exercise', imageMiddleWare.uploadMultiImages([
@@ -105,6 +103,8 @@ router.put('/exercise/:id', imageMiddleWare.uploadMultiImages([
 router.delete('/exercise/:id', exerciseController.deleteExercise);
 router.get('/exercise', exerciseController.getExercises)
 router.get("/user/:id", controller.getUserDetails)
+router.get("/logs/:userId", controller.getUserWorkoutLogs)
+router.get("/users", controller.searchUser);
 
 
 

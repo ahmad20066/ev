@@ -15,6 +15,10 @@ const Package = sequelize.define("Package", {
         type: Sequelize.STRING,
         allowNull: true,
     },
+    type: {
+        type: Sequelize.ENUM("group", "personalized"),
+        allowNull: false
+    }
 }, {
     tableName: "packages",
     timestamps: true,

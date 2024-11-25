@@ -46,12 +46,6 @@ const Subscription = sequelize.define("Subscription", {
         type: Sequelize.BOOLEAN,
         defaultValue: true,
     },
-    subscription_type: {
-        type: Sequelize.VIRTUAL,
-        get() {
-            return this.package_id === 1 ? 'group' : this.package_id === 2 ? 'personalized' : 'unknown';
-        }
-    },
     days_left: {
         type: Sequelize.VIRTUAL,
         get() {
@@ -61,10 +55,20 @@ const Subscription = sequelize.define("Subscription", {
             const diffDays = Math.ceil(timeDiff / (1000 * 3600 * 24));
             return diffDays;
         }
+    },
+    package_type: {
+        type: Sequelize.VIRTUAL,
+        get() {
+            const packageInstance = this.getDataValue("package");
+            return packageInstance ? packageInstance.type : null;
+        }
     }
 }, {
     tableName: "subscriptions",
     timestamps: true,
 });
+
+
+
 
 module.exports = Subscription;

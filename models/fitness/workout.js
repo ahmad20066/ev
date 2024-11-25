@@ -1,5 +1,6 @@
 const Sequelize = require("sequelize");
 const sequelize = require("../index");
+const Package = require("../package");
 const Workout = sequelize.define("Workout", {
     id: {
         type: Sequelize.INTEGER,
@@ -43,7 +44,15 @@ const Workout = sequelize.define("Workout", {
         allowNull: true,
     },
     date: {
-        type: Sequelize.DATE,
+        type: Sequelize.DATEONLY,
+    },
+    package_id: {
+        type: Sequelize.INTEGER,
+        references: {
+            model: Package,
+            key: "id"
+        },
+        allowNull: false
     }
 }, {
     tableName: "workouts",

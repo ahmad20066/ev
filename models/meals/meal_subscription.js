@@ -33,6 +33,5 @@ const MealSubscription = sequelize.define("MealSubscription", {
         type: Sequelize.DATE,
         allowNull: false,
     }
-
 })
 module.exports = MealSubscription

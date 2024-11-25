@@ -44,4 +44,7 @@ router.post("/join-workout", hasSubscription, [
 router.post("/workout-done", hasSubscription, [
     body("workout_id").isInt().withMessage("Invalid workout id"),
 ], controller.markWorkoutDone)
+
+router.post("/survey-answer", controller.submitAnswers)
+router.get("/survey", controller.getSurvey)
 module.exports = router;

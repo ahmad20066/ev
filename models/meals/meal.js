@@ -1,29 +1,25 @@
 const { DataTypes } = require('sequelize');
 const sequelize = require('../index');
 const Type = require('./type');
-const MealPlan = sequelize.define('MealPlan', {
-    title: {
+
+const Meal = sequelize.define('Meal', {
+    name: {
         type: DataTypes.STRING,
-        allowNull: false
+        allowNull: false,
+    },
+    description: {
+        type: DataTypes.TEXT,
+        allowNull: true,
     },
     calories: {
-        type: DataTypes.INTEGER,
-        allowNull: false
+        type: DataTypes.FLOAT,
+        allowNull: true,
     },
-    image: {
+    image_url: {
         type: DataTypes.STRING,
-        allowNull: false
+        allowNull: true,
     },
-    price_weekly: {
-        type: DataTypes.INTEGER,
-        allowNull: false
-    },
-    price_monthly: {
-        type: DataTypes.INTEGER,
-        allowNull: false
-    }
 }, {
-    tableName: "mealPlans",
     defaultScope: {
         include: [
             {
@@ -33,6 +29,7 @@ const MealPlan = sequelize.define('MealPlan', {
             },
         ],
     },
-});
+}
+);
 
-module.exports = MealPlan;
+module.exports = Meal;

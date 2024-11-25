@@ -19,4 +19,5 @@ router.get("/activeFitnessSubscriptions", [
 router.get("/activeMealsSubscriptions", controller.activeSubscriptionsMeals)
 router.get("/new-signups", controller.newSignUps)
 router.get('/completion-rate', controller.workoutCompletionRate)
+router.get("", controller.getStats)
 module.exports = router;

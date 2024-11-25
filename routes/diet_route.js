@@ -3,7 +3,7 @@ const { body, validationResult } = require("express-validator");
 const router = express.Router();
 const controller = require("../controllers/user/diet_controller")
 const isAuth = require("../middlewares/isAuth")
-router.get("/meal-plans", controller.getMealPlans)
+router.get("/meal-plans", isAuth, controller.getMealPlans)
 router.get("/subscriptions", isAuth, controller.getMealSubscriptions)
 router.post("/subscribe", isAuth, [
     body('type')
@@ -19,7 +19,8 @@ router.post("/subscribe", isAuth, [
     controller.subscribeToMealPlan(req, res, next);
 }
 )
-
-
+router.get("/week-meals", isAuth, controller.getMealsForWeek);
+router.get("/my-selections", isAuth, controller.getMealSelections)
+router.post("/change-selection", isAuth, controller.changeSelection)
 
 module.exports = router
