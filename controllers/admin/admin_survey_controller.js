@@ -17,7 +17,7 @@ exports.createSurvey = async (req, res, next) => {
                 package_id
             }
         })
-        if (!existingSurvey) {
+        if (existingSurvey) {
             const error = new Error("This package already has a survey, Please delete the previous one to add this")
             error.statusCode = 403
             throw error

@@ -30,7 +30,7 @@ const sendOtp = async (email, otp) => {
 
 exports.setUpProfile = async (req, res, next) => {
     const userId = req.userId;
-    const { age, gender, weight, height, activity_level, health_goal, dietary_preferences, fitness_level } = req.body;
+    const { age, gender, weight, height, goal, dietary_preferences, fitness_level, sport_duration, sport, training_location } = req.body;
 
     try {
         const user = await User.findByPk(userId);
@@ -48,11 +48,14 @@ exports.setUpProfile = async (req, res, next) => {
         })
         await weightRecord.save()
         user.height = height;
-        user.activity_level_id = activity_level;
-        user.health_goal_id = health_goal;
+
+        user.goal = goal;
         user.dietary_preferences = dietary_preferences;
         user.fitness_level = fitness_level;
         user.is_set_up = true;
+        user.training_location = training_location;
+        user.sport_duration = sport_duration;
+        user.sport = sport
         await user.save();
 
         res.status(200).json({
@@ -116,7 +119,7 @@ exports.register = async (req, res, next) => {
             gender: null,
             height: null,
             activity_level: null,
-            health_goal: null,
+            goal: null,
             dietary_preferences: null,
             fitness_level: null,
         });

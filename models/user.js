@@ -1,7 +1,6 @@
 const Sequelize = require("sequelize");
 const sequelize = require("./index");
-const ActivityLevel = require("./activity_level");
-const HealthGoal = require("./health_goal");
+
 
 const User = sequelize.define("User", {
     name: {
@@ -33,6 +32,22 @@ const User = sequelize.define("User", {
         type: Sequelize.STRING,
         allowNull: true,
     },
+    sport: {
+        type: Sequelize.STRING,
+        allowNull: true,
+    },
+    goal: {
+        type: Sequelize.STRING,
+        allowNull: true,
+    },
+    training_location: {
+        type: Sequelize.STRING,
+        allowNull: true,
+    },
+    sport_duration: {
+        type: Sequelize.STRING,
+        allowNull: true,
+    },
     age: {
         type: Sequelize.INTEGER,
         allowNull: true,
@@ -48,28 +63,11 @@ const User = sequelize.define("User", {
             min: 0,
         },
     },
-    activity_level_id: {
-        type: Sequelize.INTEGER,
-        references: {
-            model: ActivityLevel,
-            key: "id",
-        },
-        allowNull: true,
-    },
-    health_goal_id: {
-        type: Sequelize.INTEGER,
-        references: {
-            model: HealthGoal,
-            key: "id",
-        },
-        allowNull: true,
-    },
+
+
     dietary_preferences: {
         type: Sequelize.STRING,
         allowNull: true, // Example: keto, vegan, etc.
-    },
-    package_type: {
-        type: Sequelize.ENUM("group", "personalized")
     },
     is_set_up: {
         type: Sequelize.BOOLEAN,
@@ -93,7 +91,6 @@ const User = sequelize.define("User", {
     tableName: "users"
 });
 
-User.belongsTo(ActivityLevel, { foreignKey: "activity_level_id" });
-User.belongsTo(HealthGoal, { foreignKey: "health_goal_id" });
+
 
 module.exports = User;

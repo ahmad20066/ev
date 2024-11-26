@@ -43,8 +43,8 @@ const Workout = sequelize.define("Workout", {
         },
         allowNull: true,
     },
-    date: {
-        type: Sequelize.DATEONLY,
+    day: {
+        type: Sequelize.ENUM("sunday", "monday", "wednesday", "tuesday", "thursday", "friday", "saturday"),
     },
     package_id: {
         type: Sequelize.INTEGER,

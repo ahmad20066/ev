@@ -11,6 +11,7 @@ const { Op } = require('sequelize');
 const Answer = require('../../models/survey/answer');
 const Survey = require('../../models/survey/survey');
 const Question = require('../../models/survey/question');
+const WorkoutRequest = require('../../models/fitness/user_workout_request');
 
 
 exports.getWorkoutsByDate = async (req, res, next) => {
@@ -19,7 +20,7 @@ exports.getWorkoutsByDate = async (req, res, next) => {
 
         // Default to today's date if no date is provided
         if (!date) {
-            date = new Date().toISOString().split("T")[0];
+            date = new Date().toISOString().split("T")[0]; // Get today's date in YYYY-MM-DD format
         }
 
         // Validate date format
@@ -28,6 +29,12 @@ exports.getWorkoutsByDate = async (req, res, next) => {
             error.statusCode = 422;
             throw error;
         }
+
+        // Extract the day of the week from the provided date
+        const daysOfWeek = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+        const parsedDate = new Date(date);
+        const dayIndex = parsedDate.getDay(); // Get day of the week (0-6, where 0 = Sunday)
+        const day = daysOfWeek[dayIndex]; // Get the name of the day (e.g., "monday")
 
         // Ensure user has an active subscription
         const subscription = await Subscription.findOne({
@@ -47,28 +54,19 @@ exports.getWorkoutsByDate = async (req, res, next) => {
             error.statusCode = 400;
             throw error;
         }
-        console.log(subscription)
-        const type = subscription.package_type;
+
+        const type = subscription.package.type;
 
 
-        const where = type === "group"
-            ? {
-                date: {
-                    [Op.eq]: date
-                },
-                type
-            }
-            : {
-                date: {
-                    [Op.eq]: date
-                },
-                type,
-                user_id: req.userId
-            };
-        console.log("***************")
-        console.log(where)
-        const workouts = await Workout.findAll({
+        const where = {
+            day: day,
+            type: type,
+            ...(type === "personalized" ? { user_id: req.userId } : {})
+        };
+
+        const workouts = await Workout.findOne({
             where: where,
+            order: [['createdAt', 'DESC']],
             include: {
                 model: Exercise,
                 as: "exercises",
@@ -79,8 +77,15 @@ exports.getWorkoutsByDate = async (req, res, next) => {
             }
         });
 
-        // Log and return results
-        console.log("Fetched workouts:", workouts);
+        if (workouts.length === 0) {
+            const error = new Error("You do not have workouts for this day");
+            error.statusCode = 400;
+            throw error;
+        }
+
+
+
+
         res.status(200).json(workouts);
     } catch (e) {
         if (!e.statusCode) {
@@ -89,7 +94,6 @@ exports.getWorkoutsByDate = async (req, res, next) => {
         next(e);
     }
 };
-
 exports.subscribeToPackage = async (req, res, next) => {
     try {
         const { package_id, pricing_id } = req.body
@@ -131,8 +135,18 @@ exports.subscribeToPackage = async (req, res, next) => {
         })
 
         await subscription.save();
+        let message
+        if (package.type === "personalized") {
+            const request = new WorkoutRequest({
+                user_id: req.userId,
+                package_id
+            })
+            await request.save()
+            message = "Subscription Successful, please wait for the coach to create your workouts"
+        }
+
         res.status(201).json({
-            message: "Subscription Successful",
+            message: message || "Subscription Successful",
             // subscription
         })
     } catch (e) {
@@ -241,7 +255,7 @@ exports.submitAnswers = async (req, res) => {
             throw error;
         }
 
-        const questionId = answers[0]?.question_id;
+        const questionId = answers[0]?.qustion_id;
         const question = await Question.findByPk(questionId)
         if (!question) {
             const error = new Error("Question not found");
@@ -270,7 +284,7 @@ exports.submitAnswers = async (req, res) => {
 
 
         const savedAnswers = answers.map(answer => ({
-            question_id: answer.question_id,
+            qustion_id: answer.qustion_id,
             answer: answer.answer,
             user_id: userId
         }));
@@ -314,5 +328,6 @@ exports.getSurvey = async (req, res, next) => {
         next(e)
     }
 }
+
 
 // exports.renewSubscription = (req,res,next) => {}

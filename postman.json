@@ -73,7 +73,7 @@
                 "url": "{{url}}/answers",
                 "body": {
                     "mode": "raw",
-                    "raw": "{\n  \"question_id\": 1,\n  \"answer\": \"Blue\"\n}"
+                    "raw": "{\n  \"qustion_id\": 1,\n  \"answer\": \"Blue\"\n}"
                 }
             }
         }

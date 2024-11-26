@@ -7,26 +7,33 @@ const WorkoutCompletion = require("../../models/fitness/workout_completion");
 const MealSubscription = require("../../models/meals/meal_subscription");
 const Subscription = require("../../models/subscription");
 const User = require("../../models/user");
-const { Op } = require("sequelize");
+const { Op, Sequelize } = require("sequelize");
 const WeightRecord = require('../../models/weight_record');
 const Package = require('../../models/package');
+const WorkoutRequest = require('../../models/fitness/user_workout_request');
+const Answer = require('../../models/survey/answer');
+
+const Question = require('../../models/survey/question');
+const UserMealSelection = require('../../models/meals/user_meal_selection');
 exports.createWorkout = async (req, res, next) => {
     try {
-        const { title, user_id, description, duration, exercises, difficulty_level, calories_burned, date, package_id } = req.body;
+        const { title, user_id, description, duration, exercises, difficulty_level, calories_burned, day, package_id } = req.body;
         const coach = req.userId;
-        const parsedDate = Date.parse(date);
-        const package = await Package.findByPk(package_id)
+
+        const package = await Package.findByPk(package_id);
         if (!package) {
-            const error = new Error("Package not found")
-            error.statusCode = 404
+            const error = new Error("Package not found");
+            error.statusCode = 404;
             throw error;
         }
-        const type = package.type
+
+        const type = package.type;
         if (type == "personalized" && !user_id) {
-            const error = new Error("Personalized workouts require a user id")
-            error.statusCode = 422
+            const error = new Error("Personalized workouts require a user id");
+            error.statusCode = 422;
             throw error;
         }
+
         const workout = await Workout.create({
             title,
             description,
@@ -35,7 +42,7 @@ exports.createWorkout = async (req, res, next) => {
             difficulty_level,
             calories_burned,
             coach,
-            date: parsedDate,
+            day, // Use the 'day' field instead of 'date'
             user_id: user_id,
             package_id
         });
@@ -50,7 +57,6 @@ exports.createWorkout = async (req, res, next) => {
                 reps
             });
         }));
-
 
         const workoutWithExercises = await Workout.findByPk(workout.id, {
             include: [{
@@ -71,62 +77,7 @@ exports.createWorkout = async (req, res, next) => {
         next(error);
     }
 };
-// exports.createWorkout = async (req, res, next) => {
-//     try {
-//         const { title, type, user_id, description, duration, exercises, difficulty_level, calories_burned, date } = req.body;
-//         const coach = req.userId;
-//         const parsedDate = Date.parse(date)
-//         const workout = await Workout.create({
-//             title,
-//             description,
-//             type,
-//             duration,
-//             difficulty_level,
-//             calories_burned,
-//             coach,
-//             date: parsedDate,
-//             user_id: user_id,
-//         });
 
-//         const exercisesArray = exercises;
-//         console.log(exercisesArray)
-//         await Promise.all(exercisesArray.map(async (exercise, index) => {
-//             const exerciseImage = req.files.find(file => file.fieldname === `exercises[${index}][image]`)
-//                 ? req.files.find(file => file.fieldname === `exercises[${index}][image]`).path
-//                 : null;
-//             const targetMuscleImage = req.files.find(file => file.fieldname === `exercises[${index}][target_muscles_image]`)
-//                 ? req.files.find(file => file.fieldname === `exercises[${index}][target_muscles_image]`).path
-//                 : null;
-
-//             if (!exerciseImage) {
-//                 const error = new Error("You should include images for all exercises");
-//                 error.statusCode = 422;
-//                 throw error;
-//             }
-
-//             exercise.image_url = exerciseImage;
-//             exercise.target_muscles_image = targetMuscleImage
-//             await Exercise.create({
-//                 ...exercise,
-//                 workout_id: workout.id
-//             });
-//         }));
-
-//         const workoutWithExercises = await Workout.findByPk(workout.id, {
-//             include: [{
-//                 model: Exercise,
-//                 as: 'exercises'
-//             }]
-//         });
-
-//         res.status(201).json({
-//             message: 'Workout created successfully',
-//             workout: workoutWithExercises
-//         });
-//     } catch (error) {
-//         next(error);
-//     }
-// };
 exports.getWorkout = async (req, res, next) => {
     try {
         const workoutId = req.params.id;
@@ -151,11 +102,11 @@ exports.getWorkout = async (req, res, next) => {
         next(error);
     }
 };
+
 exports.updateWorkout = async (req, res, next) => {
     try {
         const workoutId = req.params.id;
-        const { title, type, description, duration, difficulty_level, calories_burned, date, exercises, package_id } = req.body;
-        const parsedDate = Date.parse(date);
+        const { title, type, description, duration, difficulty_level, calories_burned, day, exercises, package_id } = req.body;
 
         const workout = await Workout.findByPk(workoutId);
 
@@ -170,7 +121,7 @@ exports.updateWorkout = async (req, res, next) => {
         workout.difficulty_level = difficulty_level || workout.difficulty_level;
         workout.calories_burned = calories_burned || workout.calories_burned;
         workout.package_id = package_id || workout.package_id;
-        workout.date = parsedDate || workout.date;
+        workout.day = day || workout.day; // Update 'day' field
 
         await workout.save();
 
@@ -309,6 +260,19 @@ exports.getUserDetails = async (req, res, next) => {
                     as: "fitness_subscriptions"
                 },
                 {
+                    model: Answer,
+                    as: "survey_answers",
+                    include: {
+                        model: Question,
+                        as: "question"
+                    }
+                },
+                {
+                    model: UserMealSelection,
+                    as: "meal_selections"
+
+                },
+                {
                     model: MealSubscription,
                     as: "diet_subscriptions"
                 },
@@ -354,7 +318,7 @@ exports.getUserWorkoutLogs = async (req, res, next) => {
                 {
                     model: Workout,
                     as: 'workout',
-                    attributes: ['id', 'title', 'type', 'difficulty_level', 'date', 'duration'],
+                    attributes: ['id', 'title', 'type', 'difficulty_level', 'day', 'duration'],
                 },
             ],
         });
@@ -365,7 +329,7 @@ exports.getUserWorkoutLogs = async (req, res, next) => {
                 {
                     model: Workout,
                     as: 'workout',
-                    attributes: ['id', 'title', 'type', 'difficulty_level', 'date', 'duration'],
+                    attributes: ['id', 'title', 'type', 'difficulty_level', 'day', 'duration'],
                 },
             ],
         });
@@ -451,6 +415,77 @@ exports.getUserWorkoutLogs = async (req, res, next) => {
         next(error);
     }
 };
+
+
+exports.getWorkoutRequests = async (req, res, next) => {
+    try {
+
+        let date = req.query.date;
+
+        const where = {};
+
+        if (date) {
+            const datePattern = /^\d{4}-\d{2}-\d{2}$/;
+            if (!datePattern.test(date)) {
+                const error = new Error("Invalid date format. Use YYYY-MM-DD.");
+                error.statusCode = 422;
+                throw error;
+            }
+
+            const startDate = new Date(date);
+            const endDate = new Date(date);
+            endDate.setDate(startDate.getDate() + 1);
+
+            where.createdAt = {
+                [Sequelize.Op.gte]: startDate,
+                [Sequelize.Op.lt]: endDate
+            };
+        }
+
+        const workoutRequests = await WorkoutRequest.findAll({
+            where: where,
+            include: [{
+                model: Package,
+                as: "package",
+                attributes: ['id', 'name']
+            },
+            {
+                model: User,
+                as: "user",
+                attributes: {
+                    exclude: ['is_set_up', "is_active", "deactivated_at", "package_id", "health_goal_id", "activity_level_id", "password"]
+                },
+                include: [
+                    {
+                        model: Answer,
+                        as: "survey_answers",
+                        include: {
+                            model: Question,
+                            as: "question"
+                        }
+                    },
+                    {
+                        model: WeightRecord,
+                        as: "weight-record"
+                    },
+
+                ]
+            }
+            ],
+            order: [['createdAt', 'DESC']]
+        });
+
+
+
+        res.status(200).json(workoutRequests);
+    } catch (e) {
+        if (!e.statusCode) {
+            e.statusCode = 500;
+        }
+        next(e);
+    }
+};
+
 
 
 

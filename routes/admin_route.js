@@ -13,19 +13,19 @@ const mealController = require("../controllers/admin/meals_controller")
 const surveyController = require("../controllers/admin/admin_survey_controller")
 const { body, param, validationResult, query } = require("express-validator");
 
-// CRUD Routes for ActivityLevel
-router.post('/activity-level', activityLevelController.createActivityLevel);
-router.get('/activity-levels', activityLevelController.getActivityLevels);
-router.get('/activity-level/:activityLevelId', activityLevelController.getActivityLevelById);
-router.put('/activity-level/:activityLevelId', activityLevelController.updateActivityLevel);
-router.delete('/activity-level/:activityLevelId', activityLevelController.deleteActivityLevel);
+// // CRUD Routes for ActivityLevel
+// router.post('/activity-level', activityLevelController.createActivityLevel);
+// router.get('/activity-levels', activityLevelController.getActivityLevels);
+// router.get('/activity-level/:activityLevelId', activityLevelController.getActivityLevelById);
+// router.put('/activity-level/:activityLevelId', activityLevelController.updateActivityLevel);
+// router.delete('/activity-level/:activityLevelId', activityLevelController.deleteActivityLevel);
 
-// CRUD Routes for HealthGoal
-router.post('/health-goal', healthGoalController.createHealthGoal);
-router.get('/health-goals', healthGoalController.getHealthGoals);
-router.get('/health-goal/:healthGoalId', healthGoalController.getHealthGoalById);
-router.put('/health-goal/:healthGoalId', healthGoalController.updateHealthGoal);
-router.delete('/health-goal/:healthGoalId', healthGoalController.deleteHealthGoal);
+// // CRUD Routes for HealthGoal
+// router.post('/health-goal', healthGoalController.createHealthGoal);
+// router.get('/health-goals', healthGoalController.getHealthGoals);
+// router.get('/health-goal/:healthGoalId', healthGoalController.getHealthGoalById);
+// router.put('/health-goal/:healthGoalId', healthGoalController.updateHealthGoal);
+// router.delete('/health-goal/:healthGoalId', healthGoalController.deleteHealthGoal);
 //CRUD Routes for fitness plan
 // router.post('/fitness-plan', imageMiddleWare.uploadSingleImage(
 //     "image",

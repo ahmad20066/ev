@@ -105,6 +105,7 @@ router.get('/exercise', exerciseController.getExercises)
 router.get("/user/:id", controller.getUserDetails)
 router.get("/logs/:userId", controller.getUserWorkoutLogs)
 router.get("/users", controller.searchUser);
+router.get("/workout-requests", controller.getWorkoutRequests);
 
 
 
