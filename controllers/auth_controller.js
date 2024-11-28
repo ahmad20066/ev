@@ -165,7 +165,7 @@ exports.login = async (req, res, next) => {
         delete userWithoutPassword.password;
         const token = jwt.sign({ userId: user.id, role: user.role, is_set_up: user.is_set_up }, JWT_SECRET, { expiresIn: "7d" });
         if (!user.is_set_up && user.role != "admin") {
-            return res.status(409).json({
+            return res.status(200).json({
                 Message: "Please setup your profile",
                 token,
                 user
