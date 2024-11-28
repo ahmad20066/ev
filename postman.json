@@ -1,79 +1,110 @@
 {
     "info": {
-        "name": "Survey API Collection",
-        "description": "CRUD for surveys, questions, and answers",
+        "name": "Banner API",
+        "description": "CRUD operations for the Banner model",
         "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
     },
     "item": [
         {
-            "name": "Create Survey",
+            "name": "Create Banner",
             "request": {
                 "method": "POST",
-                "url": "{{url}}/surveys",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "url": {
+                    "raw": "http://localhost:3000/api/banners",
+                    "host": [
+                        "http://localhost:3000"
+                    ],
+                    "path": [
+                        "api",
+                        "banners"
+                    ]
+                },
                 "body": {
                     "mode": "raw",
-                    "raw": "{\n  \"title\": \"Customer Satisfaction\",\n  \"package_id\": 1\n}"
+                    "raw": "{\n    \"image\": \"https://example.com/banner.jpg\"\n}"
                 }
             }
         },
         {
-            "name": "Get All Surveys",
+            "name": "Get All Banners",
             "request": {
                 "method": "GET",
-                "url": "{{url}}/surveys"
+                "url": {
+                    "raw": "http://localhost:3000/api/banners",
+                    "host": [
+                        "http://localhost:3000"
+                    ],
+                    "path": [
+                        "api",
+                        "banners"
+                    ]
+                }
             }
         },
         {
-            "name": "Get Survey",
+            "name": "Get Banner by ID",
             "request": {
                 "method": "GET",
-                "url": "{{url}}/surveys/:id"
+                "url": {
+                    "raw": "http://localhost:3000/api/banners/:id",
+                    "host": [
+                        "http://localhost:3000"
+                    ],
+                    "path": [
+                        "api",
+                        "banners",
+                        ":id"
+                    ]
+                }
             }
         },
         {
-            "name": "Update Survey",
+            "name": "Update Banner",
             "request": {
                 "method": "PUT",
-                "url": "{{url}}/surveys/:id",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "url": {
+                    "raw": "http://localhost:3000/api/banners/:id",
+                    "host": [
+                        "http://localhost:3000"
+                    ],
+                    "path": [
+                        "api",
+                        "banners",
+                        ":id"
+                    ]
+                },
                 "body": {
                     "mode": "raw",
-                    "raw": "{\n  \"title\": \"Updated Survey Title\"\n}"
+                    "raw": "{\n    \"image\": \"https://example.com/new-banner.jpg\"\n}"
                 }
             }
         },
         {
-            "name": "Delete Survey",
+            "name": "Delete Banner",
             "request": {
                 "method": "DELETE",
-                "url": "{{url}}/surveys/:id"
-            }
-        },
-        {
-            "name": "Create Question",
-            "request": {
-                "method": "POST",
-                "url": "{{url}}/questions",
-                "body": {
-                    "mode": "raw",
-                    "raw": "{\n  \"title\": \"What is your favorite color?\",\n  \"image\": null,\n  \"survey_id\": 1\n}"
-                }
-            }
-        },
-        {
-            "name": "Get Questions for Survey",
-            "request": {
-                "method": "GET",
-                "url": "{{url}}/surveys/:surveyId/questions"
-            }
-        },
-        {
-            "name": "Submit Answer",
-            "request": {
-                "method": "POST",
-                "url": "{{url}}/answers",
-                "body": {
-                    "mode": "raw",
-                    "raw": "{\n  \"qustion_id\": 1,\n  \"answer\": \"Blue\"\n}"
+                "url": {
+                    "raw": "http://localhost:3000/api/banners/:id",
+                    "host": [
+                        "http://localhost:3000"
+                    ],
+                    "path": [
+                        "api",
+                        "banners",
+                        ":id"
+                    ]
                 }
             }
         }

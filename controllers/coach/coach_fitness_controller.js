@@ -485,6 +485,19 @@ exports.getWorkoutRequests = async (req, res, next) => {
         next(e);
     }
 };
+// exports.getWeightRecord = async (req, res, next) => {
+//     try {
+//         const { userId } = req.query
+//         const record = await WeightRecord.findAll({
+//             where: {
+//                 user_id: userId
+//             }
+//         })
+//         res.status(200).json(record)
+//     } catch (e) {
+//         next(e)
+//     }
+// }
 
 
 

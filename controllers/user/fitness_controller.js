@@ -18,25 +18,20 @@ exports.getWorkoutsByDate = async (req, res, next) => {
     try {
         let date = req.query.date;
 
-        // Default to today's date if no date is provided
         if (!date) {
-            date = new Date().toISOString().split("T")[0]; // Get today's date in YYYY-MM-DD format
+            date = new Date().toISOString().split("T")[0];
         }
 
-        // Validate date format
         if (isNaN(Date.parse(date))) {
             const error = new Error("Invalid date format. Use YYYY-MM-DD.");
             error.statusCode = 422;
             throw error;
         }
 
-        // Extract the day of the week from the provided date
         const daysOfWeek = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
         const parsedDate = new Date(date);
-        const dayIndex = parsedDate.getDay(); // Get day of the week (0-6, where 0 = Sunday)
-        const day = daysOfWeek[dayIndex]; // Get the name of the day (e.g., "monday")
-
-        // Ensure user has an active subscription
+        const dayIndex = parsedDate.getDay();
+        const day = daysOfWeek[dayIndex];
         const subscription = await Subscription.findOne({
             where: {
                 user_id: req.userId,
@@ -45,26 +40,21 @@ exports.getWorkoutsByDate = async (req, res, next) => {
             include: {
                 model: Package,
                 as: 'package',
-                attributes: ['type'],
             },
         });
-
         if (!subscription) {
             const error = new Error("You have no active subscription");
             error.statusCode = 400;
             throw error;
         }
-
         const type = subscription.package.type;
-
-
         const where = {
             day: day,
             type: type,
-            ...(type === "personalized" ? { user_id: req.userId } : {})
+            ...(type === "personalized" ? { user_id: req.userId } : {}),
+            package_id: subscription.package_id
         };
-
-        const workouts = await Workout.findOne({
+        const workout = await Workout.findOne({
             where: where,
             order: [['createdAt', 'DESC']],
             include: {
@@ -76,17 +66,12 @@ exports.getWorkoutsByDate = async (req, res, next) => {
                 }
             }
         });
-
-        if (workouts.length === 0) {
+        if (!workout) {
             const error = new Error("You do not have workouts for this day");
             error.statusCode = 400;
             throw error;
         }
-
-
-
-
-        res.status(200).json(workouts);
+        res.status(200).json(workout);
     } catch (e) {
         if (!e.statusCode) {
             e.statusCode = 500;
@@ -135,8 +120,15 @@ exports.subscribeToPackage = async (req, res, next) => {
         })
 
         await subscription.save();
+        const previousSubscription = await Subscription.findOne({
+            where: {
+                user_id: req.userId,
+                is_active: false
+            }
+
+        })
         let message
-        if (package.type === "personalized") {
+        if (package.type === "personalized" && !previousSubscription) {
             const request = new WorkoutRequest({
                 user_id: req.userId,
                 package_id

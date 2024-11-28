@@ -32,7 +32,12 @@ exports.createSurvey = async (req, res, next) => {
 
 exports.getSurveys = async (req, res, next) => {
     try {
-        const surveys = await Survey.findAll();
+        const surveys = await Survey.findAll({
+            include: {
+                model: Question,
+                as: "questions"
+            }
+        });
         res.status(200).json(surveys);
     } catch (error) {
         next(error)
@@ -41,7 +46,12 @@ exports.getSurveys = async (req, res, next) => {
 
 exports.getSurvey = async (req, res, next) => {
     try {
-        const survey = await Survey.findByPk(req.params.id);
+        const survey = await Survey.findByPk(req.params.id, {
+            include: {
+                model: Question,
+                as: "questions"
+            }
+        });
         if (!survey) return res.status(404).json({ message: "Survey not found" });
         res.status(200).json(survey);
     } catch (error) {

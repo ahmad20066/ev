@@ -56,13 +56,7 @@ const Subscription = sequelize.define("Subscription", {
             return diffDays;
         }
     },
-    package_type: {
-        type: Sequelize.VIRTUAL,
-        get() {
-            const packageInstance = this.getDataValue("package");
-            return packageInstance ? packageInstance.type : null;
-        }
-    }
+
 }, {
     tableName: "subscriptions",
     timestamps: true,

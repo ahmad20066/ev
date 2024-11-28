@@ -11,6 +11,7 @@ const subscriptionController = require('../controllers/admin/admin_subscription_
 const typeController = require("../controllers/admin/admin_type_controller")
 const mealController = require("../controllers/admin/meals_controller")
 const surveyController = require("../controllers/admin/admin_survey_controller")
+const bannerController = require("../controllers/admin/admin_banner_controller")
 const { body, param, validationResult, query } = require("express-validator");
 
 // // CRUD Routes for ActivityLevel
@@ -105,4 +106,8 @@ router.delete("/surveys/:id", surveyController.deleteSurvey);
 router.post("/questions", imageMiddleWare.uploadSingleImage("image"), surveyController.createQuestion);
 router.get("/surveys/:surveyId/questions", surveyController.getQuestions);
 
+//banner routes
+router.post("/banner", imageMiddleWare.uploadSingleImage("image"), bannerController.createBanner)
+router.get("/banner", bannerController.getAllBanners)
+router.delete("/banner/:id", bannerController.deleteBanner)
 module.exports = router;
