@@ -1,3 +1,5 @@
+const Address = require("../../models/meals/address")
+const DeliveryTime = require("../../models/meals/delivery_time")
 const MealPlan = require("../../models/meals/meal_plan")
 const MealSubscription = require("../../models/meals/meal_subscription")
 const Package = require("../../models/package")
@@ -67,6 +69,9 @@ exports.getMealSubscriptions = async (req, res, next) => {
         console.log(where)
         const subscriptions = await MealSubscription.findAll({
             where: where,
+            attributes: {
+                exclude: ["meal_plan_id", "user_id", "createdAt", "updatedAt", "address_id", "delivery_time_id"]
+            },
             include: [{
                 model: User,
                 as: "user"
@@ -74,6 +79,14 @@ exports.getMealSubscriptions = async (req, res, next) => {
             {
                 model: MealPlan,
                 as: "meal_plan"
+            },
+            {
+                model: Address,
+                as: "address",
+            },
+            {
+                model: DeliveryTime,
+                as: "delivery_time"
             }
             ]
         })

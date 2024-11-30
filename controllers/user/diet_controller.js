@@ -7,6 +7,8 @@ const MealSubscription = require("../../models/meals/meal_subscription");
 const Type = require("../../models/meals/type");
 const UserMealSelection = require("../../models/meals/user_meal_selection");
 const Subscription = require("../../models/subscription");
+const DeliveryTime = require("../../models/meals/delivery_time");
+const Address = require("../../models/meals/address");
 exports.getMealPlans = async (req, res, next) => {
     try {
         const mealPlans = await MealPlan.findAll();
@@ -18,7 +20,7 @@ exports.getMealPlans = async (req, res, next) => {
 };
 exports.subscribeToMealPlan = async (req, res, next) => {
     try {
-        const { type, meal_plan_id } = req.body;
+        const { meal_plan_id, delivery_time_id, address_label, street, city, building } = req.body;
 
         const mealPlan = await MealPlan.findByPk(meal_plan_id, {
             include: {
@@ -32,31 +34,31 @@ exports.subscribeToMealPlan = async (req, res, next) => {
             error.statusCode = 404;
             throw error;
         }
-
+        const delivery_time = await DeliveryTime.findByPk(delivery_time_id)
+        if (!delivery_time) {
+            const error = new Error("Delivery time not found");
+            error.statusCode = 404;
+            throw error;
+        }
         const startDate = new Date();
+        const address = await Address.create({ address_label, city, street, building });
         let endDate;
 
-        if (type === "weekly") {
-            endDate = new Date(startDate);
-            endDate.setDate(startDate.getDate() + 7);
-        } else if (type === "monthly") {
-            endDate = new Date(startDate);
-            endDate.setMonth(startDate.getMonth() + 1);
-        }
+        endDate = new Date(startDate);
+        endDate.setMonth(startDate.getMonth() + 1);
 
-        // Create Meal Subscription
         const mealSubscription = await MealSubscription.create({
-            type: type,
+            type: "monthly",
             meal_plan_id: meal_plan_id,
             user_id: req.userId,
             start_date: startDate,
             end_date: endDate,
+            delivery_time_id,
+            address_id: address.id,
         });
 
-        // Get upcoming week days
         const upcomingWeek = getUpcomingWeek();
 
-        // Assign meals by type for each day
         for (const { date } of upcomingWeek) {
             for (const type of mealPlan.types) {
                 console.log(type)
@@ -64,7 +66,7 @@ exports.subscribeToMealPlan = async (req, res, next) => {
                     include: {
                         model: Type,
                         as: "types",
-                        where: { id: type.id }, // Match the type
+                        where: { id: type.id },
                     },
                 });
                 console.log(meal)
@@ -101,12 +103,22 @@ exports.getMealSubscriptions = async (req, res, next) => {
                 user_id: userId
             },
             attributes: {
-                exclude: ["meal_plan_id", "user_id", "createdAt", "updatedAt"]
+                exclude: ["meal_plan_id", "user_id", "createdAt", "updatedAt", "address_id", "delivery_time_id"]
             },
-            include: {
-                model: MealPlan,
-                as: "meal_plan"
-            }
+            include: [
+                {
+                    model: Address,
+                    as: "address",
+                },
+                {
+                    model: MealPlan,
+                    as: "meal_plan",
+                },
+                {
+                    model: DeliveryTime,
+                    as: "delivery_time"
+                }
+            ],
         })
         const currentDate = new Date();
         const subscriptionsWithDaysLeft = subscriptions.map(subscription => {
@@ -254,6 +266,15 @@ exports.changeSelection = async (req, res, next) => {
             message: "Meal selection updated successfully.",
             // updatedSelection: selection,
         });
+    } catch (error) {
+        next(error);
+    }
+};
+exports.getAllDeliveryTimes = async (req, res, next) => {
+    try {
+        const deliveryTimes = await DeliveryTime.findAll();
+
+        res.status(200).json(deliveryTimes);
     } catch (error) {
         next(error);
     }

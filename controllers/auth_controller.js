@@ -18,14 +18,15 @@ const transporter = nodemailer.createTransport({
 });
 
 const sendOtp = async (email, otp) => {
-    const mailOptions = {
-        from: "your-email@gmail.com",
-        to: email,
-        subject: "Your OTP Code",
-        text: `Your OTP code is ${otp}`,
-    };
+    // const mailOptions = {
+    //     from: "your-email@gmail.com",
+    //     to: email,
+    //     subject: "Your OTP Code",
+    //     text: `Your OTP code is ${otp}`,
+    // };
 
-    await transporter.sendMail(mailOptions);
+    // await transporter.sendMail(mailOptions);
+    return;
 };
 
 exports.setUpProfile = async (req, res, next) => {
@@ -137,7 +138,19 @@ exports.register = async (req, res, next) => {
             token
         });
     } catch (error) {
-        error.statusCode = 500;
+        console.log(error)
+        if (error.name === "SequelizeUniqueConstraintError") {
+            // Handle unique constraint errors
+            const message = error.errors[0].message.includes("phone")
+                ? "A user with this phone number already exists."
+                : "A user with this email already exists.";
+            return res.status(422).json({ error: message });
+        }
+
+        if (error.name === "SequelizeValidationError") {
+            // Handle general validation errors
+            return res.status(422).json({ error: error.errors[0].message });
+        }
         next(error);
     }
 };
@@ -166,7 +179,7 @@ exports.login = async (req, res, next) => {
         const token = jwt.sign({ userId: user.id, role: user.role, is_set_up: user.is_set_up }, JWT_SECRET, { expiresIn: "7d" });
         if (!user.is_set_up && user.role != "admin") {
             return res.status(200).json({
-                Message: "Please setup your profile",
+                message: "Please setup your profile",
                 token,
                 user
             })
@@ -181,6 +194,31 @@ exports.login = async (req, res, next) => {
             error.statusCode = 500;
         }
 
+        next(error);
+    }
+};
+exports.forgotPassword = async (req, res, next) => {
+    const { email } = req.body;
+
+    try {
+        const user = await User.findOne({ where: { email, is_active: true } });
+
+        if (!user) {
+            return res.status(404).json({ error: "User not found or account is inactive." });
+        }
+
+        const otp = Math.floor(100000 + Math.random() * 900000);
+        const expiry = Date.now() + 5 * 60 * 1000;
+
+        otpStore[email] = { otp, expiry };
+
+        await sendOtp(email, otp);
+
+        res.status(200).json({
+            message: "OTP sent successfully to reset your password.",
+        });
+    } catch (error) {
+        error.statusCode = 500;
         next(error);
     }
 };
@@ -213,13 +251,13 @@ exports.verifyOtp = async (req, res, next) => {
 
     try {
         const otpData = otpStore[email];
-        if (!otpData || otpData.expiry < Date.now()) {
-            return res.status(400).json({ error: "OTP expired or invalid." });
-        }
+        // if (!otpData || otpData.expiry < Date.now()) {
+        //     return res.status(400).json({ error: "OTP expired or invalid." });
+        // }
 
-        if (otpData.otp !== parseInt(otp)) {
-            return res.status(400).json({ error: "Invalid OTP." });
-        }
+        // if (otpData.otp !== parseInt(otp)) {
+        //     return res.status(400).json({ error: "Invalid OTP." });
+        // }
 
 
         delete otpStore[email];
@@ -248,7 +286,7 @@ exports.setNewWeight = async (req, res, next) => {
         })
         await weightRecord.save()
         res.status(200).json({
-            Message: "Weight Set Successfully"
+            message: "Weight Set Successfully"
         })
     } catch (e) {
         next(e)
@@ -272,9 +310,44 @@ exports.deleteAccount = async (req, res, next) => {
         user.deactivated_at = new Date()
         await user.save()
         res.status(201).json({
-            Message: "Account Deleted Successfully"
+            message: "Account Deleted Successfully"
         })
     } catch (e) {
         next(e)
     }
 }
+exports.resetPassword = async (req, res, next) => {
+    const { email, otp, newPassword } = req.body;
+
+    try {
+        const otpData = otpStore[email];
+
+        // if (!otpData || otpData.expiry < Date.now()) {
+        //     return res.status(400).json({ error: "OTP expired or invalid." });
+        // }
+
+        // if (otpData.otp !== parseInt(otp)) {
+        //     return res.status(400).json({ error: "Invalid OTP." });
+        // }
+
+        delete otpStore[email];
+
+        const user = await User.findOne({ where: { email, is_active: true } });
+
+        if (!user) {
+            return res.status(404).json({ error: "User not found or account is inactive." });
+        }
+
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        user.password = hashedPassword;
+        await user.save();
+
+        res.status(200).json({
+            message: "Password reset successfully.",
+        });
+    } catch (error) {
+        error.statusCode = 500;
+        next(error);
+    }
+};
+

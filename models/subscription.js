@@ -3,6 +3,7 @@ const sequelize = require('./index');
 const User = require('./user')
 const Package = require('./package');
 const PricingModel = require('./pricing_model');
+const DeliveryTime = require('./meals/delivery_time');
 
 const Subscription = sequelize.define("Subscription", {
     id: {
@@ -56,6 +57,7 @@ const Subscription = sequelize.define("Subscription", {
             return diffDays;
         }
     },
+
 
 }, {
     tableName: "subscriptions",

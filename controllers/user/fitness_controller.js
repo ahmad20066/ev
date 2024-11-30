@@ -7,11 +7,14 @@ const WorkoutAttendance = require('../../models/fitness/workout_attendance');
 const ExerciseCompletion = require('../../models/fitness/exercise_completion');
 const WorkoutExercise = require("../../models/fitness/workout_exercise");
 const WorkoutCompletion = require('../../models/fitness/workout_completion');
-const { Op } = require('sequelize');
+const { Op, Sequelize } = require('sequelize');
 const Answer = require('../../models/survey/answer');
 const Survey = require('../../models/survey/survey');
 const Question = require('../../models/survey/question');
 const WorkoutRequest = require('../../models/fitness/user_workout_request');
+const ExerciseStat = require('../../models/fitness/exercise_stat');
+const User = require('../../models/user');
+const WorkoutRating = require('../../models/fitness/workout_rating');
 
 
 exports.getWorkoutsByDate = async (req, res, next) => {
@@ -180,45 +183,68 @@ exports.joinWorkout = async (req, res, next) => {
 }
 exports.markExerciseDone = async (req, res, next) => {
     try {
-        const { workout_id, exercise_id, stats } = req.body
-        const exercise = await Exercise.findByPk(exercise_id)
+        const { workout_id, exercise_id, stats } = req.body;
+        const exercise = await Exercise.findByPk(exercise_id);
         if (!exercise) {
-            const error = new Error("Exercise Not Found")
+            const error = new Error("Exercise Not Found");
             error.statusCode = 404;
             throw error;
         }
-        const workoutExercise = await WorkoutExercise.findOne({
+
+        const user_id = req.userId;
+        const attendance = await WorkoutAttendance.findOne({
             where: {
                 workout_id,
-                exercise_id
+                user_id
             }
-        });
-
-        if (!workoutExercise) {
-            const error = new Error("Workout Exercise Not Found");
-            error.statusCode = 404;
-            throw error;
+        })
+        if (!attendance) {
+            const error = new Error("You should join the workout first")
+            error.statusCode = 403;
+            throw error
         }
-        const user_id = req.userId
-        const exerciseCompletion = new ExerciseCompletion({
+        const exerciseCompletion = await ExerciseCompletion.create({
             exercise_id,
             user_id,
-            stats
-        })
-        await exerciseCompletion.save()
+            workout_id
+        });
+
+        const statsPromises = stats.map((stat) => {
+            return ExerciseStat.create({
+                exercise_completion_id: exerciseCompletion.id,
+                set: stat.set,
+                reps: stat.reps,
+                weight: stat.weight
+            });
+        });
+
+        await Promise.all(statsPromises);
+
         res.status(201).json({
-            message: "Exercise Done"
-        })
+            message: "Exercise Completed and Stats Recorded",
+        });
     } catch (e) {
+        console.error(e);
         if (!e.statusCode) {
-            e.statusCode = 500
+            e.statusCode = 500;
         }
-        next(e)
+        next(e);
     }
-}
+};
 exports.markWorkoutDone = async (req, res, next) => {
     try {
         const { workout_id } = req.body;
+        const workout_attendance = await WorkoutAttendance.findOne({
+            where: {
+                workout_id,
+                user_id: req.userId
+            }
+        })
+        if (!workout_attendance) {
+            const error = new Error("Please join the workout first")
+            error.statusCode = 403
+            throw error;
+        }
         const workoutCompletion = new WorkoutCompletion({
             workout_id,
             user_id: req.userId
@@ -320,6 +346,125 @@ exports.getSurvey = async (req, res, next) => {
         next(e)
     }
 }
+exports.exerciseLeaderBoard = async (req, res, next) => {
+    try {
+        const exercise_id = req.query.exercise_id;
+
+        if (!exercise_id) {
+            const error = new Error("Exercise ID is required");
+            error.statusCode = 400;
+            throw error;
+        }
+
+        const exerciseCompletions = await ExerciseCompletion.findAll({
+            where: { exercise_id },
+            include: [
+                {
+                    model: ExerciseStat,
+                    attributes: ['set', 'reps', 'weight'],
+                    order: [['weight', 'DESC']],
+                },
+                {
+                    model: User,
+                    as: "user",
+                    attributes: ['id', 'name'],
+                }
+            ]
+        });
+
+        if (exerciseCompletions.length === 0) {
+            return res.status(200).json([]);
+        }
+
+        const leaderboard = exerciseCompletions
+            .map(completion => {
+                const topStat = completion.ExerciseStats[0];
+
+                if (topStat) {
+                    return {
+                        user: {
+                            id: completion.user.id,
+                            name: completion.user.name,
+
+                        },
+                        stats: {
+                            set: topStat.set,
+                            reps: topStat.reps,
+                            weight: topStat.weight,
+                        }
+                    };
+                }
+
+                return null;
+            })
+            .filter(item => item !== null)
+            .sort((a, b) => b.stats.weight - a.stats.weight);
+
+        leaderboard.forEach((entry, index) => {
+            entry.rank = index + 1;
+        });
+
+        res.status(200).json(
+            leaderboard
+        );
+
+    } catch (error) {
+        console.error(error);
+        if (!error.statusCode) {
+            error.statusCode = 500;
+        }
+        next(error);
+    }
+};
+exports.rateWorkout = async (req, res, next) => {
+    try {
+        const { workout_id, rating, message } = req.body
+        const workout = await Workout.findByPk(workout_id)
+        if (!workout) {
+            const error = new Error("Workout not found")
+            error.statusCode = 404
+            throw error;
+        }
+        const subscription = await Subscription.findOne({
+            where: {
+                user_id: req.userId,
+                is_active: true,
+                package_id: workout.package_id
+            }
+        })
+        if (!subscription) {
+            return res.status(403).json({
+                message: "You have no active subscription to this pacakge"
+            })
+        }
+        const completion = await WorkoutCompletion.findOne({
+            where: {
+                workout_id: workout_id,
+                user_id: req.userId
+            }
+        })
+        if (!completion) {
+            const error = new Error("You cant rate a workout that you did not complete")
+            error.statusCode = 403
+            throw error;
+        }
+        const feedback = new WorkoutRating({
+            workout_id,
+            rating,
+            message
+        })
+        await feedback.save()
+        res.status(201).json({
+            message: "Feedback submitted"
+        })
+    } catch (e) {
+        next(e)
+    }
+}
+
+
+
+
 
 
 // exports.renewSubscription = (req,res,next) => {}

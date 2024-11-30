@@ -1,12 +1,13 @@
 {
     "info": {
-        "name": "Banner API",
-        "description": "CRUD operations for the Banner model",
+        "name": "DeliveryTime CRUD",
+        "_postman_id": "12345-67890-abcdef",
+        "description": "CRUD operations for DeliveryTime model",
         "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
     },
     "item": [
         {
-            "name": "Create Banner",
+            "name": "Create DeliveryTime",
             "request": {
                 "method": "POST",
                 "header": [
@@ -15,57 +16,66 @@
                         "value": "application/json"
                     }
                 ],
-                "url": {
-                    "raw": "http://localhost:3000/api/banners",
-                    "host": [
-                        "http://localhost:3000"
-                    ],
-                    "path": [
-                        "api",
-                        "banners"
-                    ]
-                },
                 "body": {
                     "mode": "raw",
-                    "raw": "{\n    \"image\": \"https://example.com/banner.jpg\"\n}"
-                }
-            }
-        },
-        {
-            "name": "Get All Banners",
-            "request": {
-                "method": "GET",
+                    "raw": "{\n    \"title\": 30\n}"
+                },
                 "url": {
-                    "raw": "http://localhost:3000/api/banners",
+                    "raw": "{{url}}/admin/delivery-time",
                     "host": [
-                        "http://localhost:3000"
+                        "{{url}}"
                     ],
                     "path": [
-                        "api",
-                        "banners"
+                        "admin",
+                        "delivery-time"
                     ]
                 }
-            }
+            },
+            "response": []
         },
         {
-            "name": "Get Banner by ID",
+            "name": "Get All DeliveryTimes",
             "request": {
                 "method": "GET",
                 "url": {
-                    "raw": "http://localhost:3000/api/banners/:id",
+                    "raw": "{{url}}/admin/delivery-time",
                     "host": [
-                        "http://localhost:3000"
+                        "{{url}}"
                     ],
                     "path": [
-                        "api",
-                        "banners",
+                        "admin",
+                        "delivery-time"
+                    ]
+                }
+            },
+            "response": []
+        },
+        {
+            "name": "Get DeliveryTime by ID",
+            "request": {
+                "method": "GET",
+                "url": {
+                    "raw": "{{url}}/admin/delivery-time/:id",
+                    "host": [
+                        "{{url}}"
+                    ],
+                    "path": [
+                        "admin",
+                        "delivery-time",
                         ":id"
+                    ],
+                    "variable": [
+                        {
+                            "key": "id",
+                            "value": "1"
+                        }
                     ]
                 }
-            }
+            },
+            "response": []
         },
         {
-            "name": "Update Banner",
+            "name": "Update DeliveryTime",
             "request": {
                 "method": "PUT",
                 "header": [
@@ -74,39 +84,53 @@
                         "value": "application/json"
                     }
                 ],
-                "url": {
-                    "raw": "http://localhost:3000/api/banners/:id",
-                    "host": [
-                        "http://localhost:3000"
-                    ],
-                    "path": [
-                        "api",
-                        "banners",
-                        ":id"
-                    ]
-                },
                 "body": {
                     "mode": "raw",
-                    "raw": "{\n    \"image\": \"https://example.com/new-banner.jpg\"\n}"
+                    "raw": "{\n    \"title\": 45\n}"
+                },
+                "url": {
+                    "raw": "{{url}}/admin/delivery-time/:id",
+                    "host": [
+                        "{{url}}"
+                    ],
+                    "path": [
+                        "admin",
+                        "delivery-time",
+                        ":id"
+                    ],
+                    "variable": [
+                        {
+                            "key": "id",
+                            "value": "1"
+                        }
+                    ]
                 }
-            }
+            },
+            "response": []
         },
         {
-            "name": "Delete Banner",
+            "name": "Delete DeliveryTime",
             "request": {
                 "method": "DELETE",
                 "url": {
-                    "raw": "http://localhost:3000/api/banners/:id",
+                    "raw": "{{url}}/admin/delivery-time/:id",
                     "host": [
-                        "http://localhost:3000"
+                        "{{url}}"
                     ],
                     "path": [
-                        "api",
-                        "banners",
+                        "admin",
+                        "delivery-time",
                         ":id"
+                    ],
+                    "variable": [
+                        {
+                            "key": "id",
+                            "value": "1"
+                        }
                     ]
                 }
-            }
+            },
+            "response": []
         }
     ]
 }

@@ -33,6 +33,9 @@ exports.createWorkout = async (req, res, next) => {
             error.statusCode = 422;
             throw error;
         }
+        if (type == "group" && user_id) {
+            user_id = undefined
+        }
 
         const workout = await Workout.create({
             title,
@@ -43,7 +46,7 @@ exports.createWorkout = async (req, res, next) => {
             calories_burned,
             coach,
             day, // Use the 'day' field instead of 'date'
-            user_id: user_id,
+            user_id,
             package_id
         });
 

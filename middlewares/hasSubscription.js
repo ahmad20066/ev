@@ -12,7 +12,7 @@ module.exports = async (req, res, next) => {
     })
     if (!subscription) {
         return res.status(403).json({
-            Message: "You have no active subscription"
+            message: "You have no active subscription"
         })
     }
     next()

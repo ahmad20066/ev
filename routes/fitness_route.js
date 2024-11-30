@@ -47,4 +47,6 @@ router.post("/workout-done", hasSubscription, [
 
 router.post("/survey-answer", controller.submitAnswers)
 router.get("/survey", controller.getSurvey)
+router.get("/leader-board", controller.exerciseLeaderBoard)
+router.post("/feedback", controller.rateWorkout)
 module.exports = router;

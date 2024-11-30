@@ -73,6 +73,10 @@ const User = sequelize.define("User", {
         type: Sequelize.BOOLEAN,
         defaultValue: false
     },
+    // is_verified: {
+    //     type: Sequelize.BOOLEAN,
+    //     defaultValue: false
+    // },
     is_active: {
         type: Sequelize.BOOLEAN,
         defaultValue: true,

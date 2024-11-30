@@ -37,6 +37,9 @@ const Question = require('./survey/question');
 const Survey = require('./survey/survey');
 const WorkoutRequest = require('./fitness/user_workout_request');
 const Answer = require('./survey/answer');
+const ExerciseStat = require('./fitness/exercise_stat');
+const DeliveryTime = require('./meals/delivery_time');
+const Address = require('./meals/address');
 // Package.hasMany(Workout, { foreignKey: "package_id" });
 // Workout.belongsTo(Package, { foreignKey: "package_id" });
 
@@ -75,6 +78,7 @@ User.hasMany(WorkoutCompletion, { foreignKey: "user_id", as: "workouts_completed
 WorkoutCompletion.belongsTo(Workout, { foreignKey: "workout_id", as: "workout" })
 WorkoutAttendance.belongsTo(Workout, { foreignKey: "workout_id", as: "workout" })
 User.hasMany(ExerciseCompletion, { foreignKey: "user_id", as: "exercises_completed" })
+ExerciseCompletion.belongsTo(User, { foreignKey: "user_id", as: "user" })
 WorkoutExercise.belongsTo(Exercise, { foreignKey: "exercise_id", as: "exercise" })
 
 
@@ -116,3 +120,15 @@ User.hasMany(WorkoutRequest, { as: "requests", foreignKey: "user_id" })
 WorkoutRequest.belongsTo(User, { as: "user", foreignKey: "user_id" })
 Package.hasMany(WorkoutRequest, { as: "requests", foreignKey: "package_id" })
 WorkoutRequest.belongsTo(Package, { as: "package", foreignKey: "package_id" })
+
+ExerciseCompletion.hasMany(ExerciseStat, {
+    foreignKey: "exercise_completion_id"
+});
+ExerciseStat.belongsTo(ExerciseCompletion, {
+    foreignKey: "exercise_completion_id"
+});
+
+MealSubscription.belongsTo(DeliveryTime, { as: "delivery_time", foreignKey: "delivery_time_id" })
+
+MealSubscription.belongsTo(Address, { foreignKey: "address_id", as: "address" });
+Address.hasMany(MealSubscription, { foreignKey: "address_id" });

@@ -13,6 +13,7 @@ router.post(
             .isLength({ min: 6 })
             .withMessage("Password must be at least 6 characters long"),
         body("phone").notEmpty().withMessage("Phone number is required"),
+        body("phone").isNumeric().withMessage("Enter a valid phone number"),
         body("role").isIn(["consumer", "admin", "kitchen_staff", "coach"]).withMessage("Invalid role"),
     ],
     (req, res, next) => {
@@ -109,4 +110,6 @@ router.post(
 )
 router.post("/delete-account", isAuth, controller.deleteAccount)
 
+router.post("/forgot-password", controller.forgotPassword)
+router.post("/reset-password", controller.resetPassword)
 module.exports = router;

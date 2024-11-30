@@ -5,4 +5,5 @@ router.post("/cancel-subscription", controller.cancelSubscription)
 router.get("/my-subscriptions", controller.getSubscriptions)
 router.get("/current-subscription", controller.getSubscription)
 router.get("/me", controller.getProfile)
+router.put("/update", controller.updateProfile)
 module.exports = router

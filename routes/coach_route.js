@@ -4,6 +4,7 @@ const controller = require("../controllers/coach/coach_fitness_controller");
 const exerciseController = require("../controllers/coach/coach_exercises_controller");
 const imageMiddleWare = require('../middlewares/multer');
 const { body, param, validationResult } = require("express-validator");
+const chatController = require("../controllers/chat_controller");
 
 router.post("/workout", [
     body("title")
@@ -107,6 +108,9 @@ router.get("/logs/:userId", controller.getUserWorkoutLogs)
 router.get("/users", controller.searchUser);
 router.get("/workout-requests", controller.getWorkoutRequests);
 
+router.post("/message", imageMiddleWare.uploadSingleImage("file"), chatController.sendMessageCoach)
+router.get("/chats", chatController.getChatsCoach)
+router.get("/messages", chatController.getMessages)
 
 
 module.exports = router;

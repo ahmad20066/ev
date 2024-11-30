@@ -3,16 +3,6 @@ const PricingModel = require("../../models/pricing_model");
 const Subscription = require("../../models/subscription");
 const User = require("../../models/user");
 const WeightRecord = require("../../models/weight_record");
-
-
-exports.editProfile = async (req, res, next) => {
-    const user_id = req.userId;
-    const { email, name, phone, image } = req.body
-    const user = await User.findByPk(user_id, {
-
-    })
-    user.update({})
-}
 exports.cancelSubscription = async (req, res, next) => {
     try {
         const userId = req.userId;
@@ -111,5 +101,43 @@ exports.getProfile = async (req, res, next) => {
         next(e);
     }
 };
+exports.updateProfile = async (req, res, next) => {
+    try {
+        const userId = req.userId;
+        const { name, email, phone } = req.body;
+
+        if (!name && !email && !phone) {
+            const error = new Error("You must provide at least one field to update: name, email, or phone.");
+            error.statusCode = 400;
+            throw error;
+        }
+
+        const user = await User.findByPk(userId);
+
+        if (!user) {
+            const error = new Error("User not found");
+            error.statusCode = 404;
+            throw error;
+        }
+
+        const updatedData = {};
+        if (name) updatedData.name = name;
+        if (email) updatedData.email = email;
+        if (phone) updatedData.phone = phone;
+
+        await user.update(updatedData);
+
+        const updatedUser = await User.scope('defaultScope').findByPk(userId);
+
+        res.status(200).json({
+            message: "Profile updated successfully",
+            user: updatedUser
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+
 
 

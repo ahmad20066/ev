@@ -7,7 +7,6 @@ const Message = sequelize.define('Message', {
         type: DataTypes.TEXT,
         allowNull: false,
     },
-
     sender_id: {
         type: DataTypes.INTEGER,
         references: {
