@@ -11,7 +11,7 @@ const MealDay = sequelize.define("MealDay", {
         allowNull: false
     },
     day: {
-        type: Sequelize.DATEONLY,
+        type: Sequelize.ENUM("sunday", "monday", "wednesday", "tuesday", "thursday", "friday", "saturday"),
         allowNull: false
     }
 })

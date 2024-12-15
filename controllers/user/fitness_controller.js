@@ -15,6 +15,7 @@ const WorkoutRequest = require('../../models/fitness/user_workout_request');
 const ExerciseStat = require('../../models/fitness/exercise_stat');
 const User = require('../../models/user');
 const WorkoutRating = require('../../models/fitness/workout_rating');
+const Choice = require('../../models/survey/choice');
 
 
 exports.getWorkoutsByDate = async (req, res, next) => {
@@ -262,58 +263,86 @@ exports.submitAnswers = async (req, res) => {
         const { answers } = req.body;
         const userId = req.userId;
 
-        // Retrieve the user's subscription
+        if (!Array.isArray(answers) || answers.length === 0) {
+            return res.status(400).json({ message: "'answers' must be a non-empty array." });
+        }
+
         const userSubscription = await Subscription.findOne({
-            where: { user_id: userId, is_active: true }
+            where: { user_id: userId, is_active: true },
         });
 
         if (!userSubscription) {
-            const error = new Error("You cannot answer this survey. No active subscription found.");
-            error.statusCode = 403;
-            throw error;
+            return res.status(403).json({
+                message: "You cannot answer this survey. No active subscription found.",
+            });
         }
 
-        const questionId = answers[0]?.qustion_id;
-        const question = await Question.findByPk(questionId)
-        if (!question) {
-            const error = new Error("Question not found");
-            error.statusCode = 404;
-            throw error;
+
+        const firstQuestionId = answers[0]?.question_id;
+        console.log(answers)
+        console.log(firstQuestionId)
+        const firstQuestion = await Question.findByPk(firstQuestionId);
+        if (!firstQuestion) {
+            return res.status(404).json({ message: "Question not found." });
         }
-        const surveyId = question.survey_id;
+
+        const surveyId = firstQuestion.survey_id;
         const survey = await Survey.findByPk(surveyId);
-
         if (!survey) {
-            const error = new Error("The survey does not exist.");
-            error.statusCode = 404;
-            throw error;
+            return res.status(404).json({ message: "Survey not found." });
         }
 
         if (userSubscription.package_id !== survey.package_id) {
-            const error = new Error("You cannot answer this survey as it is not part of your subscription package.");
-            error.statusCode = 403;
-            throw error;
+            return res.status(403).json({
+                message: "You cannot answer this survey as it is not part of your subscription package.",
+            });
         }
 
+        // Prepare to save answers
+        const savedAnswers = [];
 
-        if (!Array.isArray(answers) || answers.length === 0) {
-            return res.status(400).json({ message: "Invalid input, 'answers' must be a non-empty array." });
+        for (const { question_id, answer, choice_id } of answers) {
+            const question = await Question.findByPk(question_id, { include: { model: Choice, as: "choices" } });
+            if (!question) {
+                return res.status(404).json({ message: `Question with ID ${question_id} not found.` });
+            }
+
+            if (question.type === "normal") {
+                if (!answer || typeof answer !== "string") {
+                    return res.status(400).json({
+                        message: `Invalid answer for question ID ${question_id}. A string is required.`,
+                    });
+                }
+                savedAnswers.push({ question_id, answer, user_id: userId });
+
+            } else if (question.type === "choice") {
+                if (!choice_id) {
+                    return res.status(400).json({
+                        message: `Choice ID is required for question ID ${question_id}.`,
+                    });
+                }
+
+                const validChoice = question.choices.find((choice) => choice.id === choice_id);
+                if (!validChoice) {
+                    return res.status(400).json({
+                        message: `Invalid choice ID ${choice_id} for question ID ${question_id}.`,
+                    });
+                }
+
+                savedAnswers.push({ question_id, choice_id, user_id: userId });
+            } else {
+                return res.status(400).json({ message: `Unknown question type for question ID ${question_id}.` });
+            }
         }
 
-
-        const savedAnswers = answers.map(answer => ({
-            qustion_id: answer.qustion_id,
-            answer: answer.answer,
-            user_id: userId
-        }));
-
-        const result = await Answer.bulkCreate(savedAnswers);
+        await Answer.bulkCreate(savedAnswers);
 
         res.status(201).json({
-            message: "Answers submitted successfully",
+            message: "Answers submitted successfully.",
         });
     } catch (error) {
-        res.status(error.statusCode || 500).json({ error: error.message });
+        console.error(error);
+        res.status(error.statusCode || 500).json({ message: error.message || "Internal Server Error" });
     }
 };
 exports.getSurvey = async (req, res, next) => {
@@ -333,7 +362,12 @@ exports.getSurvey = async (req, res, next) => {
             },
             include: {
                 model: Question,
-                as: "questions"
+                as: "questions",
+                include: {
+                    model: Choice,
+                    as: "choices",
+                    required: false
+                }
             }
         })
         if (!survey) {

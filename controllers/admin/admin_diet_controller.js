@@ -1,10 +1,12 @@
+const { Sequelize } = require('sequelize');
 const MealPlan = require('../../models/meals/meal_plan');
 const MealPlanType = require('../../models/meals/meal_plan_type');
+const MealSubscription = require('../../models/meals/meal_subscription');
 const Type = require('../../models/meals/type');
 
 exports.createMealPlan = async (req, res, next) => {
     try {
-        const { title, calories, price_weekly, price_monthly, types } = req.body;
+        const { title, calories, price_monthly, types } = req.body;
         const image = req.file.path;
 
         const newMealPlan = await MealPlan.create({
@@ -12,7 +14,6 @@ exports.createMealPlan = async (req, res, next) => {
             calories,
             image,
             price_monthly,
-            price_weekly
         });
         console.log(types)
         if (types && Array.isArray(types) && types.length > 0) {
@@ -39,24 +40,42 @@ exports.createMealPlan = async (req, res, next) => {
         next(error);
     }
 };
-
-
 exports.getAllMealPlans = async (req, res, next) => {
     try {
+
         const mealPlans = await MealPlan.findAll({
-            include: {
-                model: Type,
-                as: "types",
-                through: { attributes: [] }
-            }
+            attributes: {
+                include: [
+                    [
+                        Sequelize.fn("COUNT", Sequelize.col("subscriptions.id")), 'subscriptions_count'
+                    ]
+                ]
+            },
+            include: [
+                {
+                    model: MealSubscription,
+                    as: "subscriptions",
+                    attributes: [],
+                    where: {
+                        is_active: true
+                    },
+                    required: false
+                },
+                {
+                    model: Type,
+                    as: "types",
+                    through: { attributes: [] }
+                }
+            ],
+            group: ['MealPlan.id'],
         });
+
         res.status(200).json(mealPlans);
     } catch (error) {
         error.statusCode = 500;
         next(error);
     }
 };
-
 exports.getMealPlanById = async (req, res, next) => {
     try {
         const { id } = req.params;
@@ -75,7 +94,6 @@ exports.getMealPlanById = async (req, res, next) => {
         next(error);
     }
 };
-
 exports.updateMealPlan = async (req, res, next) => {
     try {
         const { id } = req.params;
@@ -97,7 +115,6 @@ exports.updateMealPlan = async (req, res, next) => {
         next(error);
     }
 };
-
 exports.deleteMealPlan = async (req, res, next) => {
     try {
         const { id } = req.params;
@@ -118,6 +135,29 @@ exports.deleteMealPlan = async (req, res, next) => {
         next(error);
     }
 };
-
-
-
+exports.getMealPlanSubscriptions = async (req, res, next) => {
+    try {
+        const meal_plan_id = req.params.id;
+        const is_active = req.query.is_active;
+        if (!is_active) {
+            is_active = false
+        }
+        const mealPlan = await MealPlan.findByPk(meal_plan_id)
+        if (!mealPlan) {
+            const error = new Error("Meal plan not found")
+            error.statusCode = 404
+            throw error;
+        }
+        const count = await MealSubscription.count({
+            where: {
+                meal_plan_id,
+                is_active
+            }
+        })
+        res.status(200).json({
+            subscriptions_count: count
+        })
+    } catch (e) {
+        next(e)
+    }
+}

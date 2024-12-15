@@ -22,8 +22,8 @@ const UserMealSelection = sequelize.define("UserMealSelection", {
         },
         allowNull: false,
     },
-    date: {
-        type: Sequelize.DATE,
+    day: {
+        type: Sequelize.ENUM("sunday", "monday", "wednesday", "tuesday", "thursday", "friday", "saturday"),
         allowNull: false
     },
     meal_subscription_id: {

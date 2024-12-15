@@ -95,3 +95,50 @@ exports.getMealSubscriptions = async (req, res, next) => {
         next(e)
     }
 }
+exports.cancelSubscription = async (req, res, next) => {
+    try {
+        const { id } = req.params;
+
+
+        const subscription = await Subscription.findByPk(id);
+
+        if (!subscription) {
+            const error = new Error("Subscription not found");
+            error.statusCode = 404;
+            throw error;
+        }
+
+        subscription.is_active = false;
+        await subscription.save();
+
+        res.status(200).json({
+            message: "Subscription cancelled successfully",
+            subscription,
+        });
+    } catch (e) {
+        next(e);
+    }
+};
+exports.cancelMealSubscription = async (req, res, next) => {
+    try {
+        const { id } = req.params;
+
+        const mealSubscription = await MealSubscription.findByPk(id);
+
+        if (!mealSubscription) {
+            const error = new Error("Meal subscription not found");
+            error.statusCode = 404;
+            throw error;
+        }
+
+        mealSubscription.is_active = false;
+        await mealSubscription.save();
+
+        res.status(200).json({
+            message: "Meal subscription cancelled successfully",
+            mealSubscription,
+        });
+    } catch (e) {
+        next(e);
+    }
+};

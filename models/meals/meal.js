@@ -1,6 +1,7 @@
 const { DataTypes } = require('sequelize');
 const sequelize = require('../index');
 const Type = require('./type');
+const Ingredient = require('./ingredient');
 
 const Meal = sequelize.define('Meal', {
     name: {
@@ -19,6 +20,18 @@ const Meal = sequelize.define('Meal', {
         type: DataTypes.STRING,
         allowNull: true,
     },
+    protein: {
+        type: DataTypes.DOUBLE
+    },
+    fats: {
+        type: DataTypes.DOUBLE
+    },
+    fiber: {
+        type: DataTypes.DOUBLE
+    },
+    carb: {
+        type: DataTypes.DOUBLE
+    }
 }, {
     defaultScope: {
         include: [
@@ -27,6 +40,11 @@ const Meal = sequelize.define('Meal', {
                 as: 'types',
                 through: { attributes: [] },
             },
+            {
+                model: Ingredient,
+                as: "ingredients",
+                through: { attributes: [] },
+            }
         ],
     },
 }

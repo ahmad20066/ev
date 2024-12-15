@@ -15,6 +15,8 @@ const Answer = require('../../models/survey/answer');
 
 const Question = require('../../models/survey/question');
 const UserMealSelection = require('../../models/meals/user_meal_selection');
+const WorkoutRating = require('../../models/fitness/workout_rating');
+const Choice = require('../../models/survey/choice');
 exports.createWorkout = async (req, res, next) => {
     try {
         const { title, user_id, description, duration, exercises, difficulty_level, calories_burned, day, package_id } = req.body;
@@ -86,14 +88,20 @@ exports.getWorkout = async (req, res, next) => {
         const workoutId = req.params.id;
 
         const workout = await Workout.findByPk(workoutId, {
-            include: [{
-                model: Exercise,
-                as: 'exercises',
-                through: {
-                    model: WorkoutExercise,
-                    attributes: ['sets', 'reps']
+            include: [
+                {
+                    model: Exercise,
+                    as: 'exercises',
+                    through: {
+                        model: WorkoutExercise,
+                        attributes: ['sets', 'reps']
+                    }
+                },
+                {
+                    model: WorkoutRating,
+                    as: "reviews",
                 }
-            }]
+            ]
         });
 
         if (!workout) {
@@ -265,10 +273,20 @@ exports.getUserDetails = async (req, res, next) => {
                 {
                     model: Answer,
                     as: "survey_answers",
-                    include: {
-                        model: Question,
-                        as: "question"
-                    }
+                    attributes: {
+                        exclude: ['question_id', "choice_id", "user_id"]
+                    },
+                    include: [
+                        {
+                            model: Question,
+                            as: "question"
+                        },
+                        {
+                            model: Choice,
+                            as: "choice",
+                            required: false
+                        }
+                    ]
                 },
                 {
                     model: UserMealSelection,

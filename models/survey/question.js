@@ -1,21 +1,29 @@
-const Sequelize = require("sequelize")
-const sequelize = require("../index")
-const Survey = require("./survey")
+const Sequelize = require("sequelize");
+const sequelize = require("../index");
+const Survey = require("./survey");
+
 const Question = sequelize.define("Question", {
     title: {
         type: Sequelize.STRING,
-        allowNull: false
+        allowNull: false,
     },
     image: {
         type: Sequelize.STRING,
-        allowNull: true
+        allowNull: true,
+    },
+    type: {
+        type: Sequelize.ENUM("normal", "choice"),
+        allowNull: false,
+        defaultValue: "normal",
     },
     survey_id: {
         type: Sequelize.INTEGER,
+        allowNull: false,
         references: {
             model: Survey,
-            key: "id"
-        }
-    }
-})
-module.exports = Question
+            key: "id",
+        },
+    },
+});
+
+module.exports = Question;

@@ -21,7 +21,17 @@ exports.getMealPlans = async (req, res, next) => {
 exports.subscribeToMealPlan = async (req, res, next) => {
     try {
         const { meal_plan_id, delivery_time_id, address_label, street, city, building } = req.body;
-
+        const oldSubscription = await MealSubscription.findOne({
+            where: {
+                user_id: req.userId,
+                is_active: true
+            }
+        })
+        // if (oldSubscription) {
+        //     const error = new Error("You are already subscribed");
+        //     error.statusCode = 400;
+        //     throw error;
+        // }
         const mealPlan = await MealPlan.findByPk(meal_plan_id, {
             include: {
                 model: Type,
@@ -59,8 +69,10 @@ exports.subscribeToMealPlan = async (req, res, next) => {
 
         const upcomingWeek = getUpcomingWeek();
 
-        for (const { date } of upcomingWeek) {
+        for (const { day } of upcomingWeek) {
+            console.log("1")
             for (const type of mealPlan.types) {
+                console.log("2")
                 console.log(type)
                 const meal = await Meal.findOne({
                     include: {
@@ -74,7 +86,7 @@ exports.subscribeToMealPlan = async (req, res, next) => {
                 if (meal) {
                     await UserMealSelection.create({
                         user_id: req.userId,
-                        date,
+                        day,
                         meal_id: meal.id,
                         meal_subscription_id: mealSubscription.id,
                     });
@@ -142,7 +154,7 @@ exports.getMealSubscriptions = async (req, res, next) => {
 const getUpcomingWeek = () => {
     const today = new Date();
     const week = [];
-    const daysOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    const daysOfWeek = ["sunday", "monday", "wednesday", "tuesday", "thursday", "friday", "saturday"];
 
     for (let i = 0; i < 7; i++) {
         const date = new Date();
@@ -157,7 +169,7 @@ const getUpcomingWeek = () => {
 exports.getMealsForWeek = async (req, res, next) => {
     try {
         const upcomingWeek = getUpcomingWeek();
-        const dates = upcomingWeek.map(entry => entry.date);
+        const dates = upcomingWeek.map(entry => entry.day);
 
         const meals = await MealDay.findAll({
             where: {
@@ -171,7 +183,7 @@ exports.getMealsForWeek = async (req, res, next) => {
 
         const groupedByDay = upcomingWeek.map(entry => ({
             day: entry,
-            meals: meals.filter(m => m.day === entry.date).map(m => m.meal)
+            meals: meals.filter(m => m.day == entry.day).map(m => m.meal)
         }));
 
         res.status(200).json(groupedByDay);
@@ -179,24 +191,25 @@ exports.getMealsForWeek = async (req, res, next) => {
         next(error);
     }
 };
+
+
 exports.getMealSelections = async (req, res, next) => {
     try {
         const userId = req.userId;
-        let { date } = req.query;
+        let { day } = req.query;  // Change 'date' to 'day'
 
-        if (!date) {
+        if (!day) {
             const today = new Date();
-            date = today.toISOString().split("T")[0];
+            const dayNames = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+            day = dayNames[today.getDay()]; // Get the current day as a string (e.g., "monday")
         }
 
-        console.log(`UserID: ${userId}, Date: ${date}`);
+        console.log(`UserID: ${userId}, Day: ${day}`);
 
         const selections = await UserMealSelection.findAll({
             where: {
                 user_id: userId,
-                date: {
-                    [Op.startsWith]: date, // Match the date
-                },
+                day: day,  // Match by 'day' instead of 'date'
             },
             include: {
                 model: Meal,
@@ -205,7 +218,7 @@ exports.getMealSelections = async (req, res, next) => {
         });
 
         if (!selections.length) {
-            return res.status(404).json({ message: "No meal selections found for the specified date." });
+            return res.status(404).json({ message: "No meal selections found for the specified day." });
         }
 
         const meals = selections.map(selection => ({
@@ -215,13 +228,14 @@ exports.getMealSelections = async (req, res, next) => {
         }));
 
         res.status(200).json({
-            date: date,
+            day: day,  // Return the 'day' instead of 'date'
             meals,
         });
     } catch (error) {
         next(error);
     }
 };
+
 
 exports.changeSelection = async (req, res, next) => {
     try {

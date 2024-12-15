@@ -33,7 +33,18 @@ exports.getSubscriptions = async (req, res, next) => {
         const subscriptions = await Subscription.findAll({
             where: {
                 user_id: userId
-            }
+            },
+            include: [{
+                model: Package,
+                as: "package",
+
+            },
+            {
+                model: PricingModel,
+                as: "pricing",
+
+            },
+            ]
         })
         res.status(200).json(subscriptions)
     } catch (e) {

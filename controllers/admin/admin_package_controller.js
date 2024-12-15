@@ -113,3 +113,79 @@ exports.deletePackage = async (req, res, next) => {
         next(e);
     }
 };
+exports.createPricing = async (req, res, next) => {
+    try {
+        const { title, price, number_of_days, package_id } = req.body;
+
+        // Validate input
+        if (!title || !price || !number_of_days) {
+            return res.status(400).json({ message: "All fields (title, price, number_of_days) are required." });
+        }
+
+        const pricing = await PricingModel.create({ title, price, number_of_days, package_id });
+        res.status(201).json({ message: "Pricing created successfully.", pricing });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Failed to create pricing.", error: error.message });
+    }
+};
+exports.getAllPricings = async (req, res, next) => {
+    try {
+        const pricings = await PricingModel.findAll();
+        res.status(200).json({ message: "Pricings retrieved successfully.", pricings });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Failed to retrieve pricings.", error: error.message });
+    }
+};
+exports.getPricingById = async (req, res, next) => {
+    try {
+        const { id } = req.params;
+        const pricing = await PricingModel.findByPk(id);
+
+        if (!pricing) {
+            return res.status(404).json({ message: "Pricing not found." });
+        }
+
+        res.status(200).json({ message: "Pricing retrieved successfully.", pricing });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Failed to retrieve pricing.", error: error.message });
+    }
+};
+exports.updatePricing = async (req, res, next) => {
+    try {
+        const { id } = req.params;
+        const { title, price, number_of_days, package_id } = req.body;
+
+        const pricing = await PricingModel.findByPk(id);
+
+        if (!pricing) {
+            return res.status(404).json({ message: "Pricing not found." });
+        }
+
+        const updatedPricing = await pricing.update({ title, price, number_of_days, package_id });
+        res.status(200).json({ message: "Pricing updated successfully.", updatedPricing });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Failed to update pricing.", error: error.message });
+    }
+};
+exports.deletePricing = async (req, res, next) => {
+    try {
+        const { id } = req.params;
+
+        const pricing = await PricingModel.findByPk(id);
+
+        if (!pricing) {
+            return res.status(404).json({ message: "Pricing not found." });
+        }
+
+        await pricing.destroy();
+        res.status(200).json({ message: "Pricing deleted successfully." });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Failed to delete pricing.", error: error.message });
+    }
+};
+

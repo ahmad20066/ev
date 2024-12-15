@@ -1,13 +1,13 @@
 {
     "info": {
-        "name": "DeliveryTime CRUD",
-        "_postman_id": "12345-67890-abcdef",
-        "description": "CRUD operations for DeliveryTime model",
+        "name": "PricingModel Admin API",
+        "_postman_id": "d2b3a9ee-5e99-4f6d-8f23-23f4e88c774e",
+        "description": "Admin API for managing pricing models",
         "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
     },
     "item": [
         {
-            "name": "Create DeliveryTime",
+            "name": "Create Pricing",
             "request": {
                 "method": "POST",
                 "header": [
@@ -18,50 +18,52 @@
                 ],
                 "body": {
                     "mode": "raw",
-                    "raw": "{\n    \"title\": 30\n}"
+                    "raw": "{\n    \"title\": \"Basic Package\",\n    \"price\": 29.99,\n    \"number_of_days\": 30,\n    \"package_id\": 1\n}"
                 },
                 "url": {
-                    "raw": "{{url}}/admin/delivery-time",
+                    "raw": "{{url}}/admin/pricing",
                     "host": [
                         "{{url}}"
                     ],
                     "path": [
                         "admin",
-                        "delivery-time"
+                        "pricing"
                     ]
                 }
             },
             "response": []
         },
         {
-            "name": "Get All DeliveryTimes",
+            "name": "Get All Pricings",
             "request": {
                 "method": "GET",
+                "header": [],
                 "url": {
-                    "raw": "{{url}}/admin/delivery-time",
+                    "raw": "{{url}}/admin/pricing",
                     "host": [
                         "{{url}}"
                     ],
                     "path": [
                         "admin",
-                        "delivery-time"
+                        "pricing"
                     ]
                 }
             },
             "response": []
         },
         {
-            "name": "Get DeliveryTime by ID",
+            "name": "Get Pricing by ID",
             "request": {
                 "method": "GET",
+                "header": [],
                 "url": {
-                    "raw": "{{url}}/admin/delivery-time/:id",
+                    "raw": "{{url}}/admin/pricing/:id",
                     "host": [
                         "{{url}}"
                     ],
                     "path": [
                         "admin",
-                        "delivery-time",
+                        "pricing",
                         ":id"
                     ],
                     "variable": [
@@ -75,7 +77,7 @@
             "response": []
         },
         {
-            "name": "Update DeliveryTime",
+            "name": "Update Pricing",
             "request": {
                 "method": "PUT",
                 "header": [
@@ -86,16 +88,16 @@
                 ],
                 "body": {
                     "mode": "raw",
-                    "raw": "{\n    \"title\": 45\n}"
+                    "raw": "{\n    \"title\": \"Premium Package\",\n    \"price\": 49.99,\n    \"number_of_days\": 30,\n    \"package_id\": 1\n}"
                 },
                 "url": {
-                    "raw": "{{url}}/admin/delivery-time/:id",
+                    "raw": "{{url}}/admin/pricing/:id",
                     "host": [
                         "{{url}}"
                     ],
                     "path": [
                         "admin",
-                        "delivery-time",
+                        "pricing",
                         ":id"
                     ],
                     "variable": [
@@ -109,17 +111,18 @@
             "response": []
         },
         {
-            "name": "Delete DeliveryTime",
+            "name": "Delete Pricing",
             "request": {
                 "method": "DELETE",
+                "header": [],
                 "url": {
-                    "raw": "{{url}}/admin/delivery-time/:id",
+                    "raw": "{{url}}/admin/pricing/:id",
                     "host": [
                         "{{url}}"
                     ],
                     "path": [
                         "admin",
-                        "delivery-time",
+                        "pricing",
                         ":id"
                     ],
                     "variable": [

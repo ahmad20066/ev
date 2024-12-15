@@ -9,7 +9,7 @@ const OrderMeal = sequelize.define('OrderMeal', {
         allowNull: false,
         references: {
             model: Order,
-            key: 'order_id',
+            key: 'id',
         },
         onDelete: 'CASCADE',
     },
@@ -18,7 +18,7 @@ const OrderMeal = sequelize.define('OrderMeal', {
         allowNull: false,
         references: {
             model: Meal,
-            key: 'meal_id',
+            key: 'id',
         },
         onDelete: 'CASCADE',
     },

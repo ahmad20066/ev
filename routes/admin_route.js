@@ -14,6 +14,7 @@ const surveyController = require("../controllers/admin/admin_survey_controller")
 const bannerController = require("../controllers/admin/admin_banner_controller")
 const deliveryTimeController = require("../controllers/admin/admin_delivery_time_controller")
 const { body, param, validationResult, query } = require("express-validator");
+const { createOrders } = require('../controllers/kitchen/orders_controller');
 
 // // CRUD Routes for ActivityLevel
 // router.post('/activity-level', activityLevelController.createActivityLevel);
@@ -78,6 +79,8 @@ router.get("/meal-subscriptions", query('type').optional()
         }
         subscriptionController.getMealSubscriptions(req, res, next);
     });
+router.post("/cancel-subscription/:id", subscriptionController.cancelSubscription)
+router.post("/cancel-meal-subscription/:id", subscriptionController.cancelMealSubscription)
 
 router.post('/types', typeController.createType);
 router.get('/types', typeController.getAllTypes);
@@ -100,7 +103,7 @@ router.get("/week-meals", mealController.getMealsForWeek);
 router.post("/surveys", surveyController.createSurvey);
 router.get("/surveys", surveyController.getSurveys);
 router.get("/surveys/:id", surveyController.getSurvey);
-router.put("/surveys/:id", surveyController.updateSurvey);
+// router.put("/surveys/:id", surveyController.updateSurvey);
 router.delete("/surveys/:id", surveyController.deleteSurvey);
 
 // Question routes
@@ -117,4 +120,18 @@ router.post("/delivery-time", deliveryTimeController.createDeliveryTime);
 router.get("/delivery-time", deliveryTimeController.getAllDeliveryTimes);
 router.put("/delivery-time/:id", deliveryTimeController.updateDeliveryTime);
 router.delete("/delivery-time/:id", deliveryTimeController.deleteDeliveryTime);
+
+//ingredients routes
+router.post("/ingredients", imageMiddleWare.uploadSingleImage("image"), mealController.createIngredient)
+router.get("/ingredients", mealController.getAllIngredients)
+router.put("/ingredients/:id", imageMiddleWare.uploadSingleImage("image"), mealController.updateIngredient)
+router.delete("/ingredients/:id", mealController.deleteIngredient)
+
+router.get("/orders", createOrders)
+
+router.post("/pricing", packageController.createPricing);
+router.get("/pricing", packageController.getAllPricings);
+router.get("/pricing/:id", packageController.getPricingById);
+router.put("/pricing/:id", packageController.updatePricing);
+router.delete("/pricing/:id", packageController.deletePricing);
 module.exports = router;
