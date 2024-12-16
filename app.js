@@ -19,6 +19,18 @@ const path = require("path");
 const http = require('http');
 const cancelExpiredSubscriptions = require("./schedulers/subscriptions_scheduler")
 cancelExpiredSubscriptions();
+const cors = require('cors');
+
+// Your CORS configuration
+const corsOptions = {
+    // origin: 'http://yourfrontenddomain.com', // Allow requests from your frontend domain
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'], // Allow specific headers
+    credentials: true, // If you want to allow cookies with CORS
+};
+
+// Use CORS middleware
+app.use(cors(corsOptions));
 app.use(express.json())
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 app.use((req, res, next) => {
