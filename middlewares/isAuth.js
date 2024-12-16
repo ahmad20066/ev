@@ -1,7 +1,9 @@
 const jwt = require('jsonwebtoken')
 module.exports = (req, res, next) => {
     try {
-
+        if (req.method === "OPTIONS") {
+            return res.status(200).end();
+        }
         const authHeader = req.headers.authorization
         console.log(authHeader);
         if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -14,9 +16,7 @@ module.exports = (req, res, next) => {
         const userId = decodedToken.userId
         req.userId = userId
         req.role = decodedToken.role
-        // if (req.method === "OPTIONS") {
-        //     return next()
-        // }
+
         console.log(req.role)
         next()
     } catch (e) {
