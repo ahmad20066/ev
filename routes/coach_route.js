@@ -103,6 +103,7 @@ router.put('/exercise/:id', imageMiddleWare.uploadMultiImages([
 ]), exerciseController.updateExercise);
 router.delete('/exercise/:id', exerciseController.deleteExercise);
 router.get('/exercise', exerciseController.getExercises)
+router.get('/exercise/:id', exerciseController.getExercise)
 router.get("/user/:id", controller.getUserDetails)
 router.get("/logs/:userId", controller.getUserWorkoutLogs)
 router.get("/users", controller.searchUser);

@@ -58,6 +58,21 @@ exports.getExercises = async (req, res, next) => {
         next(error);
     }
 };
+exports.getExercise = async (req, res, next) => {
+    try {
+        const { id } = req.params
+        const exercise = await Exercise.findByPk(id);
+        if (!exercise) {
+            const error = new Error("Exercise not found")
+            error.statusCode = 404;
+            throw error;
+        }
+
+        res.status(200).json(exercise);
+    } catch (error) {
+        next(error);
+    }
+};
 exports.deleteExercise = async (req, res, next) => {
     try {
         const exercise = await Exercise.findByPk(req.params.id);
