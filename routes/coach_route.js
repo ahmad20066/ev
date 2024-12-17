@@ -113,5 +113,14 @@ router.post("/message", imageMiddleWare.uploadSingleImage("file"), chatControlle
 router.get("/chats", chatController.getChatsCoach)
 router.get("/messages", chatController.getMessages)
 
+router.get('/user/:id/fitness-subscriptions', controller.getFitnessSubscriptions);
+router.get('/user/:id/survey-answers', controller.getSurveyAnswers);
+router.get('/user/:id/meal-selections', controller.getMealSelections);
+router.get('/user/:id/diet-subscriptions', controller.getDietSubscriptions);
+router.get('/user/:id/workout-attendance', controller.getWorkoutAttendance);
+router.get('/user/:id/workouts-completed', controller.getWorkoutsCompleted);
+router.get('/user/:id/exercises-completed', controller.getExercisesCompleted);
+router.get('/user/:id/weight-records', controller.getWeightRecords);
+
 
 module.exports = router;

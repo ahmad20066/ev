@@ -95,26 +95,56 @@ exports.getMealPlanById = async (req, res, next) => {
     }
 };
 exports.updateMealPlan = async (req, res, next) => {
-    try {
-        const { id } = req.params;
-        const { title, calories, image, price_per_day } = req.body;
+    const { id } = req.params;
+    const { title, calories, price_monthly, types } = req.body;
+    const image = req.file ? req.file.path : null;
 
+    try {
         const mealPlan = await MealPlan.findByPk(id);
 
         if (!mealPlan) {
-            const err = new Error('Meal Plan not found');
-            err.statusCode = 404;
-            next(err);
-            return;
+            return res.status(404).json({
+                message: "Meal plan not found"
+            });
         }
 
-        await mealPlan.update({ title, calories, image, price_per_day });
-        res.status(200).json(mealPlan);
+        mealPlan.title = title || mealPlan.title;
+        mealPlan.calories = calories || mealPlan.calories;
+        mealPlan.price_monthly = price_monthly || mealPlan.price_monthly;
+        if (image) {
+            mealPlan.image = image;
+        }
+
+        await mealPlan.save();
+
+        if (types && Array.isArray(types) && types.length > 0) {
+            await MealPlanType.destroy({
+                where: { meal_plan_id: id }
+            });
+
+            for (const typeId of types) {
+                await MealPlanType.create({
+                    meal_plan_id: id,
+                    type_id: typeId
+                });
+            }
+        }
+
+        const updatedMealPlan = await MealPlan.findByPk(id, {
+            include: {
+                model: Type,
+                as: "types",
+                through: { attributes: [] }
+            }
+        });
+
+        res.status(200).json(updatedMealPlan);
     } catch (error) {
         error.statusCode = 500;
         next(error);
     }
 };
+
 exports.deleteMealPlan = async (req, res, next) => {
     try {
         const { id } = req.params;

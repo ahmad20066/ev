@@ -495,7 +495,13 @@ exports.rateWorkout = async (req, res, next) => {
         next(e)
     }
 }
-
+exports.renewSubscription = async (req, res, next) => {
+    const { subscription_id } = req.query
+    const subscription = await Subscription.findByPk(subscription_id)
+    if (!subscription) {
+        const error = new Error("Subscripti")
+    }
+}
 
 
 

@@ -54,18 +54,36 @@ exports.activeSubscriptionsMeals = async (req, res, next) => {
 }
 exports.newSignUps = async (req, res, next) => {
     try {
-        const startDate = startOfMonth(new Date());
-        const endDate = endOfMonth(new Date());
+        const currentYear = new Date().getFullYear();
 
-        const newSignupsCount = await User.count({
-            where: {
-                createdAt: {
-                    [Op.between]: [startDate, endDate]
+        const months = [
+            "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+            "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+        ];
+
+        const signUpData = months.map(month => ({
+            month,
+            signups: 0
+        }));
+
+
+
+        for (let i = 0; i < 12; i++) {
+            const startOfMonthDate = startOfMonth(new Date(currentYear, i, 1));
+            const endOfMonthDate = endOfMonth(new Date(currentYear, i, 1));
+
+            const signupsCount = await User.count({
+                where: {
+                    createdAt: {
+                        [Op.between]: [startOfMonthDate, endOfMonthDate]
+                    }
                 }
-            }
-        });
+            });
 
-        res.status(200).json({ newSignupsCount });
+            signUpData[i].signups = signupsCount;
+        }
+
+        res.status(200).json(signUpData);
     } catch (error) {
         next(error);
     }
@@ -125,12 +143,10 @@ exports.getStats = async (req, res, next) => {
             WorkoutCompletion.count(),
         ]);
 
-        // Calculate workout completion rate
         const completionRate = completedWorkoutsCount === 0
             ? 0
             : (completedWorkoutsCount / workoutsCount) * 100;
 
-        // Return consolidated response
         const fitnessSubs = activeFitnessSubscriptions.length;
         res.status(200).json({
             metrics: {

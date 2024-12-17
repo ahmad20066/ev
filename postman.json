@@ -1,136 +1,255 @@
 {
     "info": {
-        "name": "PricingModel Admin API",
-        "_postman_id": "d2b3a9ee-5e99-4f6d-8f23-23f4e88c774e",
-        "description": "Admin API for managing pricing models",
+        "_postman_id": "c3a3f3f9-b92b-4cf9-85e1-cf51964d23c4",
+        "name": "Coach User Data APIs",
+        "description": "Collection of APIs to fetch user data for a coach",
         "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
     },
     "item": [
         {
-            "name": "Create Pricing",
+            "name": "Get Fitness Subscriptions",
             "request": {
-                "method": "POST",
-                "header": [
-                    {
-                        "key": "Content-Type",
-                        "value": "application/json"
-                    }
-                ],
-                "body": {
-                    "mode": "raw",
-                    "raw": "{\n    \"title\": \"Basic Package\",\n    \"price\": 29.99,\n    \"number_of_days\": 30,\n    \"package_id\": 1\n}"
-                },
                 "url": {
-                    "raw": "{{url}}/admin/pricing",
+                    "raw": "{{url}}/coach/user/:id/fitness-subscriptions",
                     "host": [
                         "{{url}}"
                     ],
                     "path": [
-                        "admin",
-                        "pricing"
+                        "coach",
+                        "user",
+                        ":id",
+                        "fitness-subscriptions"
+                    ],
+                    "variable": [
+                        {
+                            "key": "id",
+                            "value": "1",
+                            "description": "User ID"
+                        }
                     ]
-                }
-            },
-            "response": []
-        },
-        {
-            "name": "Get All Pricings",
-            "request": {
+                },
                 "method": "GET",
                 "header": [],
-                "url": {
-                    "raw": "{{url}}/admin/pricing",
-                    "host": [
-                        "{{url}}"
-                    ],
-                    "path": [
-                        "admin",
-                        "pricing"
-                    ]
-                }
-            },
-            "response": []
-        },
-        {
-            "name": "Get Pricing by ID",
-            "request": {
-                "method": "GET",
-                "header": [],
-                "url": {
-                    "raw": "{{url}}/admin/pricing/:id",
-                    "host": [
-                        "{{url}}"
-                    ],
-                    "path": [
-                        "admin",
-                        "pricing",
-                        ":id"
-                    ],
-                    "variable": [
-                        {
-                            "key": "id",
-                            "value": "1"
-                        }
-                    ]
-                }
-            },
-            "response": []
-        },
-        {
-            "name": "Update Pricing",
-            "request": {
-                "method": "PUT",
-                "header": [
-                    {
-                        "key": "Content-Type",
-                        "value": "application/json"
-                    }
-                ],
                 "body": {
                     "mode": "raw",
-                    "raw": "{\n    \"title\": \"Premium Package\",\n    \"price\": 49.99,\n    \"number_of_days\": 30,\n    \"package_id\": 1\n}"
-                },
-                "url": {
-                    "raw": "{{url}}/admin/pricing/:id",
-                    "host": [
-                        "{{url}}"
-                    ],
-                    "path": [
-                        "admin",
-                        "pricing",
-                        ":id"
-                    ],
-                    "variable": [
-                        {
-                            "key": "id",
-                            "value": "1"
-                        }
-                    ]
+                    "raw": "{}"
                 }
             },
             "response": []
         },
         {
-            "name": "Delete Pricing",
+            "name": "Get Survey Answers",
             "request": {
-                "method": "DELETE",
-                "header": [],
                 "url": {
-                    "raw": "{{url}}/admin/pricing/:id",
+                    "raw": "{{url}}/coach/user/:id/survey-answers",
                     "host": [
                         "{{url}}"
                     ],
                     "path": [
-                        "admin",
-                        "pricing",
-                        ":id"
+                        "coach",
+                        "user",
+                        ":id",
+                        "survey-answers"
                     ],
                     "variable": [
                         {
                             "key": "id",
-                            "value": "1"
+                            "value": "1",
+                            "description": "User ID"
                         }
                     ]
+                },
+                "method": "GET",
+                "header": [],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{}"
+                }
+            },
+            "response": []
+        },
+        {
+            "name": "Get Meal Selections",
+            "request": {
+                "url": {
+                    "raw": "{{url}}/coach/user/:id/meal-selections",
+                    "host": [
+                        "{{url}}"
+                    ],
+                    "path": [
+                        "coach",
+                        "user",
+                        ":id",
+                        "meal-selections"
+                    ],
+                    "variable": [
+                        {
+                            "key": "id",
+                            "value": "1",
+                            "description": "User ID"
+                        }
+                    ]
+                },
+                "method": "GET",
+                "header": [],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{}"
+                }
+            },
+            "response": []
+        },
+        {
+            "name": "Get Diet Subscriptions",
+            "request": {
+                "url": {
+                    "raw": "{{url}}/coach/user/:id/diet-subscriptions",
+                    "host": [
+                        "{{url}}"
+                    ],
+                    "path": [
+                        "coach",
+                        "user",
+                        ":id",
+                        "diet-subscriptions"
+                    ],
+                    "variable": [
+                        {
+                            "key": "id",
+                            "value": "1",
+                            "description": "User ID"
+                        }
+                    ]
+                },
+                "method": "GET",
+                "header": [],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{}"
+                }
+            },
+            "response": []
+        },
+        {
+            "name": "Get Workout Attendance",
+            "request": {
+                "url": {
+                    "raw": "{{url}}/coach/user/:id/workout-attendance",
+                    "host": [
+                        "{{url}}"
+                    ],
+                    "path": [
+                        "coach",
+                        "user",
+                        ":id",
+                        "workout-attendance"
+                    ],
+                    "variable": [
+                        {
+                            "key": "id",
+                            "value": "1",
+                            "description": "User ID"
+                        }
+                    ]
+                },
+                "method": "GET",
+                "header": [],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{}"
+                }
+            },
+            "response": []
+        },
+        {
+            "name": "Get Workouts Completed",
+            "request": {
+                "url": {
+                    "raw": "{{url}}/coach/user/:id/workouts-completed",
+                    "host": [
+                        "{{url}}"
+                    ],
+                    "path": [
+                        "coach",
+                        "user",
+                        ":id",
+                        "workouts-completed"
+                    ],
+                    "variable": [
+                        {
+                            "key": "id",
+                            "value": "1",
+                            "description": "User ID"
+                        }
+                    ]
+                },
+                "method": "GET",
+                "header": [],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{}"
+                }
+            },
+            "response": []
+        },
+        {
+            "name": "Get Exercises Completed",
+            "request": {
+                "url": {
+                    "raw": "{{url}}/coach/user/:id/exercises-completed",
+                    "host": [
+                        "{{url}}"
+                    ],
+                    "path": [
+                        "coach",
+                        "user",
+                        ":id",
+                        "exercises-completed"
+                    ],
+                    "variable": [
+                        {
+                            "key": "id",
+                            "value": "1",
+                            "description": "User ID"
+                        }
+                    ]
+                },
+                "method": "GET",
+                "header": [],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{}"
+                }
+            },
+            "response": []
+        },
+        {
+            "name": "Get Weight Records",
+            "request": {
+                "url": {
+                    "raw": "{{url}}/coach/user/:id/weight-records",
+                    "host": [
+                        "{{url}}"
+                    ],
+                    "path": [
+                        "coach",
+                        "user",
+                        ":id",
+                        "weight-records"
+                    ],
+                    "variable": [
+                        {
+                            "key": "id",
+                            "value": "1",
+                            "description": "User ID"
+                        }
+                    ]
+                },
+                "method": "GET",
+                "header": [],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{}"
                 }
             },
             "response": []

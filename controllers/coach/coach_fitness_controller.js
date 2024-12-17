@@ -17,11 +17,31 @@ const Question = require('../../models/survey/question');
 const UserMealSelection = require('../../models/meals/user_meal_selection');
 const WorkoutRating = require('../../models/fitness/workout_rating');
 const Choice = require('../../models/survey/choice');
+const { startOfYear, endOfYear } = require('date-fns');
 exports.createWorkout = async (req, res, next) => {
     try {
         const { title, user_id, description, duration, exercises, difficulty_level, calories_burned, day, package_id } = req.body;
         const coach = req.userId;
-
+        if (user_id) {
+            const user = await User.findByPk(user_id)
+            if (!user) {
+                const error = new Error("User not found");
+                error.statusCode = 404;
+                throw error;
+            }
+            const subscription = await Subscription.findOne({
+                where: {
+                    user_id,
+                    is_active: true
+                }
+            })
+            if (!subscription) {
+                const error = new Error("No Active subscription for this user");
+                error.statusCode = 400;
+                throw error;
+            }
+            package_id = subscription.package_id
+        }
         const package = await Package.findByPk(package_id);
         if (!package) {
             const error = new Error("Package not found");
@@ -258,6 +278,147 @@ exports.searchUser = (req, res, next) => {
             next(error);
         });
 };
+exports.getFitnessSubscriptions = async (req, res, next) => {
+    const { id } = req.params;
+    try {
+        const subscriptions = await Subscription.findAll({
+            where: { user_id: id },
+            include: {
+                model: Package,
+                as: "package",
+                // attributes: ['name', 'description', 'price'],
+            }
+        });
+        res.status(200).json(subscriptions);
+    } catch (error) {
+        next(error);
+    }
+};
+exports.getSurveyAnswers = async (req, res, next) => {
+    const { id } = req.params;
+    try {
+        const answers = await Answer.findAll({
+            where: { user_id: id },
+            attributes: { exclude: ['question_id', 'choice_id', 'user_id'] },
+            include: [
+                {
+                    model: Question,
+                    as: "question",
+
+                },
+                {
+                    model: Choice,
+                    as: "choice",
+
+                    required: false
+                }
+            ]
+        });
+        res.status(200).json(answers);
+    } catch (error) {
+        next(error);
+    }
+};
+exports.getMealSelections = async (req, res, next) => {
+    const { id } = req.params;
+    try {
+        const mealSelections = await UserMealSelection.findAll({
+            where: { user_id: id }
+        });
+        res.status(200).json(mealSelections);
+    } catch (error) {
+        next(error);
+    }
+};
+exports.getDietSubscriptions = async (req, res, next) => {
+    const { id } = req.params;
+    try {
+        const dietSubscriptions = await MealSubscription.findAll({
+            where: { user_id: id, is_active: true }
+        });
+        res.status(200).json(dietSubscriptions);
+    } catch (error) {
+        next(error);
+    }
+};
+exports.getWorkoutAttendance = async (req, res, next) => {
+    const { id } = req.params;
+    try {
+        const workoutAttendance = await WorkoutAttendance.findAll({
+            where: { user_id: id }
+        });
+        res.status(200).json(workoutAttendance);
+    } catch (error) {
+        next(error);
+    }
+};
+exports.getWorkoutsCompleted = async (req, res, next) => {
+    const { id } = req.params;
+    try {
+        const completedWorkouts = await WorkoutCompletion.findAll({
+            where: { user_id: id },
+            include: {
+                model: Workout,
+                as: "workout",
+
+            }
+        });
+        res.status(200).json(completedWorkouts);
+    } catch (error) {
+        next(error);
+    }
+};
+exports.getExercisesCompleted = async (req, res, next) => {
+    const { id } = req.params;
+    try {
+        const exercisesCompleted = await ExerciseCompletion.findAll({
+            where: { user_id: id }
+        });
+        res.status(200).json(exercisesCompleted);
+    } catch (error) {
+        next(error);
+    }
+};
+exports.getWeightRecords = async (req, res, next) => {
+    const { id } = req.params;
+    try {
+        const startDate = startOfYear(new Date());
+        const endDate = endOfYear(new Date());
+
+        const weightRecords = await WeightRecord.findAll({
+            where: {
+                user_id: id,
+                createdAt: {
+                    [Op.gte]: startDate,
+                    [Op.lte]: endDate
+                }
+            },
+            order: [['createdAt', 'ASC']]
+        });
+
+        if (!weightRecords.length) {
+            return res.status(404).json({ message: "No weight records found for the past year." });
+        }
+
+        const chartData = [];
+        let previousWeight = null;
+
+        weightRecords.forEach(record => {
+            if (previousWeight !== record.weight) {
+                chartData.push({
+                    date: record.createdAt.toISOString().split('T')[0],
+                    weight: record.weight
+                });
+                previousWeight = record.weight;
+            }
+        });
+
+        res.status(200).json(chartData);
+    } catch (error) {
+        next(error);
+    }
+};
+
 exports.getUserDetails = async (req, res, next) => {
     const { id } = req.params;
     try {
