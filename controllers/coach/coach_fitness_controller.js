@@ -265,7 +265,7 @@ exports.searchUser = (req, res, next) => {
         },
         include: {
             model: WeightRecord,
-            as: "weight"
+            as: "weight-record"
         }
     })
         .then(users => {
