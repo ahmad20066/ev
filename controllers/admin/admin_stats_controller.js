@@ -9,6 +9,9 @@ const ExerciseCompletion = require("../../models/fitness/exercise_completion");
 const WorkoutAttendance = require("../../models/fitness/workout_attendance");
 const WorkoutCompletion = require("../../models/fitness/workout_completion");
 const Package = require("../../models/package");
+const Renewal = require("../../models/fitness/renewal");
+const moment = require("moment");
+const sequelize = require("../../models");
 
 exports.activeSubscriptionsFitness = async (req, res, next) => {
     try {
@@ -156,6 +159,43 @@ exports.getStats = async (req, res, next) => {
                 workoutCompletionRate: completionRate,
             },
         });
+    } catch (error) {
+        next(error);
+    }
+};
+exports.getRenewalChartData = async (req, res, next) => {
+    try {
+        const currentYear = moment().year();
+
+        const monthlyRenewals = await Renewal.findAll({
+            where: {
+                createdAt: {
+                    [Op.gte]: new Date(`${currentYear}-01-01`), // Using createdAt as the renewal date
+                },
+            },
+            attributes: [
+                [sequelize.fn('MONTH', sequelize.col('createdAt')), 'month'],
+                [sequelize.fn('COUNT', sequelize.col('id')), 'count'],
+            ],
+            group: ['month'],
+            order: [[sequelize.fn('MONTH', sequelize.col('createdAt')), 'ASC']],
+        });
+        console.log(monthlyRenewals)
+        const renewalData = new Array(12).fill(0);
+        monthlyRenewals.forEach(item => {
+            console.log(item.get('month'))
+            console.log(item.get('count'))
+            renewalData[item.get('month') - 1] = item.get('count');
+            console.log(renewalData)
+        });
+        console.log(renewalData)
+        const xaxis = moment.monthsShort();
+
+        res.status(200).json({
+            renewal_data: renewalData,
+            xaxis,
+        });
+
     } catch (error) {
         next(error);
     }

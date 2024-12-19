@@ -35,6 +35,7 @@ router.post("/subscribe", [
         }
         controller.subscribeToPackage(req, res, next);
     })
+router.post("/renew", controller.renewSubscription)
 router.post("/exercise-done", hasSubscription, [
     body("exercise_id").isInt().withMessage("Invalid exercise id"),
 ], controller.markExerciseDone)

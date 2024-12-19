@@ -20,7 +20,7 @@ const Choice = require('../../models/survey/choice');
 const { startOfYear, endOfYear } = require('date-fns');
 exports.createWorkout = async (req, res, next) => {
     try {
-        const { title, user_id, description, duration, exercises, difficulty_level, calories_burned, day, package_id } = req.body;
+        let { title, user_id, description, duration, exercises, difficulty_level, calories_burned, day, package_id } = req.body;
         const coach = req.userId;
         if (user_id) {
             const user = await User.findByPk(user_id)
@@ -418,7 +418,6 @@ exports.getWeightRecords = async (req, res, next) => {
         next(error);
     }
 };
-
 exports.getUserDetails = async (req, res, next) => {
     const { id } = req.params;
     try {
@@ -597,8 +596,6 @@ exports.getUserWorkoutLogs = async (req, res, next) => {
         next(error);
     }
 };
-
-
 exports.getWorkoutRequests = async (req, res, next) => {
     try {
 
@@ -680,6 +677,64 @@ exports.getWorkoutRequests = async (req, res, next) => {
 //         next(e)
 //     }
 // }
+exports.getUserWorkout = async (req, res, next) => {
+    try {
+        const { user_id, day } = req.query
+        const user = await User.findByPk(user_id)
+        if (!user) {
+            const error = new Error("User not found")
+            error.statusCode = 404
+            throw error;
+        }
+        const workout = await Workout.findOne({
+            where: {
+                user_id,
+                type: "personalized",
+                day: day
+            }
+        })
+        if (!workout) {
+            res.status(200).json({})
+            return
+        }
+        res.status(200).json(workout)
+    } catch (e) {
+        next(e)
+    }
+}
+exports.getGroupWorkouts = async (req, res, next) => {
+    try {
+        const { package_id, day } = req.query
+
+        const workout = await Workout.findOne({
+            where: {
+                package_id,
+                day
+            },
+            include: [
+                {
+                    model: Exercise,
+                    as: 'exercises',
+                    through: {
+                        model: WorkoutExercise,
+                        attributes: ['sets', 'reps']
+                    }
+                },
+                {
+                    model: WorkoutRating,
+                    as: "reviews",
+                }
+            ]
+        })
+        if (!workout) {
+            res.status(200).json({})
+        }
+        res.status(200).json(workout)
+    } catch (e) {
+        next(e)
+    }
+}
+
 
 
 

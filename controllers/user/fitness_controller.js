@@ -16,6 +16,7 @@ const ExerciseStat = require('../../models/fitness/exercise_stat');
 const User = require('../../models/user');
 const WorkoutRating = require('../../models/fitness/workout_rating');
 const Choice = require('../../models/survey/choice');
+const Renewal = require('../../models/fitness/renewal');
 
 
 exports.getWorkoutsByDate = async (req, res, next) => {
@@ -127,7 +128,8 @@ exports.subscribeToPackage = async (req, res, next) => {
         const previousSubscription = await Subscription.findOne({
             where: {
                 user_id: req.userId,
-                is_active: false
+                is_active: false,
+                package_id
             }
 
         })
@@ -496,10 +498,43 @@ exports.rateWorkout = async (req, res, next) => {
     }
 }
 exports.renewSubscription = async (req, res, next) => {
-    const { subscription_id } = req.query
-    const subscription = await Subscription.findByPk(subscription_id)
-    if (!subscription) {
-        const error = new Error("Subscripti")
+    try {
+        const { subscription_id } = req.query
+        const subscription = await Subscription.findByPk(subscription_id, {
+            include: {
+                model: PricingModel,
+                as: "pricing"
+            }
+        })
+        if (!subscription) {
+            const error = new Error("Subscription not found")
+            error.statusCode = 404
+            throw error;
+        }
+        if (subscription.is_active) {
+            const error = new Error("Subscription already active")
+            error.statusCode = 400
+            throw error;
+        }
+        subscription.is_active = true;
+        let endDate = new Date(subscription.end_date);
+        endDate.setDate(endDate.getDate() + subscription.pricing.number_of_days); // Add days to current end_date
+        console.log(subscription.pricing.number_of_days)
+        // Update the subscription's end date
+        subscription.end_date = endDate;
+        console.log(endDate)
+        subscription.end_date = endDate
+        await subscription.save()
+        const renewal = new Renewal({
+            subscription_id
+        })
+        await renewal.save();
+        res.status(201).json({
+            message: "Subscription renewed",
+            subscription
+        })
+    } catch (e) {
+        next(e)
     }
 }
 
