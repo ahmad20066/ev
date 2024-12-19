@@ -396,9 +396,9 @@ exports.getWeightRecords = async (req, res, next) => {
             order: [['createdAt', 'ASC']]
         });
 
-        if (!weightRecords.length) {
-            return res.status(404).json({ message: "No weight records found for the past year." });
-        }
+        // if (!weightRecords.length) {
+        //     return res.status(200).json();
+        // }
 
         const chartData = [];
         let previousWeight = null;
