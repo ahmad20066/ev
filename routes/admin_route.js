@@ -104,7 +104,7 @@ router.post("/surveys", surveyController.createSurvey);
 router.get("/surveys", surveyController.getSurveys);
 router.get("/package-survey", surveyController.getPackageSurvey);
 router.get("/surveys/:id", surveyController.getSurvey);
-// router.put("/surveys/:id", surveyController.updateSurvey);
+router.put("/surveys/:id", surveyController.updateSurvey);
 router.delete("/surveys/:id", surveyController.deleteSurvey);
 
 // Question routes

@@ -2,19 +2,19 @@ const Survey = require("../../models/survey/survey");
 const Question = require("../../models/survey/question");
 const Choice = require("../../models/survey/choice");
 const Package = require("../../models/package");
-exports.updateSurvey = async (req, res, next) => {
-    try {
-        const survey = await Survey.findByPk(req.params.id);
-        if (!survey) {
-            return res.status(404).json({ message: "Survey not found" });
-        }
+// exports.updateSurvey = async (req, res, next) => {
+//     try {
+//         const survey = await Survey.findByPk(req.params.id);
+//         if (!survey) {
+//             return res.status(404).json({ message: "Survey not found" });
+//         }
 
-        const updatedSurvey = await survey.update(req.body);
-        res.status(200).json({ message: "Survey updated successfully", updatedSurvey });
-    } catch (error) {
-        next(error);
-    }
-};
+//         const updatedSurvey = await survey.update(req.body);
+//         res.status(200).json({ message: "Survey updated successfully", updatedSurvey });
+//     } catch (error) {
+//         next(error);
+//     }
+// };
 
 exports.deleteSurvey = async (req, res, next) => {
     try {
@@ -55,6 +55,29 @@ exports.createSurvey = async (req, res, next) => {
         next(error);
     }
 };
+exports.updateSurvey = async (req, res, next) => {
+    try {
+        const { id } = req.params; // ID of the survey to update
+        const { title } = req.body; // New title for the survey
+
+        if (!title) {
+            return res.status(400).json({ message: "Title is required" });
+        }
+
+        const survey = await Survey.findByPk(id);
+        if (!survey) {
+            return res.status(404).json({ message: "Survey not found" });
+        }
+
+        survey.title = title; // Update the title
+        await survey.save(); // Save the changes
+
+        res.status(200).json({ message: "Survey updated successfully", survey });
+    } catch (error) {
+        next(error);
+    }
+};
+
 
 exports.getSurveys = async (req, res, next) => {
     try {
