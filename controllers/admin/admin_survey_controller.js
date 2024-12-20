@@ -86,7 +86,7 @@ exports.getSurvey = async (req, res, next) => {
         if (!survey) {
             return res.status(404).json({ message: "Survey not found" });
         }
-        res.status(200).json({ message: "Survey retrieved successfully", survey });
+        res.status(200).json(survey);
     } catch (error) {
         next(error);
     }
