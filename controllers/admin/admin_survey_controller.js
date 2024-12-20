@@ -86,7 +86,7 @@ exports.getSurvey = async (req, res, next) => {
         if (!survey) {
             return res.status(200).json([]);;
         }
-        res.status(200).json(survey);
+        res.status(200).json([survey]);
     } catch (error) {
         next(error);
     }
