@@ -71,6 +71,14 @@ exports.getWorkoutsByDate = async (req, res, next) => {
                 }
             }
         });
+        workout.exercises = workout.exercises.map((exercise) => {
+            const stats = exercise.get('stats').dataValues;
+            console.log(stats)
+            exercise.dataValues.stats = Object.fromEntries(
+                Object.entries(stats).filter(([key, value]) => value != null)
+            );
+            return exercise;
+        });
         if (!workout) {
             const error = new Error("You do not have workouts for this day");
             error.statusCode = 400;

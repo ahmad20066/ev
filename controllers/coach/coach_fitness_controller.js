@@ -73,13 +73,14 @@ exports.createWorkout = async (req, res, next) => {
         });
 
         await Promise.all(exercises.map(async (exercise) => {
-            const { exercise_id, sets, reps } = exercise;
+            const { exercise_id, sets, reps, duration } = exercise;
 
             await WorkoutExercise.create({
                 workout_id: workout.id,
                 exercise_id,
                 sets,
-                reps
+                reps,
+                duration
             });
         }));
 
@@ -88,12 +89,20 @@ exports.createWorkout = async (req, res, next) => {
                 model: Exercise,
                 as: 'exercises',
                 through: {
-                    attributes: ['sets', 'reps'],
+                    attributes: ['sets', 'reps', 'duration'],
                     as: "stats"
                 }
             }]
         });
-
+        workoutWithExercises.exercises = workoutWithExercises.exercises.map((exercise) => {
+            const stats = exercise.get('stats').dataValues;
+            console.log(stats)
+            exercise.dataValues.stats = Object.fromEntries(
+                Object.entries(stats).filter(([key, value]) => value != null)
+            );
+            return exercise;
+        });
+        console.log("ssss")
         res.status(201).json({
             message: 'Workout created successfully',
             workout: workoutWithExercises
@@ -727,9 +736,9 @@ exports.getGroupWorkouts = async (req, res, next) => {
             ]
         })
         if (!workout) {
-            res.status(200).json({})
+            res.status(200).json([])
         }
-        res.status(200).json(workout)
+        res.status(200).json([workout])
     } catch (e) {
         next(e)
     }
