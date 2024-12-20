@@ -102,7 +102,8 @@ router.get("/week-meals", mealController.getMealsForWeek);
 //Surveys
 router.post("/surveys", surveyController.createSurvey);
 router.get("/surveys", surveyController.getSurveys);
-router.get("/package-survey", surveyController.getSurvey);
+router.get("/package-survey", surveyController.getPackageSurvey);
+router.get("/surveys/:id", surveyController.getSurvey);
 // router.put("/surveys/:id", surveyController.updateSurvey);
 router.delete("/surveys/:id", surveyController.deleteSurvey);
 

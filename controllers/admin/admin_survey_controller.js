@@ -66,8 +66,31 @@ exports.getSurveys = async (req, res, next) => {
         next(error);
     }
 };
-
 exports.getSurvey = async (req, res, next) => {
+    try {
+        const { id } = req.params
+        const survey = await Survey.findByPk(id, {
+
+            include: {
+                model: Question,
+                as: "questions",
+                include: {
+                    model: Choice,
+                    as: "choices",
+                },
+            },
+        });
+        if (!survey) {
+            return res.status(404).json({
+                message: "Survey not found"
+            });;
+        }
+        res.status(200).json([survey]);
+    } catch (error) {
+        next(error);
+    }
+};
+exports.getPackageSurvey = async (req, res, next) => {
     try {
         const { package_id } = req.query
         const survey = await Survey.findOne({
