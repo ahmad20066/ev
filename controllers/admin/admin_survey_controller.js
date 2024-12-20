@@ -69,7 +69,11 @@ exports.getSurveys = async (req, res, next) => {
 
 exports.getSurvey = async (req, res, next) => {
     try {
-        const survey = await Survey.findByPk(req.params.id, {
+        const { package_id } = req.query
+        const survey = await Survey.findOne({
+            where: {
+                package_id
+            },
             include: {
                 model: Question,
                 as: "questions",
