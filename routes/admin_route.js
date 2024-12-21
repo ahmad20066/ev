@@ -110,7 +110,8 @@ router.delete("/surveys/:id", surveyController.deleteSurvey);
 // Question routes
 router.post("/questions", imageMiddleWare.uploadSingleImage("image"), surveyController.createQuestion);
 router.get("/surveys/:surveyId/questions", surveyController.getQuestions);
-
+router.put("/questions/:id", imageMiddleWare.uploadSingleImage("image"), surveyController.updateQuestion)
+router.delete("/questions/:id", surveyController.deleteQuestion)
 //banner routes
 router.post("/banner", imageMiddleWare.uploadSingleImage("image"), bannerController.createBanner)
 router.get("/banner", bannerController.getAllBanners)

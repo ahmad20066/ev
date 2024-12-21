@@ -188,29 +188,57 @@ exports.getQuestions = async (req, res, next) => {
 
 exports.updateQuestion = async (req, res, next) => {
     try {
-        const { title, type, choices } = req.body;
-        const question = await Question.findByPk(req.params.id, { include: { model: Choice, as: "choices" } });
+        const { id } = req.params; // Get question ID from route parameters
+        const { title, type, survey_id, choices } = req.body;
+        const image = req.file ? req.file.path : null;
 
+        // Find the question by ID
+        const question = await Question.findByPk(id);
         if (!question) {
             return res.status(404).json({ message: "Question not found" });
         }
 
-        await question.update({ title, type });
-
-        if (type === "choice" && Array.isArray(choices)) {
-            await Choice.destroy({ where: { question_id: question.id } });
-            const choiceData = choices.map((choiceText) => ({
-                text: choiceText,
-                question_id: question.id,
-            }));
-            await Choice.bulkCreate(choiceData);
+        // Validate survey existence if survey_id is provided
+        if (survey_id) {
+            const survey = await Survey.findByPk(survey_id);
+            if (!survey) {
+                return res.status(404).json({ message: "Survey not found" });
+            }
+            question.survey_id = survey_id;
         }
 
-        res.status(200).json({ message: "Question updated successfully", question });
+        // Update question fields
+        if (title) question.title = title;
+        if (type) question.type = type;
+        if (image) question.image = image;
+
+        await question.save(); // Save updated question
+
+        // Handle choices if the question type is "choice"
+        if (type === "choice" && Array.isArray(choices)) {
+            // Remove existing choices for the question
+            await Choice.destroy({ where: { question_id: question.id } });
+
+            // Add new choices if provided
+            if (choices.length > 0) {
+                const choiceData = choices.map((choiceText) => ({
+                    text: choiceText,
+                    question_id: question.id,
+                }));
+                await Choice.bulkCreate(choiceData);
+            }
+        }
+
+        const updatedQuestion = await Question.findByPk(question.id, {
+            include: [{ model: Choice, as: "choices" }],
+        });
+
+        res.status(200).json({ message: "Question updated successfully", question: updatedQuestion });
     } catch (error) {
         next(error);
     }
 };
+
 
 exports.deleteQuestion = async (req, res, next) => {
     try {

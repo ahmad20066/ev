@@ -227,7 +227,7 @@ exports.deleteWorkout = async (req, res, next) => {
             return res.status(404).json({ message: 'Workout not found' });
         }
 
-        await Exercise.destroy({ where: { workout_id: workoutId } });
+
         await workout.destroy();
 
         res.status(200).json({ message: 'Workout and associated exercises deleted successfully' });
