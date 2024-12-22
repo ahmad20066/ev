@@ -43,9 +43,11 @@ exports.sendMessageCoach = async (req, res, next) => {
         let chat = await Chat.findOne({ where: { user_id } });
 
         if (!chat) {
-            const error = new Error("No chat found for this user.");
-            error.statusCode = 404;
-            throw error;
+            chat = new Chat({
+                user_id,
+                coach_id
+            })
+            await chat.save()
         }
 
         if (!chat.coach_id) {
@@ -106,15 +108,38 @@ exports.getChatsCoach = async (req, res, next) => {
         const chats = await Chat.findAll({
             where: { coach_id },
             include: [
-                { model: User, as: 'user', attributes: ['id', 'name', 'email'] },
+                {
+                    model: User,
+                    as: 'user',
+                    attributes: ['id', 'name', 'email']
+                },
+                {
+                    model: Message,
+                    as: 'messages',
+                    attributes: ['id', 'content', 'file', 'createdAt'],
+                    separate: true,
+                    limit: 1,
+                    order: [['createdAt', 'DESC']],
+                },
             ],
         });
 
-        res.status(200).json({ chats });
+        const formattedChats = chats.map(chat => {
+            console.log(chat)
+            const lastMessage = chat.dataValues.messages[0] || null;
+
+            chat.dataValues.lastMessage = lastMessage.dataValues;
+
+            delete chat.dataValues.messages;
+            return chat.dataValues;
+        });
+        // console.log(formattedChats)
+        res.status(200).json({ chats: formattedChats });
     } catch (error) {
         next(error);
     }
 };
+
 
 exports.getChatsUser = async (req, res, next) => {
     try {
