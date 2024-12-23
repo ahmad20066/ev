@@ -65,8 +65,8 @@ exports.sendMessageCoach = async (req, res, next) => {
             content,
             file,
         });
-
-        req.io.to(`chat_${chat.id}`).emit("new_message", message);
+        console.log(message)
+        req.io.to(`chat_${chat.id}`).emit("new_message", message.dataValues);
 
         res.status(201).json({ message });
     } catch (error) {
