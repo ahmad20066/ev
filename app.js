@@ -11,6 +11,7 @@ const chatRouter = require("./routes/chat_route");
 const profileRouter = require("./routes/profile_router");
 const homeRouter = require("./routes/home_route");
 const kitchenRouter = require("./routes/kitchen_route");
+const infoRouter = require("./routes/info_route");
 const isAuth = require("./middlewares/isAuth");
 const isAdmin = require("./middlewares/isAdmin");
 const isCoach = require("./middlewares/isCoach");
@@ -73,7 +74,7 @@ app.use("/chat", isAuth, chatRouter);
 app.use("/profile", isAuth, profileRouter);
 app.use("/home", isAuth, homeRouter);
 app.use("/kitchen", kitchenRouter);
-
+app.use("/info", infoRouter)
 // Global error handling
 app.use((error, req, res, next) => {
     console.error(error);

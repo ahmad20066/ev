@@ -1,258 +1,235 @@
 {
     "info": {
-        "_postman_id": "c3a3f3f9-b92b-4cf9-85e1-cf51964d23c4",
-        "name": "Coach User Data APIs",
-        "description": "Collection of APIs to fetch user data for a coach",
+        "name": "Info APIs",
+        "description": "API collection for Privacy Policy, Terms and Conditions, and FAQs",
         "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
     },
     "item": [
         {
-            "name": "Get Fitness Subscriptions",
+            "name": "Get Privacy Policy",
             "request": {
+                "method": "GET",
+                "header": [],
                 "url": {
-                    "raw": "{{url}}/coach/user/:id/fitness-subscriptions",
+                    "raw": "{{url}}/info/privacy-policy",
                     "host": [
                         "{{url}}"
                     ],
                     "path": [
-                        "coach",
-                        "user",
-                        ":id",
-                        "fitness-subscriptions"
-                    ],
-                    "variable": [
-                        {
-                            "key": "id",
-                            "value": "1",
-                            "description": "User ID"
-                        }
+                        "info",
+                        "privacy-policy"
                     ]
-                },
-                "method": "GET",
-                "header": [],
-                "body": {
-                    "mode": "raw",
-                    "raw": "{}"
                 }
-            },
-            "response": []
+            }
         },
         {
-            "name": "Get Survey Answers",
+            "name": "Create Privacy Policy",
             "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n    \"content\": \"Your Privacy Policy Content\"\n}"
+                },
                 "url": {
-                    "raw": "{{url}}/coach/user/:id/survey-answers",
+                    "raw": "{{url}}/info/privacy-policy",
                     "host": [
                         "{{url}}"
                     ],
                     "path": [
-                        "coach",
-                        "user",
-                        ":id",
-                        "survey-answers"
-                    ],
-                    "variable": [
-                        {
-                            "key": "id",
-                            "value": "1",
-                            "description": "User ID"
-                        }
+                        "info",
+                        "privacy-policy"
                     ]
-                },
-                "method": "GET",
-                "header": [],
-                "body": {
-                    "mode": "raw",
-                    "raw": "{}"
                 }
-            },
-            "response": []
+            }
         },
         {
-            "name": "Get Meal Selections",
+            "name": "Update Privacy Policy",
             "request": {
+                "method": "PUT",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n    \"content\": \"Updated Privacy Policy Content\"\n}"
+                },
                 "url": {
-                    "raw": "{{url}}/coach/user/:id/meal-selections",
+                    "raw": "{{url}}/info/privacy-policy",
                     "host": [
                         "{{url}}"
                     ],
                     "path": [
-                        "coach",
-                        "user",
-                        ":id",
-                        "meal-selections"
-                    ],
-                    "variable": [
-                        {
-                            "key": "id",
-                            "value": "1",
-                            "description": "User ID"
-                        }
+                        "info",
+                        "privacy-policy"
                     ]
-                },
-                "method": "GET",
-                "header": [],
-                "body": {
-                    "mode": "raw",
-                    "raw": "{}"
                 }
-            },
-            "response": []
+            }
         },
         {
-            "name": "Get Diet Subscriptions",
+            "name": "Get Terms and Conditions",
             "request": {
+                "method": "GET",
+                "header": [],
                 "url": {
-                    "raw": "{{url}}/coach/user/:id/diet-subscriptions",
+                    "raw": "{{url}}/info/terms-and-conditions",
                     "host": [
                         "{{url}}"
                     ],
                     "path": [
-                        "coach",
-                        "user",
-                        ":id",
-                        "diet-subscriptions"
-                    ],
-                    "variable": [
-                        {
-                            "key": "id",
-                            "value": "1",
-                            "description": "User ID"
-                        }
+                        "info",
+                        "terms-and-conditions"
                     ]
-                },
-                "method": "GET",
-                "header": [],
-                "body": {
-                    "mode": "raw",
-                    "raw": "{}"
                 }
-            },
-            "response": []
+            }
         },
         {
-            "name": "Get Workout Attendance",
+            "name": "Create Terms and Conditions",
             "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n    \"content\": \"Your Terms and Conditions Content\"\n}"
+                },
                 "url": {
-                    "raw": "{{url}}/coach/user/:id/workout-attendance",
+                    "raw": "{{url}}/info/terms-and-conditions",
                     "host": [
                         "{{url}}"
                     ],
                     "path": [
-                        "coach",
-                        "user",
-                        ":id",
-                        "workout-attendance"
-                    ],
-                    "variable": [
-                        {
-                            "key": "id",
-                            "value": "1",
-                            "description": "User ID"
-                        }
+                        "info",
+                        "terms-and-conditions"
                     ]
-                },
-                "method": "GET",
-                "header": [],
-                "body": {
-                    "mode": "raw",
-                    "raw": "{}"
                 }
-            },
-            "response": []
+            }
         },
         {
-            "name": "Get Workouts Completed",
+            "name": "Update Terms and Conditions",
             "request": {
+                "method": "PUT",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n    \"content\": \"Updated Terms and Conditions Content\"\n}"
+                },
                 "url": {
-                    "raw": "{{url}}/coach/user/:id/workouts-completed",
+                    "raw": "{{url}}/info/terms-and-conditions",
                     "host": [
                         "{{url}}"
                     ],
                     "path": [
-                        "coach",
-                        "user",
-                        ":id",
-                        "workouts-completed"
-                    ],
-                    "variable": [
-                        {
-                            "key": "id",
-                            "value": "1",
-                            "description": "User ID"
-                        }
+                        "info",
+                        "terms-and-conditions"
                     ]
-                },
-                "method": "GET",
-                "header": [],
-                "body": {
-                    "mode": "raw",
-                    "raw": "{}"
                 }
-            },
-            "response": []
+            }
         },
         {
-            "name": "Get Exercises Completed",
+            "name": "Get FAQs",
             "request": {
+                "method": "GET",
+                "header": [],
                 "url": {
-                    "raw": "{{url}}/coach/user/:id/exercises-completed",
+                    "raw": "{{url}}/info/faqs",
                     "host": [
                         "{{url}}"
                     ],
                     "path": [
-                        "coach",
-                        "user",
-                        ":id",
-                        "exercises-completed"
-                    ],
-                    "variable": [
-                        {
-                            "key": "id",
-                            "value": "1",
-                            "description": "User ID"
-                        }
+                        "info",
+                        "faqs"
                     ]
-                },
-                "method": "GET",
-                "header": [],
-                "body": {
-                    "mode": "raw",
-                    "raw": "{}"
                 }
-            },
-            "response": []
+            }
         },
         {
-            "name": "Get Weight Records",
+            "name": "Create FAQ",
             "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n    \"question\": \"What is your refund policy?\",\n    \"answer\": \"We offer a full refund within 30 days.\"\n}"
+                },
                 "url": {
-                    "raw": "{{url}}/coach/user/:id/weight-records",
+                    "raw": "{{url}}/info/faqs",
                     "host": [
                         "{{url}}"
                     ],
                     "path": [
-                        "coach",
-                        "user",
-                        ":id",
-                        "weight-records"
-                    ],
-                    "variable": [
-                        {
-                            "key": "id",
-                            "value": "1",
-                            "description": "User ID"
-                        }
+                        "info",
+                        "faqs"
                     ]
-                },
-                "method": "GET",
-                "header": [],
+                }
+            }
+        },
+        {
+            "name": "Update FAQ",
+            "request": {
+                "method": "PUT",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
                 "body": {
                     "mode": "raw",
-                    "raw": "{}"
+                    "raw": "{\n    \"question\": \"Updated Question\",\n    \"answer\": \"Updated Answer\"\n}"
+                },
+                "url": {
+                    "raw": "{{url}}/info/faqs/:id",
+                    "host": [
+                        "{{url}}"
+                    ],
+                    "path": [
+                        "info",
+                        "faqs",
+                        ":id"
+                    ]
                 }
-            },
-            "response": []
+            }
+        },
+        {
+            "name": "Delete FAQ",
+            "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                    "raw": "{{url}}/info/faqs/:id",
+                    "host": [
+                        "{{url}}"
+                    ],
+                    "path": [
+                        "info",
+                        "faqs",
+                        ":id"
+                    ]
+                }
+            }
         }
     ]
 }
