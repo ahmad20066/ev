@@ -15,7 +15,7 @@ exports.getHomePlans = async (req, res, next) => {
         const plans = await MealPlan.findAll({
             limit: 5,
             order: [
-                'createdAt', 'DESC'
+                ['createdAt', 'DESC']
             ]
         })
         res.status(200).json(plans)
@@ -28,7 +28,7 @@ exports.getHomePackages = async (req, res, next) => {
         const packages = await Package.findAll({
             limit: 5,
             order: [
-                'createdAt', 'DESC'
+                ['createdAt', 'DESC']
             ]
         })
         res.status(200).json(plans)
