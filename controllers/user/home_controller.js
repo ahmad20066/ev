@@ -31,7 +31,7 @@ exports.getHomePackages = async (req, res, next) => {
                 ['createdAt', 'DESC']
             ]
         })
-        res.status(200).json(plans)
+        res.status(200).json(packages)
     } catch (e) {
         next(e)
     }
