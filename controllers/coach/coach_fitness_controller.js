@@ -18,6 +18,7 @@ const UserMealSelection = require('../../models/meals/user_meal_selection');
 const WorkoutRating = require('../../models/fitness/workout_rating');
 const Choice = require('../../models/survey/choice');
 const { startOfYear, endOfYear } = require('date-fns');
+const Sport = require('../../models/sport');
 exports.createWorkout = async (req, res, next) => {
     try {
         let { title, user_id, description, duration, exercises, difficulty_level, calories_burned, day, package_id } = req.body;
@@ -487,6 +488,10 @@ exports.getUserDetails = async (req, res, next) => {
                 {
                     model: WeightRecord,
                     as: "weight-record"
+                },
+                {
+                    model: Sport,
+                    as: "sport"
                 }
             ]
         })
