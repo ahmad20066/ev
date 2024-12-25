@@ -57,7 +57,7 @@ exports.setUpProfile = async (req, res, next) => {
         user.is_set_up = true;
         user.training_location = training_location;
         user.sport_duration = sport_duration;
-        user.sport = sport
+        user.sport_id = sport
         await user.save();
 
         res.status(200).json({

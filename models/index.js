@@ -163,4 +163,4 @@ Order.belongsToMany(Meal, { through: OrderMeal, as: "meals", foreignKey: 'order_
 
 Workout.hasMany(WorkoutRating, { as: "reviews", foreignKey: "workout_id" })
 
-User.belongsTo(Sport, { foreignKey: "sport" })
+User.belongsTo(Sport, { as: "sport", foreignKey: "sport_id" })

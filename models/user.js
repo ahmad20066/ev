@@ -33,7 +33,7 @@ const User = sequelize.define("User", {
         type: Sequelize.STRING,
         allowNull: true,
     },
-    sport: {
+    sport_id: {
         type: Sequelize.INTEGER,
         allowNull: true,
         references: {
