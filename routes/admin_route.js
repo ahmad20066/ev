@@ -13,6 +13,7 @@ const mealController = require("../controllers/admin/meals_controller")
 const surveyController = require("../controllers/admin/admin_survey_controller")
 const bannerController = require("../controllers/admin/admin_banner_controller")
 const deliveryTimeController = require("../controllers/admin/admin_delivery_time_controller")
+const sportsController = require("../controllers/admin/admin_sports_controller")
 const { body, param, validationResult, query } = require("express-validator");
 const { createOrders } = require('../controllers/kitchen/orders_controller');
 
@@ -136,4 +137,10 @@ router.get("/pricing", packageController.getAllPricings);
 router.get("/pricing/:id", packageController.getPricingById);
 router.put("/pricing/:id", packageController.updatePricing);
 router.delete("/pricing/:id", packageController.deletePricing);
+
+//Sports
+router.post("/sports", sportsController.createSport);
+router.get("/sports", sportsController.getAllSports);
+router.put("/sports/:id", sportsController.updateSport);
+router.delete("/sports/:id", sportsController.deleteSport)
 module.exports = router;

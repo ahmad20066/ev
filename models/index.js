@@ -46,6 +46,7 @@ const Order = require('./meals/order');
 const OrderMeal = require('./meals/order_meal');
 const WorkoutRating = require('./fitness/workout_rating');
 const Choice = require('./survey/choice');
+const Sport = require('./sport');
 // Package.hasMany(Workout, { foreignKey: "package_id" });
 // Workout.belongsTo(Package, { foreignKey: "package_id" });
 
@@ -161,3 +162,5 @@ Meal.belongsToMany(Order, { through: OrderMeal, as: "orders", foreignKey: 'meal_
 Order.belongsToMany(Meal, { through: OrderMeal, as: "meals", foreignKey: 'order_id' });
 
 Workout.hasMany(WorkoutRating, { as: "reviews", foreignKey: "workout_id" })
+
+User.belongsTo(Sport, { foreignKey: "sport" })

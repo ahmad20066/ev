@@ -92,6 +92,7 @@ exports.getWorkoutsByDate = async (req, res, next) => {
         next(e);
     }
 };
+
 exports.subscribeToPackage = async (req, res, next) => {
     try {
         const { package_id, pricing_id } = req.body

@@ -112,4 +112,5 @@ router.post("/delete-account", isAuth, controller.deleteAccount)
 
 router.post("/forgot-password", controller.forgotPassword)
 router.post("/reset-password", controller.resetPassword)
+router.get("/sports", controller.getAllSports)
 module.exports = router;

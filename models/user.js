@@ -1,5 +1,6 @@
 const Sequelize = require("sequelize");
 const sequelize = require("./index");
+const Sport = require("./sport");
 
 
 const User = sequelize.define("User", {
@@ -33,8 +34,12 @@ const User = sequelize.define("User", {
         allowNull: true,
     },
     sport: {
-        type: Sequelize.STRING,
+        type: Sequelize.INTEGER,
         allowNull: true,
+        references: {
+            model: Sport,
+            key: "id",
+        }
     },
     goal: {
         type: Sequelize.STRING,

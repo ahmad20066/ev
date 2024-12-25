@@ -1,29 +1,12 @@
 {
     "info": {
-        "name": "Info APIs",
-        "description": "API collection for Privacy Policy, Terms and Conditions, and FAQs",
+        "name": "Sports CRUD API",
+        "description": "Postman collection for the Sports CRUD API with the prefix {{url}}/admin",
         "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
     },
     "item": [
         {
-            "name": "Get Privacy Policy",
-            "request": {
-                "method": "GET",
-                "header": [],
-                "url": {
-                    "raw": "{{url}}/info/privacy-policy",
-                    "host": [
-                        "{{url}}"
-                    ],
-                    "path": [
-                        "info",
-                        "privacy-policy"
-                    ]
-                }
-            }
-        },
-        {
-            "name": "Create Privacy Policy",
+            "name": "Create Sport",
             "request": {
                 "method": "POST",
                 "header": [
@@ -32,201 +15,116 @@
                         "value": "application/json"
                     }
                 ],
-                "body": {
-                    "mode": "raw",
-                    "raw": "{\n    \"content\": \"Your Privacy Policy Content\"\n}"
-                },
                 "url": {
-                    "raw": "{{url}}/info/privacy-policy",
+                    "raw": "{{url}}/admin/sports",
                     "host": [
                         "{{url}}"
                     ],
                     "path": [
-                        "info",
-                        "privacy-policy"
+                        "admin",
+                        "sports"
                     ]
-                }
-            }
-        },
-        {
-            "name": "Update Privacy Policy",
-            "request": {
-                "method": "PUT",
-                "header": [
-                    {
-                        "key": "Content-Type",
-                        "value": "application/json"
-                    }
-                ],
+                },
                 "body": {
                     "mode": "raw",
-                    "raw": "{\n    \"content\": \"Updated Privacy Policy Content\"\n}"
-                },
-                "url": {
-                    "raw": "{{url}}/info/privacy-policy",
-                    "host": [
-                        "{{url}}"
-                    ],
-                    "path": [
-                        "info",
-                        "privacy-policy"
-                    ]
+                    "raw": "{\n  \"title\": \"Football\"\n}"
                 }
             }
         },
         {
-            "name": "Get Terms and Conditions",
+            "name": "Get All Sports",
             "request": {
                 "method": "GET",
                 "header": [],
                 "url": {
-                    "raw": "{{url}}/info/terms-and-conditions",
+                    "raw": "{{url}}/admin/sports",
                     "host": [
                         "{{url}}"
                     ],
                     "path": [
-                        "info",
-                        "terms-and-conditions"
+                        "admin",
+                        "sports"
                     ]
                 }
             }
         },
         {
-            "name": "Create Terms and Conditions",
-            "request": {
-                "method": "POST",
-                "header": [
-                    {
-                        "key": "Content-Type",
-                        "value": "application/json"
-                    }
-                ],
-                "body": {
-                    "mode": "raw",
-                    "raw": "{\n    \"content\": \"Your Terms and Conditions Content\"\n}"
-                },
-                "url": {
-                    "raw": "{{url}}/info/terms-and-conditions",
-                    "host": [
-                        "{{url}}"
-                    ],
-                    "path": [
-                        "info",
-                        "terms-and-conditions"
-                    ]
-                }
-            }
-        },
-        {
-            "name": "Update Terms and Conditions",
-            "request": {
-                "method": "PUT",
-                "header": [
-                    {
-                        "key": "Content-Type",
-                        "value": "application/json"
-                    }
-                ],
-                "body": {
-                    "mode": "raw",
-                    "raw": "{\n    \"content\": \"Updated Terms and Conditions Content\"\n}"
-                },
-                "url": {
-                    "raw": "{{url}}/info/terms-and-conditions",
-                    "host": [
-                        "{{url}}"
-                    ],
-                    "path": [
-                        "info",
-                        "terms-and-conditions"
-                    ]
-                }
-            }
-        },
-        {
-            "name": "Get FAQs",
+            "name": "Get Sport By ID",
             "request": {
                 "method": "GET",
                 "header": [],
                 "url": {
-                    "raw": "{{url}}/info/faqs",
+                    "raw": "{{url}}/admin/sports/:id",
                     "host": [
                         "{{url}}"
                     ],
                     "path": [
-                        "info",
-                        "faqs"
-                    ]
-                }
-            }
-        },
-        {
-            "name": "Create FAQ",
-            "request": {
-                "method": "POST",
-                "header": [
-                    {
-                        "key": "Content-Type",
-                        "value": "application/json"
-                    }
-                ],
-                "body": {
-                    "mode": "raw",
-                    "raw": "{\n    \"question\": \"What is your refund policy?\",\n    \"answer\": \"We offer a full refund within 30 days.\"\n}"
-                },
-                "url": {
-                    "raw": "{{url}}/info/faqs",
-                    "host": [
-                        "{{url}}"
-                    ],
-                    "path": [
-                        "info",
-                        "faqs"
-                    ]
-                }
-            }
-        },
-        {
-            "name": "Update FAQ",
-            "request": {
-                "method": "PUT",
-                "header": [
-                    {
-                        "key": "Content-Type",
-                        "value": "application/json"
-                    }
-                ],
-                "body": {
-                    "mode": "raw",
-                    "raw": "{\n    \"question\": \"Updated Question\",\n    \"answer\": \"Updated Answer\"\n}"
-                },
-                "url": {
-                    "raw": "{{url}}/info/faqs/:id",
-                    "host": [
-                        "{{url}}"
-                    ],
-                    "path": [
-                        "info",
-                        "faqs",
+                        "admin",
+                        "sports",
                         ":id"
+                    ],
+                    "variable": [
+                        {
+                            "key": "id",
+                            "value": "1"
+                        }
                     ]
                 }
             }
         },
         {
-            "name": "Delete FAQ",
+            "name": "Update Sport",
+            "request": {
+                "method": "PUT",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "url": {
+                    "raw": "{{url}}/admin/sports/:id",
+                    "host": [
+                        "{{url}}"
+                    ],
+                    "path": [
+                        "admin",
+                        "sports",
+                        ":id"
+                    ],
+                    "variable": [
+                        {
+                            "key": "id",
+                            "value": "1"
+                        }
+                    ]
+                },
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"title\": \"Updated Football\"\n}"
+                }
+            }
+        },
+        {
+            "name": "Delete Sport",
             "request": {
                 "method": "DELETE",
                 "header": [],
                 "url": {
-                    "raw": "{{url}}/info/faqs/:id",
+                    "raw": "{{url}}/admin/sports/:id",
                     "host": [
                         "{{url}}"
                     ],
                     "path": [
-                        "info",
-                        "faqs",
+                        "admin",
+                        "sports",
                         ":id"
+                    ],
+                    "variable": [
+                        {
+                            "key": "id",
+                            "value": "1"
+                        }
                     ]
                 }
             }

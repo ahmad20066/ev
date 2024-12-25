@@ -9,6 +9,7 @@ const UserMealSelection = require("../../models/meals/user_meal_selection");
 const Subscription = require("../../models/subscription");
 const DeliveryTime = require("../../models/meals/delivery_time");
 const Address = require("../../models/meals/address");
+const Ingredient = require("../../models/meals/ingredient");
 exports.getMealPlans = async (req, res, next) => {
     try {
         const mealPlans = await MealPlan.findAll();
@@ -105,8 +106,6 @@ exports.subscribeToMealPlan = async (req, res, next) => {
         next(e);
     }
 };
-
-
 exports.getMealSubscriptions = async (req, res, next) => {
     try {
         const userId = req.userId;
@@ -236,7 +235,20 @@ exports.getMealSelections = async (req, res, next) => {
     }
 };
 
-
+exports.getMealById = async (req, res, next) => {
+    try {
+        const { id } = req.params
+        const meal = await Meal.findByPk(id,)
+        if (!meal) {
+            const error = new Error("Meal not found")
+            error.statusCode = 404;
+            throw error;
+        }
+        res.status(200).json(meal)
+    } catch (e) {
+        next(e)
+    }
+}
 exports.changeSelection = async (req, res, next) => {
     try {
         const userId = req.userId;

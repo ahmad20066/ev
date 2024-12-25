@@ -2,6 +2,7 @@ const ExerciseCompletion = require("../../models/fitness/exercise_completion");
 const WorkoutAttendance = require("../../models/fitness/workout_attendance");
 const WorkoutCompletion = require("../../models/fitness/workout_completion");
 const MealSubscription = require("../../models/meals/meal_subscription");
+const Sport = require("../../models/sport");
 const Subscription = require("../../models/subscription");
 const User = require("../../models/user");
 const WeightRecord = require("../../models/weight_record");
@@ -88,6 +89,9 @@ exports.getUserDetails = (req, res, next) => {
                 {
                     model: ExerciseCompletion,
                     as: "exercises_completed"
+                },
+                {
+                    model: Sport,
                 }
             ]
         })

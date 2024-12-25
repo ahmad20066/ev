@@ -4,6 +4,7 @@ const User = require("../models/user");
 const nodemailer = require("nodemailer");
 const { Op } = require("sequelize");
 const WeightRecord = require("../models/weight_record");
+const Sport = require("../models/sport");
 
 const JWT_SECRET = "ahmad_secret";
 
@@ -68,7 +69,14 @@ exports.setUpProfile = async (req, res, next) => {
         next(error);
     }
 };
-
+exports.getAllSports = async (req, res, next) => {
+    try {
+        const sports = await Sport.findAll();
+        res.status(200).json(sports);
+    } catch (error) {
+        next(error);
+    }
+};
 exports.register = async (req, res, next) => {
     const { name, email, phone, password, role } = req.body;
 

@@ -50,4 +50,5 @@ router.get("/week-meals", isAuth, controller.getMealsForWeek);
 router.get("/my-selections", isAuth, controller.getMealSelections)
 router.post("/change-selection", isAuth, controller.changeSelection)
 router.get("/delivery-time", controller.getAllDeliveryTimes);
+router.get("/meal/:id", controller.getMealById)
 module.exports = router
