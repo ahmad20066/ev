@@ -89,7 +89,15 @@ const User = sequelize.define("User", {
     deactivated_at: {
         type: Sequelize.DATE,
         allowNull: true,
-    }
+    },
+    is_blocked: {
+        type: Sequelize.BOOLEAN,
+        defaultValue: false,
+    },
+    blocked_at: {
+        type: Sequelize.DATE,
+        allowNull: true,
+    },
 }, {
     defaultScope: {
         attributes: { exclude: ['password'] }

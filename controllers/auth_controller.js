@@ -180,7 +180,11 @@ exports.login = async (req, res, next) => {
             error.statusCode = 400;
             throw error
         }
-
+        if (!user.is_active) {
+            let error = new Error("You have been blocked");
+            error.statusCode = 403;
+            throw error
+        }
         const userWithoutPassword = user.toJSON();
         delete userWithoutPassword.password;
         const token = jwt.sign({ userId: user.id, role: user.role, is_set_up: user.is_set_up }, JWT_SECRET, { expiresIn: "7d" });
@@ -191,6 +195,7 @@ exports.login = async (req, res, next) => {
                 user
             })
         }
+
         return res.status(200).json({
             message: "Login successful",
             token,
@@ -339,7 +344,7 @@ exports.resetPassword = async (req, res, next) => {
 
         delete otpStore[email];
 
-        const user = await User.findOne({ where: { email, is_active: true } });
+        const user = await User.findOne({ where: { email, is_active: true, is_blocked: false } });
 
         if (!user) {
             return res.status(404).json({ error: "User not found or account is inactive." });
