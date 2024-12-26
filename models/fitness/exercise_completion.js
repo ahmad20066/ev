@@ -18,6 +18,13 @@ const ExerciseCompletion = sequelize.define("ExerciseCompletion", {
             key: "id",
         },
     },
+}, {
+    defaultScope: {
+        include: {
+            model: Exercise,
+            as: "exercise"
+        }
+    }
 });
 
 module.exports = ExerciseCompletion;

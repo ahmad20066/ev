@@ -19,6 +19,7 @@ const WorkoutRating = require('../../models/fitness/workout_rating');
 const Choice = require('../../models/survey/choice');
 const { startOfYear, endOfYear } = require('date-fns');
 const Sport = require('../../models/sport');
+const Meal = require('../../models/meals/meal');
 exports.createWorkout = async (req, res, next) => {
     try {
         let { title, user_id, description, duration, exercises, difficulty_level, calories_burned, day, package_id } = req.body;
@@ -460,12 +461,13 @@ exports.getUserDetails = async (req, res, next) => {
                 },
                 {
                     model: UserMealSelection,
-                    as: "meal_selections"
+                    as: "meal_selections",
 
                 },
                 {
                     model: MealSubscription,
-                    as: "diet_subscriptions"
+                    as: "diet_subscriptions",
+
                 },
                 {
                     model: WorkoutAttendance,

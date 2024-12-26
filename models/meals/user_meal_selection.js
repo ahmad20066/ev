@@ -34,6 +34,14 @@ const UserMealSelection = sequelize.define("UserMealSelection", {
         },
         allowNull: false
     },
-});
+},
+    {
+        defaultScope: {
+            include: {
+                model: Meal,
+                as: "meal"
+            }
+        }
+    });
 
 module.exports = UserMealSelection;

@@ -85,11 +85,10 @@ app.use((error, req, res, next) => {
     });
 });
 
-// Database synchronization and socket setup
 sequelize
     .sync({
         // force: true
-        alter: true
+        // alter: true
     })
     .then(() => {
         server.listen(8080, () => {

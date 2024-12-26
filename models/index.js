@@ -146,7 +146,14 @@ ExerciseCompletion.hasMany(ExerciseStat, {
 ExerciseStat.belongsTo(ExerciseCompletion, {
     foreignKey: "exercise_completion_id"
 });
-
+Exercise.hasMany(ExerciseCompletion, {
+    foreignKey: "exercise_id",
+    as: "exercise"
+})
+ExerciseCompletion.belongsTo(Exercise, {
+    as: "exercise",
+    foreignKey: "exercise_id"
+})
 MealSubscription.belongsTo(DeliveryTime, { as: "delivery_time", foreignKey: "delivery_time_id" })
 
 MealSubscription.belongsTo(Address, { foreignKey: "address_id", as: "address" });

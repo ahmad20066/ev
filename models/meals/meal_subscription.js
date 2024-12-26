@@ -51,5 +51,22 @@ const MealSubscription = sequelize.define("MealSubscription", {
         },
         allowNull: false
     }
+}, {
+    defaultScope: {
+        include: [
+            {
+                model: MealPlan,
+                as: "meal_plan"
+            },
+            {
+                model: Address,
+                as: "address",
+            },
+            {
+                model: DeliveryTime,
+                as: "delivery_time"
+            }
+        ]
+    }
 })
 module.exports = MealSubscription

@@ -1,3 +1,4 @@
+const { Sequelize } = require("sequelize");
 const Ingredient = require("../../models/meals/ingredient");
 const Meal = require("../../models/meals/meal");
 const MealDay = require("../../models/meals/meal_day");
@@ -231,24 +232,64 @@ const getUpcomingWeek = () => {
 };
 exports.assignMealsToDays = async (req, res, next) => {
     try {
-        const { assignments } = req.body; // assignments = [{ day: "sunday", meal_ids: [1, 2, 3] }]
+        const { assignments } = req.body;
 
-        for (const assignment of assignments) {
-            const { day, meal_ids } = assignment;
+        const newRecords = assignments.flatMap(assignment =>
+            assignment.meal_ids.map(meal_id => ({
+                day: assignment.day,
+                meal_id,
+            }))
+        );
 
-            for (const meal_id of meal_ids) {
-                await MealDay.create({
-                    meal_id,
-                    day
-                });
-            }
+        const existingRecords = await MealDay.findAll({
+            attributes: ["meal_id", "day"],
+            raw: true,
+        });
+
+        const recordsToAdd = newRecords.filter(
+            newRecord =>
+                !existingRecords.some(
+                    existingRecord =>
+                        existingRecord.meal_id === newRecord.meal_id &&
+                        existingRecord.day === newRecord.day
+                )
+        );
+
+        const recordsToDelete = existingRecords.filter(
+            existingRecord =>
+                !newRecords.some(
+                    newRecord =>
+                        newRecord.meal_id === existingRecord.meal_id &&
+                        newRecord.day === existingRecord.day
+                )
+        );
+
+
+        if (recordsToAdd.length > 0) {
+            await MealDay.bulkCreate(recordsToAdd);
         }
 
-        res.status(201).json({ message: "Meals assigned successfully." });
+        if (recordsToDelete.length > 0) {
+            await MealDay.destroy({
+                where: {
+                    [Sequelize.Op.or]: recordsToDelete,
+                },
+            });
+        }
+
+        const updatedRecords = await MealDay.findAll({
+            attributes: ["meal_id", "day"],
+        });
+
+        res.status(201).json({
+            message: "Meal days synced successfully.",
+            updatedRecords,
+        });
     } catch (error) {
         next(error);
     }
 };
+
 exports.getUpcomingWeek = async (req, res, next) => {
     try {
         const week = getUpcomingWeek();
