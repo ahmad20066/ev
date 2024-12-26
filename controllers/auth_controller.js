@@ -180,7 +180,7 @@ exports.login = async (req, res, next) => {
             error.statusCode = 400;
             throw error
         }
-        if (!user.is_blocked) {
+        if (user.is_blocked) {
             let error = new Error("You have been blocked");
             error.statusCode = 403;
             throw error
