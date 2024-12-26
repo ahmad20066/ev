@@ -95,6 +95,7 @@ router.post('/exercise', imageMiddleWare.uploadMultiImages([
     { name: 'target_muscles_image', maxCount: 1 },
     { name: 'video', maxCount: 1 }
 ]), exerciseController.createExercise);
+router.get("/logs/:userId", controller.getUserWorkoutLogs)
 
 router.put('/exercise/:id', imageMiddleWare.uploadMultiImages([
     { name: 'image', maxCount: 1 },
@@ -113,7 +114,6 @@ router.get('/exercise/:id', exerciseController.getExercise)
 // router.get('/user/:id/exercises-completed', controller.getExercisesCompleted);
 router.get('/user/:id/weight-records', controller.getWeightRecords);
 
-router.get("/logs/:userId", controller.getUserWorkoutLogs)
 router.get("/users", controller.searchUser);
 router.get("/workout-requests", controller.getWorkoutRequests);
 
