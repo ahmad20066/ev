@@ -114,15 +114,17 @@ exports.deactivateUser = async (req, res, next) => {
                 is_active: false,
                 deactivated_at: new Date(),
             });
+            res.status(200).json({ message: "User has been deactivated" });
         } else {
             await user.update({
                 is_active: true,
                 deactivated_at: null,
             });
+            res.status(200).json({ message: "User has been activated" });
         }
 
 
-        res.status(200).json({ message: "User has been deactivated" });
+
     } catch (error) {
         next(error);
     }
