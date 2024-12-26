@@ -109,11 +109,18 @@ exports.deactivateUser = async (req, res, next) => {
         if (!user) {
             return res.status(404).json({ message: "User not found" });
         }
+        if (user.is_active === true) {
+            await user.update({
+                is_active: false,
+                deactivated_at: new Date(),
+            });
+        } else {
+            await user.update({
+                is_active: true,
+                deactivated_at: null,
+            });
+        }
 
-        await user.update({
-            is_active: false,
-            deactivated_at: new Date(),
-        });
 
         res.status(200).json({ message: "User has been deactivated" });
     } catch (error) {

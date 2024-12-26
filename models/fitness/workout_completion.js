@@ -19,6 +19,6 @@ const WorkoutCompletion = sequelize.define("WorkoutCompletion", {
         },
     },
 
-});
+},);
 
 module.exports = WorkoutCompletion;

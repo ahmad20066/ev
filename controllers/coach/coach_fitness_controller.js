@@ -436,6 +436,9 @@ exports.getUserDetails = async (req, res, next) => {
             where: {
                 role: "consumer"
             },
+            attributes: {
+                exclude: ['sport_id']
+            },
             include: [
                 {
                     model: Subscription,

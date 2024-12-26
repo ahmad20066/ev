@@ -46,6 +46,7 @@ router.post("/subscribe", isAuth, [
     controller.subscribeToMealPlan(req, res, next);
 }
 )
+router.post("/renew-meal", isAuth, controller.renewSubscription)
 router.get("/week-meals", isAuth, controller.getMealsForWeek);
 router.get("/my-selections", isAuth, controller.getMealSelections)
 router.post("/change-selection", isAuth, controller.changeSelection)

@@ -10,6 +10,7 @@ const Subscription = require("../../models/subscription");
 const DeliveryTime = require("../../models/meals/delivery_time");
 const Address = require("../../models/meals/address");
 const Ingredient = require("../../models/meals/ingredient");
+const MealRenewal = require("../../models/meals/meal_renewal");
 exports.getMealPlans = async (req, res, next) => {
     try {
         const mealPlans = await MealPlan.findAll();
@@ -305,7 +306,40 @@ exports.getAllDeliveryTimes = async (req, res, next) => {
         next(error);
     }
 };
+exports.renewSubscription = async (req, res, next) => {
+    try {
+        const { subscription_id } = req.query
+        const subscription = await MealSubscription.findByPk(subscription_id,)
+        if (!subscription) {
+            const error = new Error("Subscription not found")
+            error.statusCode = 404
+            throw error;
+        }
+        if (subscription.is_active) {
+            const error = new Error("Subscription already active")
+            error.statusCode = 400
+            throw error;
+        }
+        subscription.is_active = true;
+        let endDate = new Date(subscription.end_date);
+        endDate.setDate(endDate.getDate() + 30);
 
+        subscription.end_date = endDate;
+        console.log(endDate)
+        subscription.end_date = endDate
+        await subscription.save()
+        const renewal = new MealRenewal({
+            subscription_id
+        })
+        await renewal.save();
+        res.status(201).json({
+            message: "Subscription renewed",
+            subscription
+        })
+    } catch (e) {
+        next(e)
+    }
+}
 
 
 

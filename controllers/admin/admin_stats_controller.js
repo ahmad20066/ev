@@ -12,6 +12,7 @@ const Package = require("../../models/package");
 const Renewal = require("../../models/fitness/renewal");
 const moment = require("moment");
 const sequelize = require("../../models");
+const MealRenewal = require("../../models/meals/meal_renewal");
 
 exports.activeSubscriptionsFitness = async (req, res, next) => {
     try {
@@ -168,6 +169,43 @@ exports.getRenewalChartData = async (req, res, next) => {
         const currentYear = moment().year();
 
         const monthlyRenewals = await Renewal.findAll({
+            where: {
+                createdAt: {
+                    [Op.gte]: new Date(`${currentYear}-01-01`), // Using createdAt as the renewal date
+                },
+            },
+            attributes: [
+                [sequelize.fn('MONTH', sequelize.col('createdAt')), 'month'],
+                [sequelize.fn('COUNT', sequelize.col('id')), 'count'],
+            ],
+            group: ['month'],
+            order: [[sequelize.fn('MONTH', sequelize.col('createdAt')), 'ASC']],
+        });
+        console.log(monthlyRenewals)
+        const renewalData = new Array(12).fill(0);
+        monthlyRenewals.forEach(item => {
+            console.log(item.get('month'))
+            console.log(item.get('count'))
+            renewalData[item.get('month') - 1] = item.get('count');
+            console.log(renewalData)
+        });
+        console.log(renewalData)
+        const xaxis = moment.monthsShort();
+
+        res.status(200).json({
+            renewal_data: renewalData,
+            xaxis,
+        });
+
+    } catch (error) {
+        next(error);
+    }
+};
+exports.getmealRenewalChartData = async (req, res, next) => {
+    try {
+        const currentYear = moment().year();
+
+        const monthlyRenewals = await MealRenewal.findAll({
             where: {
                 createdAt: {
                     [Op.gte]: new Date(`${currentYear}-01-01`), // Using createdAt as the renewal date
