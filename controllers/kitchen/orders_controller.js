@@ -77,6 +77,7 @@ exports.getOrders = async (req, res, next) => {
                 }
             ]
         })
+        console.log(orders)
         res.status(200).json(orders)
     } catch (e) {
         next(e)

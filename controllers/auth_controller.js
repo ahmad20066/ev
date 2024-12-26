@@ -148,11 +148,10 @@ exports.register = async (req, res, next) => {
     } catch (error) {
         console.log(error)
         if (error.name === "SequelizeUniqueConstraintError") {
-            // Handle unique constraint errors
             const message = error.errors[0].message.includes("phone")
                 ? "A user with this phone number already exists."
                 : "A user with this email already exists.";
-            return res.status(422).json({ error: message });
+            return res.status(422).json({ error: error.errors[0].message });
         }
 
         if (error.name === "SequelizeValidationError") {

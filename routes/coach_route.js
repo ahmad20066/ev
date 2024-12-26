@@ -111,7 +111,7 @@ router.get('/exercise/:id', exerciseController.getExercise)
 // router.get('/user/:id/workout-attendance', controller.getWorkoutAttendance);
 // router.get('/user/:id/workouts-completed', controller.getWorkoutsCompleted);
 // router.get('/user/:id/exercises-completed', controller.getExercisesCompleted);
-// router.get('/user/:id/weight-records', controller.getWeightRecords);
+router.get('/user/:id/weight-records', controller.getWeightRecords);
 
 router.get("/logs/:userId", controller.getUserWorkoutLogs)
 router.get("/users", controller.searchUser);
