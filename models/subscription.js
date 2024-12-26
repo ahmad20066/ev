@@ -62,6 +62,19 @@ const Subscription = sequelize.define("Subscription", {
 }, {
     tableName: "subscriptions",
     timestamps: true,
+    defaultScope: {
+        include: [
+            {
+                model: Package,
+                as: "package",
+
+            },
+            {
+                model: PricingModel,
+                as: "pricing",
+            },
+        ]
+    }
 });
 
 
