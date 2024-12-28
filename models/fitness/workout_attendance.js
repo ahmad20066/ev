@@ -23,7 +23,7 @@ const WorkoutAttendance = sequelize.define("WorkoutAttendance", {
             as: "workout"
         },
         attributes: {
-            exclude: ['workout_id', 'user_id']
+            exclude: ['user_id']
         }
     }
 });

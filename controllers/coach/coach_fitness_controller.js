@@ -523,7 +523,7 @@ exports.getUserWorkoutLogs = async (req, res, next) => {
                 },
             ],
         });
-
+        console.log(attendedWorkouts)
         const completedWorkouts = await WorkoutCompletion.findAll({
             where: { user_id: userId },
             include: [
@@ -559,7 +559,6 @@ exports.getUserWorkoutLogs = async (req, res, next) => {
 
         const totalLogs = combinedLogs.length;
 
-        // Response
         res.status(200).json({
             totalLogs,
             currentPage: parseInt(page),

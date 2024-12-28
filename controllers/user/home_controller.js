@@ -1,6 +1,7 @@
 const Banner = require("../../models/banner");
 const MealPlan = require("../../models/meals/meal_plan");
 const Package = require("../../models/package");
+const Subscription = require("../../models/subscription");
 
 exports.getBanner = async (req, res, next) => {
     try {
@@ -36,3 +37,21 @@ exports.getHomePackages = async (req, res, next) => {
         next(e)
     }
 }
+// exports.getHomeWorkouts = async (req, res, next) => {
+//     try {
+//         const subscription = await Subscription.findOne({
+//             where: {
+//                 is_active: true,
+//                 user_id: req.userId
+//             }
+//         })
+//         if (!subscription) {
+//             const error = new Error("no subscription for this user")
+//             error.statusCode = 403;
+//             throw error
+//         }
+        
+//     }catch(e){
+//         next(e)
+//     }
+// }

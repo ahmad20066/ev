@@ -95,7 +95,6 @@ sequelize
             console.log("Server listening on port 8080");
         });
 
-        // Socket.io events
         io.on("connection", (socket) => {
             console.log("A user connected");
 
