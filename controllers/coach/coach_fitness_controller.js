@@ -512,13 +512,14 @@ exports.getUserWorkoutLogs = async (req, res, next) => {
     try {
         const { userId } = req.params;
         const { page = 1, limit = 10 } = req.query;
+
         const attendedWorkouts = await WorkoutAttendance.findAll({
             where: { user_id: userId },
             include: [
                 {
                     model: Workout,
                     as: 'workout',
-                    attributes: ['id', 'title', 'type', 'difficulty_level', 'day', 'duration'],
+                    attributes: ['id', 'title'],
                 },
             ],
         });
@@ -529,71 +530,24 @@ exports.getUserWorkoutLogs = async (req, res, next) => {
                 {
                     model: Workout,
                     as: 'workout',
-                    attributes: ['id', 'title', 'type', 'difficulty_level', 'day', 'duration'],
+                    attributes: ['id', 'title'],
                 },
             ],
         });
 
-        const attendanceLogs = await Promise.all(
-            attendedWorkouts.map(async (attendance) => {
-                const workoutExercises = await WorkoutExercise.findAll({
-                    where: { workout_id: attendance.workout_id },
-                    include: [
-                        {
-                            model: Exercise,
-                            as: 'exercise',
-                            attributes: ['id', 'name'],
-                        },
-                    ],
-                });
+        const attendanceLogs = attendedWorkouts.map((attendance) => ({
+            id: attendance.workout_id,
+            workout_name: attendance.workout.title,
+            type: 'joined',
+            date: attendance.createdAt,
+        }));
 
-                return {
-                    type: 'attendance',
-                    workoutId: attendance.workout_id,
-                    title: attendance.workout.title,
-                    typeOfWorkout: attendance.workout.type,
-                    difficultyLevel: attendance.workout.difficulty_level,
-                    date: attendance.createdAt,
-                    duration: attendance.workout.duration,
-                    exercises: workoutExercises.map((we) => ({
-                        exerciseId: we.exercise_id,
-                        name: we.exercise.name,
-                        sets: we.sets,
-                        reps: we.reps,
-                    })),
-                };
-            })
-        );
-
-        const completionLogs = await Promise.all(
-            completedWorkouts.map(async (completion) => {
-                const workoutExercises = await WorkoutExercise.findAll({
-                    where: { workout_id: completion.workout_id },
-                    include: [
-                        {
-                            model: Exercise,
-                            as: 'exercise',
-                            attributes: ['id', 'name'],
-                        },
-                    ],
-                });
-
-                return {
-                    type: 'completion',
-                    workoutId: completion.workout_id,
-                    title: completion.workout.title,
-                    typeOfWorkout: completion.workout.type,
-                    difficultyLevel: completion.workout.difficulty_level,
-                    date: completion.createdAt,
-                    exercises: workoutExercises.map((we) => ({
-                        exerciseId: we.exercise_id,
-                        name: we.exercise.name,
-                        sets: we.sets,
-                        reps: we.reps,
-                    })),
-                };
-            })
-        );
+        const completionLogs = completedWorkouts.map((completion) => ({
+            id: completion.workout_id,
+            workout_name: completion.workout.title,
+            type: 'completed',
+            date: completion.createdAt,
+        }));
 
         const combinedLogs = [...attendanceLogs, ...completionLogs].sort(
             (a, b) => new Date(b.date) - new Date(a.date)
@@ -605,6 +559,7 @@ exports.getUserWorkoutLogs = async (req, res, next) => {
 
         const totalLogs = combinedLogs.length;
 
+        // Response
         res.status(200).json({
             totalLogs,
             currentPage: parseInt(page),
@@ -615,6 +570,7 @@ exports.getUserWorkoutLogs = async (req, res, next) => {
         next(error);
     }
 };
+
 exports.getWorkoutRequests = async (req, res, next) => {
     try {
 
