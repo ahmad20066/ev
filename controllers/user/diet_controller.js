@@ -168,14 +168,15 @@ const getUpcomingWeek = () => {
 };
 exports.getMealsForWeek = async (req, res, next) => {
     try {
-        const { day } = req.query;
+        const { day, type } = req.query;
         const upcomingWeek = getUpcomingWeek();
 
         const dates = day ? [day] : upcomingWeek.map(entry => entry.day);
 
         const meals = await MealDay.findAll({
             where: {
-                day: dates
+                day: dates,
+                type
             },
             include: {
                 model: Meal,
@@ -352,6 +353,15 @@ exports.renewSubscription = async (req, res, next) => {
         next(e)
     }
 }
+exports.getAllTypes = async (req, res, next) => {
+    try {
+        const types = await Type.findAll();
+        res.status(200).json(types);
+    } catch (error) {
+        error.statusCode = 500;
+        next(error);
+    }
+};
 
 
 
