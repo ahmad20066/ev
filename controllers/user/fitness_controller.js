@@ -66,7 +66,7 @@ exports.getWorkoutsByDate = async (req, res, next) => {
                 model: Exercise,
                 as: "exercises",
                 through: {
-                    attributes: ["sets", "reps"],
+                    attributes: ['sets', 'reps', 'duration'],
                     as: "stats"
                 }
             }

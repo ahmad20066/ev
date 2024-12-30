@@ -168,9 +168,13 @@ const getUpcomingWeek = () => {
 };
 exports.getMealsForWeek = async (req, res, next) => {
     try {
+        const { day } = req.query; // Extract the day from query parameters
         const upcomingWeek = getUpcomingWeek();
-        const dates = upcomingWeek.map(entry => entry.day);
 
+        // If a specific day is provided, query only for that day
+        const dates = day ? [day] : upcomingWeek.map(entry => entry.day);
+
+        // Fetch meals based on the calculated dates
         const meals = await MealDay.findAll({
             where: {
                 day: dates
@@ -181,16 +185,28 @@ exports.getMealsForWeek = async (req, res, next) => {
             }
         });
 
-        const groupedByDay = upcomingWeek.map(entry => ({
-            day: entry,
-            meals: meals.filter(m => m.day == entry.day).map(m => m.meal)
-        }));
+        let groupedByDay;
+
+        if (day) {
+            // If a specific day is provided, return meals only for that day
+            groupedByDay = {
+                day,
+                meals: meals.filter(m => m.day === day).map(m => m.meal)
+            };
+        } else {
+            // Otherwise, return meals grouped by all upcoming week days
+            groupedByDay = upcomingWeek.map(entry => ({
+                day: entry.day,
+                meals: meals.filter(m => m.day === entry.day).map(m => m.meal)
+            }));
+        }
 
         res.status(200).json(groupedByDay);
     } catch (error) {
         next(error);
     }
 };
+
 
 
 exports.getMealSelections = async (req, res, next) => {
