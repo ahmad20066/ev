@@ -5,4 +5,5 @@ router.get("/banner", controller.getBanner)
 router.get("/plans", controller.getHomePlans)
 router.get("/packages", controller.getHomePackages)
 router.get("/home-workouts", controller.getHomeWorkouts)
+
 module.exports = router

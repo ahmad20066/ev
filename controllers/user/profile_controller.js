@@ -1,3 +1,4 @@
+const MealSubscription = require("../../models/meals/meal_subscription");
 const Package = require("../../models/package");
 const PricingModel = require("../../models/pricing_model");
 const Subscription = require("../../models/subscription");
@@ -148,7 +149,40 @@ exports.updateProfile = async (req, res, next) => {
         next(error);
     }
 };
-
+exports.isSubscribed = async (req, res, next) => {
+    try {
+        const user_id = req.userId;
+        let isSubscribedFitness, isSubscribedDiet;
+        const fitnessSubscription = await Subscription.findOne({
+            where: {
+                is_active: true,
+                user_id
+            }
+        })
+        if (fitnessSubscription) {
+            isSubscribedFitness = true
+        } else {
+            isSubscribedFitness = false
+        }
+        const dietSubscription = await MealSubscription.findOne({
+            where: {
+                is_active: true,
+                user_id
+            }
+        })
+        if (dietSubscription) {
+            isSubscribedDiet = true
+        } else {
+            isSubscribedFitness = false
+        }
+        res.status(200).json({
+            fitnessSubscription: isSubscribedFitness,
+            dietSubscription: isSubscribedDiet
+        })
+    } catch (e) {
+        next(e)
+    }
+}
 
 
 
