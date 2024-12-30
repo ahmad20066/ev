@@ -168,20 +168,36 @@ const getUpcomingWeek = () => {
 };
 exports.getMealsForWeek = async (req, res, next) => {
     try {
-        const { day, type } = req.query;
+        const { day, type } = req.query; // Extract type from query
         const upcomingWeek = getUpcomingWeek();
 
         const dates = day ? [day] : upcomingWeek.map(entry => entry.day);
 
-        const meals = await MealDay.findAll({
-            where: {
-                day: dates,
-                type
-            },
-            include: {
+        const whereClause = {
+            day: dates,
+        };
+
+        const includeOptions = [
+            {
                 model: Meal,
-                as: "meal"
-            }
+                as: "meal",
+                required: true,
+                include: type
+                    ? [
+                        {
+                            model: Type,
+                            as: "types",
+                            where: { id: type },
+
+                        },
+                    ]
+                    : [],
+            },
+        ];
+
+        const meals = await MealDay.findAll({
+            where: whereClause,
+            include: includeOptions,
         });
 
         let groupedByDay;
@@ -189,12 +205,12 @@ exports.getMealsForWeek = async (req, res, next) => {
         if (day) {
             groupedByDay = {
                 day,
-                meals: meals.filter(m => m.day === day).map(m => m.meal)
+                meals: meals.filter(m => m.day === day).map(m => m.meal),
             };
         } else {
             groupedByDay = upcomingWeek.map(entry => ({
                 day: entry.day,
-                meals: meals.filter(m => m.day === entry.day).map(m => m.meal)
+                meals: meals.filter(m => m.day === entry.day).map(m => m.meal),
             }));
         }
 
@@ -203,6 +219,7 @@ exports.getMealsForWeek = async (req, res, next) => {
         next(error);
     }
 };
+
 
 
 
