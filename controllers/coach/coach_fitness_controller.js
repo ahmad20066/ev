@@ -271,7 +271,7 @@ exports.searchUser = (req, res, next) => {
         where: {
             role: "consumer",
             is_active: true,
-            is_set_up: true,
+            // is_set_up: true,
             ...condition
         },
         include: {
