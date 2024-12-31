@@ -269,14 +269,15 @@ exports.searchUser = (req, res, next) => {
 
     User.findAll({
         where: {
-            role: "consumer",
+            // role: "consumer",
             is_active: true,
             // is_set_up: true,
             ...condition
         },
         include: {
             model: WeightRecord,
-            as: "weight-record"
+            as: "weight-record",
+            required: false
         }
     })
         .then(users => {
