@@ -22,18 +22,18 @@ exports.getMealPlans = async (req, res, next) => {
 };
 exports.subscribeToMealPlan = async (req, res, next) => {
     try {
-        const { meal_plan_id, delivery_time_id, address_label, street, city, building } = req.body;
+        const { meal_plan_id, delivery_time_id, address_label, street, city, building, state, postal_code, delivery_notes } = req.body;
         const oldSubscription = await MealSubscription.findOne({
             where: {
                 user_id: req.userId,
                 is_active: true
             }
         })
-        // if (oldSubscription) {
-        //     const error = new Error("You are already subscribed");
-        //     error.statusCode = 400;
-        //     throw error;
-        // }
+        if (oldSubscription) {
+            const error = new Error("You are already subscribed");
+            error.statusCode = 400;
+            throw error;
+        }
         const mealPlan = await MealPlan.findByPk(meal_plan_id, {
             include: {
                 model: Type,
@@ -53,7 +53,7 @@ exports.subscribeToMealPlan = async (req, res, next) => {
             throw error;
         }
         const startDate = new Date();
-        const address = await Address.create({ address_label, city, street, building });
+        const address = await Address.create({ address_label, city, street, building, state, postal_code, delivery_notes });
         let endDate;
 
         endDate = new Date(startDate);

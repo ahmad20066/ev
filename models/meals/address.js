@@ -16,6 +16,18 @@ const Address = sequelize.define("Address", {
     building: {
         type: Sequelize.STRING,
         allowNull: false
+    },
+    postal_code: {
+        type: Sequelize.STRING,
+        allowNull: false
+    },
+    state: {
+        type: Sequelize.STRING,
+        allowNull: false
+    },
+    delivery_notes: {
+        type: Sequelize.STRING,
+        allowNull: false
     }
 });
 module.exports = Address;
