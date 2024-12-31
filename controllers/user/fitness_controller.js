@@ -21,22 +21,23 @@ const Renewal = require('../../models/fitness/renewal');
 
 exports.getWorkoutsByDate = async (req, res, next) => {
     try {
-        let date = req.query.date;
+        let day = req.query.day;
 
-        if (!date) {
-            date = new Date().toISOString().split("T")[0];
-        }
-
-        if (isNaN(Date.parse(date))) {
-            const error = new Error("Invalid date format. Use YYYY-MM-DD.");
+        if (!day) {
+            const error = new Error("Day is required. Use one of: sunday, monday, tuesday, wednesday, thursday, friday, saturday.");
             error.statusCode = 422;
             throw error;
         }
 
         const daysOfWeek = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
-        const parsedDate = new Date(date);
-        const dayIndex = parsedDate.getDay();
-        const day = daysOfWeek[dayIndex];
+        day = day.toLowerCase();
+
+        if (!daysOfWeek.includes(day)) {
+            const error = new Error("Invalid day. Use one of: sunday, monday, tuesday, wednesday, thursday, friday, saturday.");
+            error.statusCode = 422;
+            throw error;
+        }
+
         const subscription = await Subscription.findOne({
             where: {
                 user_id: req.userId,
@@ -47,11 +48,13 @@ exports.getWorkoutsByDate = async (req, res, next) => {
                 as: 'package',
             },
         });
+
         if (!subscription) {
             const error = new Error("You have no active subscription");
             error.statusCode = 400;
             throw error;
         }
+
         const type = subscription.package.type;
         const where = {
             day: day,
@@ -59,6 +62,7 @@ exports.getWorkoutsByDate = async (req, res, next) => {
             ...(type === "personalized" ? { user_id: req.userId } : {}),
             package_id: subscription.package_id
         };
+
         const workout = await Workout.findOne({
             where: where,
             order: [['createdAt', 'DESC']],
@@ -71,19 +75,21 @@ exports.getWorkoutsByDate = async (req, res, next) => {
                 }
             }
         });
-        workout.exercises = workout.exercises.map((exercise) => {
-            const stats = exercise.get('stats').dataValues;
-            console.log(stats)
-            exercise.dataValues.stats = Object.fromEntries(
-                Object.entries(stats).filter(([key, value]) => value != null)
-            );
-            return exercise;
-        });
+
         if (!workout) {
             const error = new Error("You do not have workouts for this day");
             error.statusCode = 400;
             throw error;
         }
+
+        workout.exercises = workout.exercises.map((exercise) => {
+            const stats = exercise.get('stats').dataValues;
+            exercise.dataValues.stats = Object.fromEntries(
+                Object.entries(stats).filter(([key, value]) => value != null)
+            );
+            return exercise;
+        });
+
         res.status(200).json(workout);
     } catch (e) {
         if (!e.statusCode) {
