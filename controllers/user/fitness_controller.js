@@ -101,13 +101,43 @@ exports.getWorkoutsByDate = async (req, res, next) => {
 exports.showWorkout = async (req, res, next) => {
     try {
         const { id } = req.params;
-        const workout = await Workout.findByPk(id)
+        const workout = await Workout.findByPk(id, {
+            include: {
+                model: Exercise,
+                as: "exercises",
+                through: {
+                    attributes: ['sets', 'reps', 'duration'],
+                    as: "stats"
+                }
+            }
+        })
         if (!workout) {
             const error = new Error("workout not found");
             error.statusCode = 404;
             throw error;
         }
-        res.status(200).json(workout)
+        if (workout.type === 'group') {
+            const subscription = await Subscription.findOne({
+                where: {
+                    user_id: req.userId,
+                    is_active: true
+                }
+            })
+            if (workout.package_id !== subscription.package_id) {
+                const error = new Error("Workout not found")
+                error.statusCode = 404
+                throw error;
+            }
+            res.status(200).json(workout)
+        } else {
+            if (workout.user_id !== req.userId) {
+                const error = new Error("Workout not found")
+                error.statusCode = 404
+                throw error;
+            }
+            res.status(200).json(workout)
+        }
+
     } catch (e) {
         throw e;
     }
