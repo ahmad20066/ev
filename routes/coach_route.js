@@ -105,14 +105,15 @@ router.put('/exercise/:id', imageMiddleWare.uploadMultiImages([
 router.delete('/exercise/:id', exerciseController.deleteExercise);
 router.get('/exercise', exerciseController.getExercises)
 router.get('/exercise/:id', exerciseController.getExercise)
-// router.get('/user/:id/fitness-subscriptions', controller.getFitnessSubscriptions);
-// router.get('/user/:id/survey-answers', controller.getSurveyAnswers);
-// router.get('/user/:id/meal-selections', controller.getMealSelections);
-// router.get('/user/:id/diet-subscriptions', controller.getDietSubscriptions);
-// router.get('/user/:id/workout-attendance', controller.getWorkoutAttendance);
-// router.get('/user/:id/workouts-completed', controller.getWorkoutsCompleted);
-// router.get('/user/:id/exercises-completed', controller.getExercisesCompleted);
+router.get('/user/:id/fitness-subscriptions', controller.getFitnessSubscriptions);
+router.get('/user/:id/survey-answers', controller.getSurveyAnswers);
+router.get('/user/:id/meal-selections', controller.getMealSelections);
+router.get('/user/:id/diet-subscriptions', controller.getDietSubscriptions);
+router.get('/user/:id/workout-attendance', controller.getWorkoutAttendance);
+router.get('/user/:id/workouts-completed', controller.getWorkoutsCompleted);
+router.get('/user/:id/exercises-completed', controller.getExercisesCompleted);
 router.get('/user/:id/weight-records', controller.getWeightRecords);
+router.get('/user/:id/basic', controller.getUserBasic);
 
 router.get("/users", controller.searchUser);
 router.get("/workout-requests", controller.getWorkoutRequests);

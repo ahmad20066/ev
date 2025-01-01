@@ -509,6 +509,30 @@ exports.getUserDetails = async (req, res, next) => {
         next(e)
     }
 }
+exports.getUserBasic = async (req, res, next) => {
+    const { id } = req.params;
+    try {
+        const user = await User.findByPk(id, {
+            where: {
+                role: "consumer"
+            },
+            attributes: {
+                exclude: ['sport_id']
+            },
+            include: {
+                model: Sport,
+                as: "sport"
+            }
+
+        })
+        if (!user) {
+            throw new Error("User not found")
+        }
+        res.status(200).json(user)
+    } catch (e) {
+        next(e)
+    }
+}
 exports.getUserWorkoutLogs = async (req, res, next) => {
     try {
         const { userId } = req.params;
