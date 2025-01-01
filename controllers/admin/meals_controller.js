@@ -23,7 +23,7 @@ exports.createMeal = async (req, res, next) => {
             name,
             description,
             calories,
-            images,
+            images: JSON.stringify(images),
             protein,
             carb,
             fats,
