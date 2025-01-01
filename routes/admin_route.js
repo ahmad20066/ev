@@ -90,10 +90,10 @@ router.get('/types/:id', typeController.getTypeById);
 router.put('/types/:id', typeController.updateType);
 router.delete('/types/:id', typeController.deleteType);
 
-router.post("/meals", imageMiddleWare.uploadSingleImage("image"), mealController.createMeal);
+router.post("/meals", imageMiddleWare.uploadMultiImages([{ name: 'images', maxCount: 10 }]), mealController.createMeal);
 router.get("/meals", mealController.getMeals);
 router.get("/meals/:id", mealController.showMeal);
-router.put("/meals/:id", mealController.updateMeal);
+router.put("/meals/:id", imageMiddleWare.uploadMultiImages([{ name: 'images', maxCount: 10 }]), mealController.updateMeal);
 router.delete("/meals/:id", mealController.deleteMeal);
 
 

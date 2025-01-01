@@ -14,13 +14,26 @@ const Exercise = sequelize.define('Exercise', {
         type: DataTypes.INTEGER,
         allowNull: true,
     },
-    image_url: {
-        type: DataTypes.STRING,
+    image_urls: {
+        type: DataTypes.JSON,
         allowNull: true,
+        get() {
+            const rawValue = this.getDataValue('image_urls');
+            return rawValue ? JSON.parse(rawValue) : null;
+        }
     },
     target_muscles_image: {
         type: DataTypes.STRING,
         allowNull: true,
+    },
+    notes: {
+        type: DataTypes.JSON,
+        allowNull: true,
+        get() {
+            // Decode the JSON data when accessing 'notes'
+            const rawValue = this.getDataValue('notes');
+            return rawValue ? JSON.parse(rawValue) : null;
+        },
     },
     video_url: {
         type: DataTypes.STRING,

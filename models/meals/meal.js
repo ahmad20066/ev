@@ -16,9 +16,14 @@ const Meal = sequelize.define('Meal', {
         type: DataTypes.FLOAT,
         allowNull: true,
     },
-    image_url: {
-        type: DataTypes.STRING,
+    images: {
+        type: DataTypes.JSON, // Store array of strings as JSON
         allowNull: true,
+        get() {
+            // Decode the JSON data when accessing 'notes'
+            const rawValue = this.getDataValue('images');
+            return rawValue ? JSON.parse(rawValue) : null;
+        },
     },
     protein: {
         type: DataTypes.DOUBLE

@@ -7,10 +7,7 @@ const hasSubscription = require("../middlewares/hasSubscription")
 router.get(
     "/workouts",
     hasSubscription,
-    query("date")
-        .optional()
-        .isISO8601()
-        .withMessage("Date must be in a valid ISO 8601 format (YYYY-MM-DD)"),
+
     (req, res, next) => {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
@@ -21,6 +18,7 @@ router.get(
         controller.getWorkoutsByDate(req, res, next);
     }
 );
+router.get("/workouts/:id", hasSubscription, controller.showWorkout)
 router.post("/subscribe", [
     body("package_id").isNumeric().withMessage("Please Enter a valid package"),
     body("pricing_id").isNumeric().withMessage("Please Enter a valid pricing"),

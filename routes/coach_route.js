@@ -91,14 +91,14 @@ router.delete("/workout/:id", [
 
 //////exercises
 router.post('/exercise', imageMiddleWare.uploadMultiImages([
-    { name: 'image', maxCount: 1 },
+    { name: 'images', maxCount: 10 },
     { name: 'target_muscles_image', maxCount: 1 },
     { name: 'video', maxCount: 1 }
 ]), exerciseController.createExercise);
 router.get("/logs/:userId", controller.getUserWorkoutLogs)
 
 router.put('/exercise/:id', imageMiddleWare.uploadMultiImages([
-    { name: 'image', maxCount: 1 },
+    { name: 'images', maxCount: 10 },
     { name: 'target_muscles_image', maxCount: 1 },
     { name: 'video', maxCount: 1 }
 ]), exerciseController.updateExercise);

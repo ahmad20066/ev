@@ -9,49 +9,47 @@ const Type = require("../../models/meals/type");
 exports.createMeal = async (req, res, next) => {
     try {
         const { name, description, calories, types, protein, carb, fats, fiber, ingredients } = req.body;
-        const image_url = req.file ? req.file.path : null;
+
+        let images = [];
+        if (req.files) {
+            if (Array.isArray(req.files)) {
+                images = req.files.map(file => file.path);
+            } else if (req.files['images']) {
+                images = req.files['images'].map(file => file.path);
+            }
+        }
 
         const meal = await Meal.create({
             name,
             description,
             calories,
-            image_url,
+            images,
             protein,
             carb,
             fats,
             fiber,
         });
 
-        if (types && Array.isArray(types) && types.length > 0) {
-            for (const typeId of types) {
-                await MealType.create({
-                    meal_id: meal.id,
-                    type_id: typeId,
-                });
-            }
+        if (types && Array.isArray(types)) {
+            const mealTypes = types.map(typeId => ({
+                meal_id: meal.id,
+                type_id: typeId
+            }));
+            await MealType.bulkCreate(mealTypes);
         }
 
-        if (ingredients && Array.isArray(ingredients) && ingredients.length > 0) {
-            for (const ingredientId of ingredients) {
-                await MealIngredient.create({
-                    meal_id: meal.id,
-                    ingredient_id: ingredientId,
-                });
-            }
+        if (ingredients && Array.isArray(ingredients)) {
+            const mealIngredients = ingredients.map(ingredientId => ({
+                meal_id: meal.id,
+                ingredient_id: ingredientId
+            }));
+            await MealIngredient.bulkCreate(mealIngredients);
         }
 
         const mealWithDetails = await Meal.findByPk(meal.id, {
             include: [
-                {
-                    model: Type,
-                    as: 'types',
-                    through: { attributes: [] },
-                },
-                {
-                    model: Ingredient,
-                    as: 'ingredients',
-                    through: { attributes: [] },
-                },
+                { model: Type, as: 'types', through: { attributes: [] } },
+                { model: Ingredient, as: 'ingredients', through: { attributes: [] } },
             ],
         });
 
@@ -91,8 +89,8 @@ exports.showMeal = async (req, res, next) => {
         const meal = await Meal.findByPk(id, {
             include: {
                 model: Type,
-                as: "types", // Alias used in the association
-                through: { attributes: [] }, // Exclude join table fields
+                as: "types",
+                through: { attributes: [] },
             },
         });
 
@@ -130,9 +128,7 @@ exports.updateMeal = async (req, res, next) => {
     try {
         const { id } = req.params;
         const { name, description, calories, types, protein, carb, fats, fiber, ingredients } = req.body;
-        const image_url = req.file ? req.file.path : null;
 
-        // Fetch the meal by ID
         const meal = await Meal.findByPk(id);
         if (!meal) {
             const error = new Error("Meal not found");
@@ -140,7 +136,9 @@ exports.updateMeal = async (req, res, next) => {
             throw error;
         }
 
-        // Update meal details
+        const newImages = req.files ? req.files.map(file => file.path) : [];
+        meal.images = [...meal.images, ...newImages];
+
         meal.name = name || meal.name;
         meal.description = description || meal.description;
         meal.calories = calories || meal.calories;
@@ -149,59 +147,33 @@ exports.updateMeal = async (req, res, next) => {
         meal.fats = fats || meal.fats;
         meal.fiber = fiber || meal.fiber;
 
-        if (image_url) {
-            meal.image_url = image_url;
-        }
-
-        // Save the updated meal
         await meal.save();
 
-        // Delete existing meal-type associations before adding new ones
         if (types && Array.isArray(types) && types.length > 0) {
-            await MealType.destroy({
-                where: {
-                    meal_id: meal.id,
-                },
-            });
-
-            // Add the new types
+            await MealType.destroy({ where: { meal_id: meal.id } });
             for (const typeId of types) {
-                await MealType.create({
-                    meal_id: meal.id,
-                    type_id: typeId,
-                });
+                await MealType.create({ meal_id: meal.id, type_id: typeId });
             }
         }
 
-        // Delete existing meal-ingredient associations before adding new ones
         if (ingredients && Array.isArray(ingredients) && ingredients.length > 0) {
-            await MealIngredient.destroy({
-                where: {
-                    meal_id: meal.id,
-                },
-            });
-
-            // Add the new ingredients
+            await MealIngredient.destroy({ where: { meal_id: meal.id } });
             for (const ingredientId of ingredients) {
-                await MealIngredient.create({
-                    meal_id: meal.id,
-                    ingredient_id: ingredientId,
-                });
+                await MealIngredient.create({ meal_id: meal.id, ingredient_id: ingredientId });
             }
         }
 
-        // Fetch the updated meal with its associated types and ingredients
         const updatedMeal = await Meal.findByPk(meal.id, {
             include: [
                 {
                     model: Type,
                     as: 'types',
-                    through: { attributes: [] }, // Exclude join table data
+                    through: { attributes: [] },
                 },
                 {
                     model: Ingredient,
                     as: 'ingredients',
-                    through: { attributes: [] }, // Exclude join table data
+                    through: { attributes: [] },
                 },
             ],
         });
@@ -214,7 +186,6 @@ exports.updateMeal = async (req, res, next) => {
         next(e);
     }
 };
-
 const getUpcomingWeek = () => {
     const today = new Date();
     const week = [];
