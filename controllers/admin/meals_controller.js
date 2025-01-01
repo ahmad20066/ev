@@ -87,11 +87,7 @@ exports.showMeal = async (req, res, next) => {
     try {
         const { id } = req.params;
         const meal = await Meal.findByPk(id, {
-            include: {
-                model: Type,
-                as: "types",
-                through: { attributes: [] },
-            },
+
         });
 
         if (!meal) {

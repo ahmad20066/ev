@@ -42,20 +42,22 @@ exports.createMealPlan = async (req, res, next) => {
 };
 exports.getAllMealPlans = async (req, res, next) => {
     try {
+
         const mealPlans = await MealPlan.findAll({
             attributes: {
                 include: [
                     [
-                        Sequelize.fn("COUNT", Sequelize.col("subscriptions.id")),
+                        Sequelize.fn("IFNULL", Sequelize.fn("COUNT", Sequelize.col("subscriptions.id")), 0),
                         'subscriptions_count'
-                    ],
-                    [
-                        Sequelize.fn("GROUP_CONCAT", Sequelize.col("types.id")), // Example aggregation
-                        'types_ids'
                     ]
                 ]
             },
             include: [
+                {
+                    model: Type,
+                    as: "types",
+                    through: { attributes: [] }
+                },
                 {
                     model: MealSubscription,
                     as: "subscriptions",
@@ -65,11 +67,7 @@ exports.getAllMealPlans = async (req, res, next) => {
                     },
                     required: false
                 },
-                {
-                    model: Type,
-                    as: "types",
-                    through: { attributes: [] }
-                }
+
             ],
             group: ['MealPlan.id'],
         });
@@ -80,7 +78,6 @@ exports.getAllMealPlans = async (req, res, next) => {
         next(error);
     }
 };
-
 exports.getMealPlanById = async (req, res, next) => {
     try {
         const { id } = req.params;

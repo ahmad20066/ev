@@ -20,14 +20,15 @@ const MealPlan = sequelize.define('MealPlan', {
     }
 }, {
     tableName: "mealPlans",
-    defaultScope: {
-        include: [
-            {
-                model: Type,
-                as: 'types',
-                through: { attributes: [] },
-            },
-        ],
-    },
+    // defaultScope: {
+    //     include: [
+    //         {
+    //             model: Type,
+    //             as: 'types',
+    //             through: { attributes: [] },
+    //             required: false
+    //         },
+    //     ],
+    // },
 });
 module.exports = MealPlan;
