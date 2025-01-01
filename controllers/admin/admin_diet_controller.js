@@ -42,12 +42,16 @@ exports.createMealPlan = async (req, res, next) => {
 };
 exports.getAllMealPlans = async (req, res, next) => {
     try {
-
         const mealPlans = await MealPlan.findAll({
             attributes: {
                 include: [
                     [
-                        Sequelize.fn("COUNT", Sequelize.col("subscriptions.id")), 'subscriptions_count'
+                        Sequelize.fn("COUNT", Sequelize.col("subscriptions.id")),
+                        'subscriptions_count'
+                    ],
+                    [
+                        Sequelize.fn("GROUP_CONCAT", Sequelize.col("types.id")), // Example aggregation
+                        'types_ids'
                     ]
                 ]
             },
@@ -76,6 +80,7 @@ exports.getAllMealPlans = async (req, res, next) => {
         next(error);
     }
 };
+
 exports.getMealPlanById = async (req, res, next) => {
     try {
         const { id } = req.params;
