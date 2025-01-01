@@ -26,7 +26,7 @@ exports.createExercise = async (req, res, next) => {
             image_urls: JSON.stringify(image_urls), // Convert array to JSON string
             target_muscles_image,
             video_url,
-            notes: notes ? JSON.stringify(notes) : null, // Ensure notes is stored as JSON string
+            notes: notes, // Ensure notes is stored as JSON string
         });
 
         res.status(201).json({
