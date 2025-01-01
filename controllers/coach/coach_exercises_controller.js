@@ -7,15 +7,15 @@ exports.createExercise = async (req, res, next) => {
 
         // Process multiple uploaded images for `image_urls`
         const image_urls = req.files.images
-            ? req.files.images.map((file) => `/uploads/images/${file.filename}`)
+            ? req.files.images.map((file) => file.path)
             : [];
-
+        console.log(req.files.images);
         // Handle single files for target muscles image and video
         const target_muscles_image = req.files.target_muscles_image
-            ? `/uploads/images/${req.files.target_muscles_image[0].filename}`
+            ? req.files.target_muscles_image.path
             : null;
         const video_url = req.files.video
-            ? `/uploads/images/${req.files.video[0].filename}`
+            ? req.files.video.path
             : null;
 
         // Create exercise and save JSON string for `image_urls`

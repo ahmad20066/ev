@@ -20,9 +20,10 @@ const path = require("path");
 const http = require("http");
 const cancelExpiredSubscriptions = require("./schedulers/subscriptions_scheduler");
 cancelExpiredSubscriptions();
+
 const cors = require("cors");
 
-// CORS configuration
+// // CORS configuration
 const corsOptions = {
     origin: "http://localhost:3000", // Replace with your frontend URL
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
@@ -30,24 +31,23 @@ const corsOptions = {
     credentials: true, // Allow cookies or authentication headers
 };
 
-// Use CORS middleware
 app.use(cors(corsOptions));
 app.use(express.json());
+app.use("/uploads", express.static(path.join(__dirname, "uploads"), {
+    fallthrough: false,
+}));
 
-// Serve static files
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-// Remove manual CORS headers (already handled by cors middleware)
-// Remove this block to avoid conflicts:
-// app.use((req, res, next) => {
-//   res.setHeader("Access-Control-Allow-Origin", "*");
-//   res.setHeader(
-//     "Access-Control-Allow-Methods",
-//     "OPTIONS, GET, POST, PUT, PATCH, DELETE"
-//   );
-//   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
-//   next();
-// });
+
+app.use((req, res, next) => {
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader(
+        "Access-Control-Allow-Methods",
+        "OPTIONS, GET, POST, PUT, PATCH, DELETE"
+    );
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+    next();
+});
 
 const server = http.createServer(app);
 const io = socketIo(server, {
