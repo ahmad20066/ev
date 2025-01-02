@@ -10,10 +10,6 @@ const Exercise = sequelize.define('Exercise', {
         type: DataTypes.TEXT,
         allowNull: true,
     },
-    duration: {
-        type: DataTypes.INTEGER,
-        allowNull: true,
-    },
     image_urls: {
         type: DataTypes.JSON,
         allowNull: true,
