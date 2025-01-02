@@ -9,13 +9,13 @@ exports.createExercise = async (req, res, next) => {
         const image_urls = req.files.images
             ? req.files.images.map((file) => file.path)
             : [];
-        console.log(req.files.images);
+        console.log(req.files);
         // Handle single files for target muscles image and video
         const target_muscles_image = req.files.target_muscles_image
             ? req.files.target_muscles_image.path
             : null;
         const video_url = req.files.video
-            ? req.files.video.path
+            ? req.files.video[0].path
             : null;
 
         // Create exercise and save JSON string for `image_urls`
