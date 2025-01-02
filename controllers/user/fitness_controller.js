@@ -603,33 +603,40 @@ exports.getExercise = async (req, res, next) => {
         const { id } = req.params;
         const { workout_id } = req.query;
 
-        const workoutExercise = await WorkoutExercise.findOne(
-            {
-                where: {
-                    workout_id,
-                    exercise_id: id
-                },
-                include: [{
+        const workoutExercise = await WorkoutExercise.findOne({
+            where: {
+                workout_id,
+                exercise_id: id,
+            },
+            include: [
+                {
                     model: Exercise,
-                    as: "exercise"
+                    as: 'exercise',
                 },
+            ],
+        });
 
-                ]
-            }
-        )
-        console.log(workoutExercise)
+        if (!workoutExercise) {
+            const error = new Error("Exercise is not associated to WorkoutExercise!");
+            error.statusCode = 404;
+            throw error;
+        }
+
+        // Dynamically construct stats object
+        const stats = {};
+        if (workoutExercise.sets !== null) stats.sets = workoutExercise.sets;
+        if (workoutExercise.reps !== null) stats.reps = workoutExercise.reps;
+        if (workoutExercise.duration !== null) stats.duration = workoutExercise.duration;
+
         res.status(200).json({
             ...workoutExercise.exercise.toJSON(),
-            stats: {
-                sets: workoutExercise.sets,
-                reps: workoutExercise.reps,
-                duration: workoutExercise.duration
-            },
+            stats,
         });
     } catch (error) {
         next(error);
     }
 };
+
 
 
 
