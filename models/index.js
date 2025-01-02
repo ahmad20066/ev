@@ -86,7 +86,7 @@ WorkoutCompletion.belongsTo(Workout, { foreignKey: "workout_id", as: "workout" }
 WorkoutAttendance.belongsTo(Workout, { foreignKey: "workout_id", as: "workout" })
 User.hasMany(ExerciseCompletion, { foreignKey: "user_id", as: "exercises_completed" })
 ExerciseCompletion.belongsTo(User, { foreignKey: "user_id", as: "user" })
-WorkoutExercise.belongsTo(Exercise, { foreignKey: "exercise_id", as: "exercise" })
+// WorkoutExercise.belongsTo(Exercise, { foreignKey: "exercise_id", as: "exercise" })
 
 
 Meal.hasMany(UserMealSelection, { as: "selections", foreignKey: 'meal_id' });
@@ -171,3 +171,5 @@ Order.belongsToMany(Meal, { through: OrderMeal, as: "meals", foreignKey: 'order_
 Workout.hasMany(WorkoutRating, { as: "reviews", foreignKey: "workout_id" })
 
 User.belongsTo(Sport, { as: "sport", foreignKey: "sport_id" })
+
+WorkoutExercise.belongsTo(Exercise, { foreignKey: 'exercise_id', as: 'exercise' });

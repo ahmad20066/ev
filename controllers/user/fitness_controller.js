@@ -17,6 +17,7 @@ const User = require('../../models/user');
 const WorkoutRating = require('../../models/fitness/workout_rating');
 const Choice = require('../../models/survey/choice');
 const Renewal = require('../../models/fitness/renewal');
+const { duration } = require('moment');
 
 
 exports.getWorkoutsByDate = async (req, res, next) => {
@@ -599,24 +600,38 @@ exports.renewSubscription = async (req, res, next) => {
 
 exports.getExercise = async (req, res, next) => {
     try {
-        const { id } = req.params
-        const exercise = await Exercise.findByPk(id, {
-            through: {
-                attributes: ['sets', 'reps', 'duration'],
-                as: "stats"
-            }
-        });
-        if (!exercise) {
-            const error = new Error("Exercise not found")
-            error.statusCode = 404;
-            throw error;
-        }
+        const { id } = req.params;
+        const { workout_id } = req.query;
 
-        res.status(200).json(exercise);
+        const workoutExercise = await WorkoutExercise.findOne(
+            {
+                where: {
+                    workout_id,
+                    exercise_id: id
+                },
+                include: [{
+                    model: Exercise,
+                    as: "exercise"
+                },
+
+                ]
+            }
+        )
+        console.log(workoutExercise)
+        res.status(200).json({
+            ...workoutExercise.exercise.toJSON(),
+            stats: {
+                sets: workoutExercise.sets,
+                reps: workoutExercise.reps,
+                duration: workoutExercise.duration
+            },
+        });
     } catch (error) {
         next(error);
     }
 };
+
+
 
 
 
