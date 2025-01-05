@@ -51,4 +51,5 @@ router.post("/feedback", controller.rateWorkout)
 router.get("/exercise/:id", controller.getExercise),
     router.get("/packages", controller.getAllPackages),
     router.get("/package-workouts", controller.getPackageWorkouts),
+    router.get("/package-workouts/:id", controller.showPackageWorkout),
     module.exports = router;

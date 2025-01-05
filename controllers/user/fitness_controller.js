@@ -661,7 +661,31 @@ exports.getPackageWorkouts = async (req, res, next) => {
         next(e)
     }
 }
+exports.showPackageWorkout = async (req, res, next) => {
+    try {
+        const { id } = req.params
+        const package = await Package.findByPk(package_id)
+        if (!package) {
+            const error = new Error("Package not found")
+            error.statusCode = 404
+            throw error;
+        }
+        const workouts = await Workout.findOne({
+            where: {
+                id,
 
+            },
+            include: [
+                {
+                    model: WorkoutRating,
+                    as: "reviews",
+                }]
+        })
+        res.status(200).json(workouts)
+    } catch (e) {
+        next(e)
+    }
+}
 exports.getAllPackages = async (req, res, next) => {
     try {
         const packages = await Package.findAll({
