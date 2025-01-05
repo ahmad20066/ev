@@ -62,6 +62,27 @@ exports.createWorkout = async (req, res, next) => {
         if (type == "group" && user_id) {
             user_id = undefined
         }
+        if (type == "group") {
+            const previousWorkout = await Workout.findOne({
+                where: {
+                    day,
+                    package_id
+                }
+            })
+            if (previousWorkout) {
+                await previousWorkout.destroy()
+            }
+        } else {
+            const previousWorkout = await Workout.findOne({
+                where: {
+                    day,
+                    user_id
+                }
+            })
+            if (previousWorkout) {
+                await previousWorkout.destroy()
+            }
+        }
 
         const workout = await Workout.create({
             title,
@@ -71,7 +92,7 @@ exports.createWorkout = async (req, res, next) => {
             difficulty_level,
             calories_burned,
             coach,
-            day, // Use the 'day' field instead of 'date'
+            day,
             user_id,
             package_id,
             image
