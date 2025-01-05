@@ -7,6 +7,10 @@ const Workout = sequelize.define("Workout", {
         primaryKey: true,
         autoIncrement: true,
     },
+    image: {
+        type: Sequelize.STRING,
+        allowNull: false
+    },
     title: {
         type: Sequelize.STRING,
         allowNull: false,

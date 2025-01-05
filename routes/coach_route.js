@@ -6,42 +6,44 @@ const imageMiddleWare = require('../middlewares/multer');
 const { body, param, validationResult } = require("express-validator");
 const chatController = require("../controllers/chat_controller");
 
-router.post("/workout", [
-    body("title")
-        .notEmpty()
-        .withMessage("Title is required"),
+router.post("/workout",
+    //     [
+    //     body("title")
+    //         .notEmpty()
+    //         .withMessage("Title is required"),
 
-    body("description")
-        .optional()
-        .isString()
-        .withMessage("Description must be a string"),
-    body("duration")
-        .isInt({ min: 1 })
-        .withMessage("Duration must be a positive integer"),
-    body("difficulty_level")
-        .notEmpty()
-        .withMessage("Difficulty level is required"),
-    body("calories_burned")
-        .isInt({ min: 0 })
-        .withMessage("Calories burned must be a non-negative integer"),
-    body("exercises")
-        .isArray({ min: 1 })
-        .withMessage("Exercises must be an array with at least one exercise"),
-    // body("exercises.*.name")
-    //     .notEmpty()
-    //     .withMessage("Exercise name is required"),
-    // body("exercises.*.duration")
-    //     .isInt({ min: 1 })
-    //     .withMessage("Exercise duration must be a positive integer")
-], (req, res, next) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-        const error = new Error(errors.array()[0].msg)
-        error.statusCode = 422;
-        next(error)
-    }
-    controller.createWorkout(req, res, next);
-});
+    //     body("description")
+    //         .optional()
+    //         .isString()
+    //         .withMessage("Description must be a string"),
+    //     body("duration")
+    //         .isInt({ min: 1 })
+    //         .withMessage("Duration must be a positive integer"),
+    //     body("difficulty_level")
+    //         .notEmpty()
+    //         .withMessage("Difficulty level is required"),
+    //     body("calories_burned")
+    //         .isInt({ min: 0 })
+    //         .withMessage("Calories burned must be a non-negative integer"),
+    //     body("exercises")
+    //         .isArray({ min: 1 })
+    //         .withMessage("Exercises must be an array with at least one exercise"),
+    //     // body("exercises.*.name")
+    //     //     .notEmpty()
+    //     //     .withMessage("Exercise name is required"),
+    //     // body("exercises.*.duration")
+    //     //     .isInt({ min: 1 })
+    //     //     .withMessage("Exercise duration must be a positive integer")
+    // ],
+    imageMiddleWare.uploadSingleImage("image"), (req, res, next) => {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            const error = new Error(errors.array()[0].msg)
+            error.statusCode = 422;
+            next(error)
+        }
+        controller.createWorkout(req, res, next);
+    });
 
 router.get("/workout/:id", [
     param("id").isInt().withMessage("Workout ID must be a valid integer")

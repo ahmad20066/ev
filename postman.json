@@ -1,130 +1,100 @@
 {
     "info": {
-        "name": "Sports CRUD API",
-        "description": "Postman collection for the Sports CRUD API with the prefix {{url}}/admin",
+        "name": "Full Body Strength Training",
         "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
     },
     "item": [
         {
-            "name": "Create Sport",
+            "name": "Create Training Program",
             "request": {
                 "method": "POST",
                 "header": [
                     {
                         "key": "Content-Type",
-                        "value": "application/json"
+                        "value": "multipart/form-data",
+                        "type": "text"
                     }
                 ],
-                "url": {
-                    "raw": "{{url}}/admin/sports",
-                    "host": [
-                        "{{url}}"
-                    ],
-                    "path": [
-                        "admin",
-                        "sports"
-                    ]
-                },
                 "body": {
-                    "mode": "raw",
-                    "raw": "{\n  \"title\": \"Football\"\n}"
-                }
-            }
-        },
-        {
-            "name": "Get All Sports",
-            "request": {
-                "method": "GET",
-                "header": [],
-                "url": {
-                    "raw": "{{url}}/admin/sports",
-                    "host": [
-                        "{{url}}"
-                    ],
-                    "path": [
-                        "admin",
-                        "sports"
-                    ]
-                }
-            }
-        },
-        {
-            "name": "Get Sport By ID",
-            "request": {
-                "method": "GET",
-                "header": [],
-                "url": {
-                    "raw": "{{url}}/admin/sports/:id",
-                    "host": [
-                        "{{url}}"
-                    ],
-                    "path": [
-                        "admin",
-                        "sports",
-                        ":id"
-                    ],
-                    "variable": [
+                    "mode": "formdata",
+                    "formdata": [
                         {
-                            "key": "id",
-                            "value": "1"
-                        }
-                    ]
-                }
-            }
-        },
-        {
-            "name": "Update Sport",
-            "request": {
-                "method": "PUT",
-                "header": [
-                    {
-                        "key": "Content-Type",
-                        "value": "application/json"
-                    }
-                ],
-                "url": {
-                    "raw": "{{url}}/admin/sports/:id",
-                    "host": [
-                        "{{url}}"
-                    ],
-                    "path": [
-                        "admin",
-                        "sports",
-                        ":id"
-                    ],
-                    "variable": [
+                            "key": "title",
+                            "value": "Full Body Strength Training",
+                            "type": "text"
+                        },
                         {
-                            "key": "id",
-                            "value": "1"
+                            "key": "type",
+                            "value": "personalized",
+                            "type": "text"
+                        },
+                        {
+                            "key": "description",
+                            "value": "22222",
+                            "type": "text"
+                        },
+                        {
+                            "key": "duration",
+                            "value": "60",
+                            "type": "text"
+                        },
+                        {
+                            "key": "difficulty_level",
+                            "value": "Intermediate",
+                            "type": "text"
+                        },
+                        {
+                            "key": "calories_burned",
+                            "value": "500",
+                            "type": "text"
+                        },
+                        {
+                            "key": "day",
+                            "value": "monday",
+                            "type": "text"
+                        },
+                        {
+                            "key": "user_id",
+                            "value": "5",
+                            "type": "text"
+                        },
+                        {
+                            "key": "exercises[0][exercise_id]",
+                            "value": "6",
+                            "type": "text"
+                        },
+                        {
+                            "key": "exercises[0][sets]",
+                            "value": "4",
+                            "type": "text"
+                        },
+                        {
+                            "key": "exercises[0][reps]",
+                            "value": "12",
+                            "type": "text"
+                        },
+                        {
+                            "key": "exercises[1][exercise_id]",
+                            "value": "3",
+                            "type": "text"
+                        },
+                        {
+                            "key": "exercises[1][duration]",
+                            "value": "30",
+                            "type": "text"
+                        },
+                        {
+                            "key": "image",
+                            "type": "file",
+                            "src": ""
                         }
                     ]
                 },
-                "body": {
-                    "mode": "raw",
-                    "raw": "{\n  \"title\": \"Updated Football\"\n}"
-                }
-            }
-        },
-        {
-            "name": "Delete Sport",
-            "request": {
-                "method": "DELETE",
-                "header": [],
                 "url": {
-                    "raw": "{{url}}/admin/sports/:id",
+                    "raw": "https://<your_endpoint_url>",
+                    "protocol": "https",
                     "host": [
-                        "{{url}}"
-                    ],
-                    "path": [
-                        "admin",
-                        "sports",
-                        ":id"
-                    ],
-                    "variable": [
-                        {
-                            "key": "id",
-                            "value": "1"
-                        }
+                        "<your_endpoint_url>"
                     ]
                 }
             }

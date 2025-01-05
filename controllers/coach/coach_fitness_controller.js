@@ -24,6 +24,8 @@ exports.createWorkout = async (req, res, next) => {
     try {
         let { title, user_id, description, duration, exercises, difficulty_level, calories_burned, day, package_id } = req.body;
         const coach = req.userId;
+        console.log(req.files);
+        const image = req.file.path;
         if (user_id) {
             const user = await User.findByPk(user_id)
             if (!user) {
@@ -71,7 +73,8 @@ exports.createWorkout = async (req, res, next) => {
             coach,
             day, // Use the 'day' field instead of 'date'
             user_id,
-            package_id
+            package_id,
+            image
         });
 
         await Promise.all(exercises.map(async (exercise) => {

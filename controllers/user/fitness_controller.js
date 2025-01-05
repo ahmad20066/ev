@@ -140,7 +140,7 @@ exports.showWorkout = async (req, res, next) => {
         }
 
     } catch (e) {
-        throw e;
+        next(e)
     }
 }
 
