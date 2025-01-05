@@ -636,10 +636,50 @@ exports.getExercise = async (req, res, next) => {
         next(error);
     }
 };
+exports.getPackageWorkouts = async (req, res, next) => {
+    try {
+        const { package_id } = req.query
+        const package = await Package.findByPk(package_id)
+        if (!package) {
+            const error = new Error("Package not found")
+            error.statusCode = 404
+            throw error;
+        }
+        const workouts = await Workout.findAll({
+            where: {
+                package_id,
+                type: "group"
+            },
+            include: [{
+                model: Exercise,
+                as: 'exercises',
+                through: {
+                    model: WorkoutExercise,
+                    attributes: ['sets', 'reps']
+                }
+            },
+            {
+                model: WorkoutRating,
+                as: "reviews",
+            }]
+        })
+        res.status(200).json(workouts)
+    } catch (e) {
+        next(e)
+    }
+}
 
-
-
-
-
-
-// exports.renewSubscription = (req,res,next) => {}
+exports.getAllPackages = async (req, res, next) => {
+    try {
+        const packages = await Package.findAll({
+            include: [{
+                model: PricingModel,
+                as: "pricings"
+            }]
+        });
+        res.status(200).json(packages);
+    } catch (e) {
+        e.statusCode = 500;
+        next(e);
+    }
+};

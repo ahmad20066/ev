@@ -48,5 +48,7 @@ router.post("/survey-answer", controller.submitAnswers)
 router.get("/survey", controller.getSurvey)
 router.get("/leader-board", controller.exerciseLeaderBoard)
 router.post("/feedback", controller.rateWorkout)
-router.get("/exercise/:id", controller.getExercise)
-module.exports = router;
+router.get("/exercise/:id", controller.getExercise),
+    router.get("/packages", controller.getAllPackages),
+    router.get("/package-workouts", controller.getPackageWorkouts),
+    module.exports = router;

@@ -73,3 +73,54 @@ exports.getHomeWorkouts = async (req, res, next) => {
         next(e)
     }
 }
+exports.getWorkoutById = async (req, res, next) => {
+    try {
+        const { id } = req.params
+        const subscription = await Subscription.findOne({
+            where: {
+                is_active: true,
+                user_id: req.userId
+            }
+        })
+        if (!subscription) {
+            const error = new Error("no subscription for this user")
+            error.statusCode = 403;
+            throw error
+        }
+        const package = await Package.findByPk(subscription.package_id)
+        if (package.type === 'group') {
+            const workout = await Workout.findOne({
+                where: {
+                    package_id: subscription.package_id,
+                    id
+                },
+                include: {
+
+                }
+
+            })
+            if (!workout) {
+                const error = new Error("Workout not found")
+                error.statusCode = 404;
+                throw error
+            }
+            res.status(200).json(workout)
+        } else {
+            const workout = await Workout.findOne({
+                where: {
+                    package_id: subscription.package_id,
+                    user_id: req.userId,
+                    id
+                }
+            })
+            if (!workout) {
+                const error = new Error("Workout not found")
+                error.statusCode = 404;
+                throw error
+            }
+            res.status(200).json(workout)
+        }
+    } catch (e) {
+        next(e)
+    }
+}
