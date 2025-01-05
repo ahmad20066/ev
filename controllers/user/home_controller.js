@@ -1,4 +1,5 @@
 const Banner = require("../../models/banner");
+const Exercise = require("../../models/fitness/exercise");
 const Workout = require("../../models/fitness/workout");
 const MealPlan = require("../../models/meals/meal_plan");
 const Package = require("../../models/package");
@@ -95,7 +96,12 @@ exports.getWorkoutById = async (req, res, next) => {
                     id
                 },
                 include: {
-
+                    model: Exercise,
+                    as: "exercises",
+                    through: {
+                        attributes: ['sets', 'reps', 'duration'],
+                        as: "stats"
+                    }
                 }
 
             })
