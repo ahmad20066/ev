@@ -650,18 +650,11 @@ exports.getPackageWorkouts = async (req, res, next) => {
                 package_id,
                 type: "group"
             },
-            include: [{
-                model: Exercise,
-                as: 'exercises',
-                through: {
-                    model: WorkoutExercise,
-                    attributes: ['sets', 'reps']
-                }
-            },
-            {
-                model: WorkoutRating,
-                as: "reviews",
-            }]
+            include: [
+                {
+                    model: WorkoutRating,
+                    as: "reviews",
+                }]
         })
         res.status(200).json(workouts)
     } catch (e) {
