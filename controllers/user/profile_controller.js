@@ -162,6 +162,8 @@ exports.isSubscribed = async (req, res, next) => {
         console.log(fitnessSubscription);
         if (fitnessSubscription) {
             isSubscribedFitness = true
+        } else {
+            isSubscribedFitness = false
         }
         const dietSubscription = await MealSubscription.findOne({
             where: {
@@ -171,6 +173,8 @@ exports.isSubscribed = async (req, res, next) => {
         })
         if (dietSubscription) {
             isSubscribedDiet = true
+        } else {
+            isSubscribedDiet = false
         }
         res.status(200).json({
             fitnessSubscription: isSubscribedFitness,
