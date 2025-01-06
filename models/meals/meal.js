@@ -20,8 +20,9 @@ const Meal = sequelize.define('Meal', {
         type: DataTypes.JSON, // Store array of strings as JSON
         allowNull: true,
         get() {
-            // Decode the JSON data when accessing 'notes'
+            console.log("aaaaaaaaaaaaaaaa")
             const rawValue = this.getDataValue('images');
+            console.log(JSON.parse(rawValue))
             return rawValue ? JSON.parse(rawValue) : null;
         },
     },

@@ -1,5 +1,6 @@
 const FAQ = require("../models/faq");
-const PrivacyPolicy = require("../models/privacy_policy")
+const PrivacyPolicy = require("../models/privacy_policy");
+const TermsAndConditions = require("../models/terms_conditions");
 
 exports.getPrivacyPolicy = async (req, res, next) => {
     try {
@@ -22,6 +23,11 @@ exports.updatePolicy = async (req, res, next) => {
     try {
         const { content } = req.body
         const policy = await PrivacyPolicy.findOne()
+        if (!policy) {
+            const error = new Error("no privacy policy to update")
+            error.statusCode = 404;
+            throw error;
+        }
         policy.content = content
         await policy.save()
         res.status(200).json({

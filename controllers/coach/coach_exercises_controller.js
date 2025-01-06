@@ -63,16 +63,14 @@ exports.updateExercise = async (req, res, next) => {
             ? req.files.video[0].path
             : exercise.video_url; // Retain existing video if none is uploaded
 
-        // Update exercise and save JSON string for `image_urls`
         exercise.name = name || exercise.name;
         exercise.description = description || exercise.description;
-        exercise.duration = duration || exercise.duration;
-        exercise.image_urls = JSON.stringify(image_urls); // Convert array to JSON string
+
+        exercise.image_urls = JSON.stringify(image_urls);
         exercise.target_muscles_image = target_muscles_image;
         exercise.video_url = video_url;
         exercise.notes = notes || exercise.notes;
 
-        // Save the updated exercise
         await exercise.save();
 
         res.status(200).json({

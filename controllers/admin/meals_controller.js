@@ -23,7 +23,7 @@ exports.createMeal = async (req, res, next) => {
             name,
             description,
             calories,
-            images: JSON.stringify(images),
+            images: images,
             protein,
             carb,
             fats,
@@ -133,7 +133,7 @@ exports.updateMeal = async (req, res, next) => {
         }
 
         // Handle uploaded images
-        let images = JSON.parse(meal.images) || [];
+        let images = meal.images || [];
         if (req.files) {
             if (Array.isArray(req.files)) {
                 images = req.files.map(file => file.path);
@@ -142,11 +142,10 @@ exports.updateMeal = async (req, res, next) => {
             }
         }
 
-        // Update meal fields
         meal.name = name || meal.name;
         meal.description = description || meal.description;
         meal.calories = calories || meal.calories;
-        meal.images = JSON.stringify(images);
+        meal.images = images;
         meal.protein = protein || meal.protein;
         meal.carb = carb || meal.carb;
         meal.fats = fats || meal.fats;
@@ -154,7 +153,6 @@ exports.updateMeal = async (req, res, next) => {
 
         await meal.save();
 
-        // Update types if provided
         if (types && Array.isArray(types)) {
             await MealType.destroy({ where: { meal_id: meal.id } });
             const mealTypes = types.map(typeId => ({
