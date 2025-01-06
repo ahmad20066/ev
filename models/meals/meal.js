@@ -17,12 +17,11 @@ const Meal = sequelize.define('Meal', {
         allowNull: true,
     },
     images: {
-        type: DataTypes.JSON, // Store array of strings as JSON
+        type: DataTypes.JSON,
         allowNull: true,
         get() {
             console.log("aaaaaaaaaaaaaaaa")
             const rawValue = this.getDataValue('images');
-            console.log(JSON.parse(rawValue))
             return rawValue ? JSON.parse(rawValue) : null;
         },
     },

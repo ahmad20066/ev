@@ -152,17 +152,16 @@ exports.updateProfile = async (req, res, next) => {
 exports.isSubscribed = async (req, res, next) => {
     try {
         const user_id = req.userId;
-        let isSubscribedFitness, isSubscribedDiet;
+        let isSubscribedFitness, isSubscribedDiet = false;
         const fitnessSubscription = await Subscription.findOne({
             where: {
                 is_active: true,
                 user_id
             }
         })
+        console.log(fitnessSubscription);
         if (fitnessSubscription) {
             isSubscribedFitness = true
-        } else {
-            isSubscribedFitness = false
         }
         const dietSubscription = await MealSubscription.findOne({
             where: {
@@ -172,8 +171,6 @@ exports.isSubscribed = async (req, res, next) => {
         })
         if (dietSubscription) {
             isSubscribedDiet = true
-        } else {
-            isSubscribedFitness = false
         }
         res.status(200).json({
             fitnessSubscription: isSubscribedFitness,
