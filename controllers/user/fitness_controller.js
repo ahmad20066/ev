@@ -61,7 +61,8 @@ exports.getWorkoutsByDate = async (req, res, next) => {
             day: day,
             type: type,
             ...(type === "personalized" ? { user_id: req.userId } : {}),
-            package_id: subscription.package_id
+            package_id: subscription.package_id,
+            is_active: true
         };
 
         const workout = await Workout.findOne({
@@ -648,7 +649,8 @@ exports.getPackageWorkouts = async (req, res, next) => {
         const workouts = await Workout.findAll({
             where: {
                 package_id,
-                type: "group"
+                type: "group",
+                is_active: true
             },
             include: [
                 {

@@ -66,21 +66,25 @@ exports.createWorkout = async (req, res, next) => {
             const previousWorkout = await Workout.findOne({
                 where: {
                     day,
-                    package_id
+                    package_id,
+                    is_active: true
                 }
             })
             if (previousWorkout) {
-                await previousWorkout.destroy()
+                previousWorkout.is_active = false;
+                await previousWorkout.save()
             }
         } else {
             const previousWorkout = await Workout.findOne({
                 where: {
                     day,
-                    user_id
+                    user_id,
+                    is_active: true
                 }
             })
             if (previousWorkout) {
-                await previousWorkout.destroy()
+                previousWorkout.is_active = false;
+                await previousWorkout.save()
             }
         }
 
@@ -713,7 +717,8 @@ exports.getUserWorkout = async (req, res, next) => {
             where: {
                 user_id,
                 type: "personalized",
-                day: day
+                day: day,
+                is_active: true
             }
         })
         if (!workout) {
@@ -732,7 +737,8 @@ exports.getGroupWorkouts = async (req, res, next) => {
         const workout = await Workout.findOne({
             where: {
                 package_id,
-                day
+                day,
+                is_active: true
             },
             include: [
                 {

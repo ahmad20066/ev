@@ -56,7 +56,8 @@ exports.getHomeWorkouts = async (req, res, next) => {
         if (package.type === 'group') {
             const workouts = await Workout.findAll({
                 where: {
-                    package_id: subscription.package_id
+                    package_id: subscription.package_id,
+                    is_active: true
                 },
 
             })
@@ -64,6 +65,7 @@ exports.getHomeWorkouts = async (req, res, next) => {
         } else {
             const workouts = await Workout.findAll({
                 where: {
+                    is_active: true,
                     package_id: subscription.package_id,
                     user_id: req.userId
                 }

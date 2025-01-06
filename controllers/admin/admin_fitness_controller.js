@@ -19,7 +19,11 @@ exports.getAllCoaches = async (req, res, next) => {
 };
 
 exports.getWorkouts = (req, res, next) => {
-    Workout.findAll().then(workouts => {
+    Workout.findAll({
+        where: {
+            is_active: true
+        }
+    }).then(workouts => {
         res.status(200).json(workouts)
     })
 }

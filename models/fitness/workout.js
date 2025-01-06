@@ -57,6 +57,10 @@ const Workout = sequelize.define("Workout", {
             key: "id"
         },
         allowNull: false
+    },
+    is_Active: {
+        type: Sequelize.BOOLEAN,
+        defaultValue: true
     }
 }, {
     tableName: "workouts",
