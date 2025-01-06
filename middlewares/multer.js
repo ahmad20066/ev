@@ -35,6 +35,7 @@ exports.uploadSingleImage = (field) => {
 };
 
 exports.uploadMultiImages = (fields) => {
+    console.log(fields)
     return upload.fields(fields);
 };
 exports.uploadAnyImages = () => {
