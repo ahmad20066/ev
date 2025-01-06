@@ -122,22 +122,31 @@ exports.deleteMeal = async (req, res, next) => {
 
 exports.updateMeal = async (req, res, next) => {
     try {
-        const { id } = req.params;
+        const { id } = req.params; // Get meal ID from route params
         const { name, description, calories, types, protein, carb, fats, fiber, ingredients } = req.body;
 
+        // Find the meal by ID
         const meal = await Meal.findByPk(id);
+
         if (!meal) {
-            const error = new Error("Meal not found");
-            error.statusCode = 404;
-            throw error;
+            return res.status(404).json({ message: 'Meal not found' });
         }
 
-        const newImages = req.files ? req.files.map(file => file.path) : [];
-        meal.images = [...meal.images, ...newImages];
+        // Handle uploaded images
+        let images = JSON.parse(meal.images) || [];
+        if (req.files) {
+            if (Array.isArray(req.files)) {
+                images = req.files.map(file => file.path);
+            } else if (req.files['images']) {
+                images = req.files['images'].map(file => file.path);
+            }
+        }
 
+        // Update meal fields
         meal.name = name || meal.name;
         meal.description = description || meal.description;
         meal.calories = calories || meal.calories;
+        meal.images = JSON.stringify(images);
         meal.protein = protein || meal.protein;
         meal.carb = carb || meal.carb;
         meal.fats = fats || meal.fats;
@@ -145,37 +154,35 @@ exports.updateMeal = async (req, res, next) => {
 
         await meal.save();
 
-        if (types && Array.isArray(types) && types.length > 0) {
+        // Update types if provided
+        if (types && Array.isArray(types)) {
             await MealType.destroy({ where: { meal_id: meal.id } });
-            for (const typeId of types) {
-                await MealType.create({ meal_id: meal.id, type_id: typeId });
-            }
+            const mealTypes = types.map(typeId => ({
+                meal_id: meal.id,
+                type_id: typeId
+            }));
+            await MealType.bulkCreate(mealTypes);
         }
 
-        if (ingredients && Array.isArray(ingredients) && ingredients.length > 0) {
+        // Update ingredients if provided
+        if (ingredients && Array.isArray(ingredients)) {
             await MealIngredient.destroy({ where: { meal_id: meal.id } });
-            for (const ingredientId of ingredients) {
-                await MealIngredient.create({ meal_id: meal.id, ingredient_id: ingredientId });
-            }
+            const mealIngredients = ingredients.map(ingredientId => ({
+                meal_id: meal.id,
+                ingredient_id: ingredientId
+            }));
+            await MealIngredient.bulkCreate(mealIngredients);
         }
 
         const updatedMeal = await Meal.findByPk(meal.id, {
             include: [
-                {
-                    model: Type,
-                    as: 'types',
-                    through: { attributes: [] },
-                },
-                {
-                    model: Ingredient,
-                    as: 'ingredients',
-                    through: { attributes: [] },
-                },
+                { model: Type, as: 'types', through: { attributes: [] } },
+                { model: Ingredient, as: 'ingredients', through: { attributes: [] } },
             ],
         });
 
         res.status(200).json({
-            message: "Meal updated successfully",
+            message: "Meal Updated Successfully",
             meal: updatedMeal,
         });
     } catch (e) {
