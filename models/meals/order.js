@@ -4,6 +4,11 @@ const MealSubscription = require('./meal_subscription');
 const User = require('../user');
 const Meal = require('./meal');
 const Order = sequelize.define('Order', {
+    id: {
+        type: DataTypes.INTEGER,
+        primaryKey: true,
+        autoIncrement: true
+    },
     user_id: {
         type: DataTypes.INTEGER,
         references: {
@@ -31,6 +36,12 @@ const Order = sequelize.define('Order', {
     }
 }, {
     tableName: 'orders',
+    indexes: [
+        {
+            unique: false,
+            fields: ['user_id', 'order_date'],
+        }
+    ],
 });
 
 module.exports = Order;

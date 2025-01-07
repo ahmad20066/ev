@@ -11,7 +11,7 @@ const User = sequelize.define("User", {
     email: {
         type: Sequelize.STRING,
         allowNull: false,
-        unique: true,
+        // unique: true,
         validate: {
             isEmail: true,
         },
@@ -19,7 +19,7 @@ const User = sequelize.define("User", {
     phone: {
         type: Sequelize.STRING,
         allowNull: false,
-        unique: true,
+        // unique: true,
     },
     password: {
         type: Sequelize.STRING,

@@ -20,9 +20,18 @@ const Meal = sequelize.define('Meal', {
         type: DataTypes.JSON,
         allowNull: true,
         get() {
-            console.log("aaaaaaaaaaaaaaaa")
             const rawValue = this.getDataValue('images');
-            return rawValue ? JSON.parse(rawValue) : null;
+
+            // Return null if the value is undefined or null
+            if (!rawValue) return null;
+
+            // Return the parsed value if it's a valid JSON string
+            try {
+                return JSON.parse(rawValue);
+            } catch (e) {
+                console.error('Error parsing images:', e);
+                return rawValue; // Return the raw value if parsing fails
+            }
         },
     },
     protein: {
