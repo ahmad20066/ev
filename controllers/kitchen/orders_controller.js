@@ -1,3 +1,4 @@
+const Address = require("../../models/meals/address");
 const Meal = require("../../models/meals/meal");
 const MealSubscription = require("../../models/meals/meal_subscription");
 const Order = require("../../models/meals/order");
@@ -73,6 +74,14 @@ exports.getOrders = async (req, res, next) => {
                     as: "meals",
                     through: {
                         attributes: []
+                    }
+                },
+                {
+                    model: MealSubscription,
+                    as: "subscription",
+                    include: {
+                        model: Address,
+                        as: "address"
                     }
                 }
             ]

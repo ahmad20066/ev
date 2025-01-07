@@ -165,6 +165,7 @@ Ingredient.belongsToMany(Meal, { through: MealIngredient, foreignKey: 'ingredien
 MealSubscription.hasMany(UserMealSelection, { as: "selections", foreignKey: "meal_subscription_id" })
 
 Order.belongsTo(User, { as: "user", foreignKey: "user_id" })
+Order.belongsTo(MealSubscription, { as: "subscription", foreignKey: "meal_subscription_id" })
 Meal.belongsToMany(Order, { through: OrderMeal, as: "orders", foreignKey: 'meal_id' });
 Order.belongsToMany(Meal, { through: OrderMeal, as: "meals", foreignKey: 'order_id' });
 
