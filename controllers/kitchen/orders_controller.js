@@ -92,6 +92,46 @@ exports.getOrders = async (req, res, next) => {
         next(e)
     }
 }
+exports.getOrderById = async (req, res, next) => {
+    try {
+        const orderId = req.params.id; // Get order ID from request parameters
+
+        const order = await Order.findOne({
+            where: { id: orderId },
+
+            include: [
+                {
+                    model: User,
+                    as: "user"
+                },
+                {
+                    model: Meal,
+                    as: "meals",
+                    through: {
+                        attributes: []
+                    }
+                },
+                {
+                    model: MealSubscription,
+                    as: "subscription",
+                    include: {
+                        model: Address,
+                        as: "address"
+                    }
+                }
+            ]
+        });
+
+        if (!order) {
+            return res.status(404).json({ message: "Order not found" });
+        }
+
+        res.status(200).json(order);
+    } catch (e) {
+        next(e);
+    }
+};
+
 exports.changeOrderStatus = async (req, res, next) => {
     try {
         const order_id = req.query.order_id
