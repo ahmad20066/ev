@@ -19,6 +19,10 @@ const PricingModel = sequelize.define("Pricing", {
             model: "packages",
             key: "id"
         }
+    },
+    is_active: {
+        type: Sequelize.BOOLEAN,
+        defaultValue: true
     }
 })
 module.exports = PricingModel
