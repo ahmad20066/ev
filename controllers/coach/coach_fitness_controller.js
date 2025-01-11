@@ -20,7 +20,7 @@ const Choice = require('../../models/survey/choice');
 const { startOfYear, endOfYear } = require('date-fns');
 const Sport = require('../../models/sport');
 const Meal = require('../../models/meals/meal');
-const { sendNotification } = require('../../helpers/notifications_helper');
+const { sendNotification } = require('../../helpers/noitifcations_helper');
 exports.createWorkout = async (req, res, next) => {
     try {
         let { title, user_id, description, duration, exercises, difficulty_level, calories_burned, day, package_id } = req.body;

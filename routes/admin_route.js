@@ -146,7 +146,7 @@ router.get("/sports", sportsController.getAllSports);
 router.put("/sports/:id", sportsController.updateSport);
 router.delete("/sports/:id", sportsController.deleteSport)
 
-//aaaaa
+
 //Notifications
 router.post("/push-notification", notificationsController.sendPushNotification)
 

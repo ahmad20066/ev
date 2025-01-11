@@ -1,5 +1,5 @@
 const MealSubscription = require("../../models/meals/meal_subscription");
-const Notification = require("../../models/notification");
+const Notification = require("../../models/noitifcation");
 const Package = require("../../models/package");
 const PricingModel = require("../../models/pricing_model");
 const Subscription = require("../../models/subscription");
