@@ -1,0 +1,103 @@
+{
+    "info": {
+        "name": "Full Body Strength Training",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "item": [
+        {
+            "name": "Create Training Program",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "multipart/form-data",
+                        "type": "text"
+                    }
+                ],
+                "body": {
+                    "mode": "formdata",
+                    "formdata": [
+                        {
+                            "key": "title",
+                            "value": "Full Body Strength Training",
+                            "type": "text"
+                        },
+                        {
+                            "key": "type",
+                            "value": "personalized",
+                            "type": "text"
+                        },
+                        {
+                            "key": "description",
+                            "value": "22222",
+                            "type": "text"
+                        },
+                        {
+                            "key": "duration",
+                            "value": "60",
+                            "type": "text"
+                        },
+                        {
+                            "key": "difficulty_level",
+                            "value": "Intermediate",
+                            "type": "text"
+                        },
+                        {
+                            "key": "calories_burned",
+                            "value": "500",
+                            "type": "text"
+                        },
+                        {
+                            "key": "day",
+                            "value": "monday",
+                            "type": "text"
+                        },
+                        {
+                            "key": "user_id",
+                            "value": "5",
+                            "type": "text"
+                        },
+                        {
+                            "key": "exercises[0][exercise_id]",
+                            "value": "6",
+                            "type": "text"
+                        },
+                        {
+                            "key": "exercises[0][sets]",
+                            "value": "4",
+                            "type": "text"
+                        },
+                        {
+                            "key": "exercises[0][reps]",
+                            "value": "12",
+                            "type": "text"
+                        },
+                        {
+                            "key": "exercises[1][exercise_id]",
+                            "value": "3",
+                            "type": "text"
+                        },
+                        {
+                            "key": "exercises[1][duration]",
+                            "value": "30",
+                            "type": "text"
+                        },
+                        {
+                            "key": "image",
+                            "type": "file",
+                            "src": ""
+                        }
+                    ]
+                },
+                "url": {
+                    "raw": "https://<your_endpoint_url>",
+                    "protocol": "https",
+                    "host": [
+                        "<your_endpoint_url>"
+                    ]
+                }
+            }
+        }
+    ]
+}
