@@ -24,9 +24,11 @@ exports.updatePolicy = async (req, res, next) => {
         const { content } = req.body
         const policy = await PrivacyPolicy.findOne()
         if (!policy) {
-            const error = new Error("no privacy policy to update")
-            error.statusCode = 404;
-            throw error;
+            await PrivacyPolicy.create({ content })
+            res.status(200).json({
+                message: "Policy Updated Successfully"
+
+            })
         }
         policy.content = content
         await policy.save()
@@ -60,7 +62,9 @@ exports.updateTerms = async (req, res, next) => {
         const { content } = req.body;
         const terms = await TermsAndConditions.findOne();
         if (!terms) {
-            return res.status(404).json({ message: "Terms and Conditions not found" });
+            await TermsAndConditions.create({ content })
+            res.status(200).json({ message: "Terms and Conditions Updated Successfully" });
+
         }
         terms.content = content;
         await terms.save();
