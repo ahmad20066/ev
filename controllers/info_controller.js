@@ -42,7 +42,7 @@ exports.updatePolicy = async (req, res, next) => {
 exports.getTermsAndConditions = async (req, res, next) => {
     try {
         const terms = await TermsAndConditions.findOne();
-        res.status(200).json({ terms });
+        res.status(200).json(terms);
     } catch (error) {
         next(error)
     }
