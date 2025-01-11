@@ -139,7 +139,7 @@ exports.deactivateUser = async (req, res, next) => {
         }
 
         await user.update({
-            is_active: false,
+            is_blocked: false,
             deactivated_at: new Date(),
         });
 
