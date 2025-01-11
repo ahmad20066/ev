@@ -26,7 +26,6 @@ const Exercise = sequelize.define('Exercise', {
         type: DataTypes.JSON,
         allowNull: true,
         get() {
-            // Decode the JSON data when accessing 'notes'
             const rawValue = this.getDataValue('notes');
             return rawValue ? JSON.parse(rawValue) : null;
         },

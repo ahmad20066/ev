@@ -19,7 +19,8 @@ const socketIo = require("socket.io");
 const path = require("path");
 const http = require("http");
 const cancelExpiredSubscriptions = require("./schedulers/subscriptions_scheduler");
-cancelExpiredSubscriptions();
+// cancelExpiredSubscriptions();
+require('dotenv').config();
 
 const cors = require("cors");
 
@@ -91,7 +92,7 @@ sequelize
         // alter: true
     })
     .then(() => {
-        server.listen(8080, () => {
+        server.listen(process.env.PORT, () => {
             console.log("Server listening on port 8080");
         });
 

@@ -17,8 +17,8 @@ let otpStore = {};
 const sendOtpSms = async (phoneNumber, otp) => {
     const apiUrl = "http://YOUR_API_URL/api/SendSMS";
     const payload = {
-        api_id: "API47426968845",
-        api_password: "BfTfCmpGfE",
+        api_id: process.env.SMS_API_ID,
+        api_password: process.env.SMS_API_PASSWORD,
         sms_type: "T",
         encoding: "T",
         sender_id: "ASMSC",
@@ -63,8 +63,8 @@ exports.sendOtp = async (req, res, next) => {
             const transporter = nodemailer.createTransport({
                 service: "Gmail",
                 auth: {
-                    user: "ahmadafif613@gmail.com",
-                    pass: "vsbm rxts dwpe mehz",
+                    user: process.env.EMAIL_PASS,
+                    pass: process.env.EMAIL_PASS,
                 },
             });
             await transporter.sendMail({
