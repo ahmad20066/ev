@@ -10,13 +10,7 @@ const axios = require("axios")
 const JWT_SECRET = "ahmad_secret";
 
 
-const transporter = nodemailer.createTransport({
-    service: "Gmail",
-    auth: {
-        user: "your-email@gmail.com",
-        pass: "your-email-password",
-    },
-});
+
 let otpStore = {};
 
 // Function to send OTP via SMS
@@ -43,17 +37,75 @@ const sendOtpSms = async (phoneNumber, otp) => {
         throw new Error("Failed to send OTP");
     }
 };
-// const sendOtp = async (email, otp) => {
-//     // const mailOptions = {
-//     //     from: "your-email@gmail.com",
-//     //     to: email,
-//     //     subject: "Your OTP Code",
-//     //     text: `Your OTP code is ${otp}`,
-//     // };
+exports.sendOtp = async (req, res, next) => {
+    const { method, email, phone } = req.body;
 
-//     // await transporter.sendMail(mailOptions);
-//     return;
-// };
+    try {
+        // Validate method
+        if (!['email', 'phone'].includes(method)) {
+            return res.status(400).json({ error: "Invalid verification method. Choose 'email' or 'phone'." });
+        }
+
+        // Handle email verification
+        if (method === 'email') {
+            if (!email) {
+                return res.status(400).json({ error: "Email is required for email verification." });
+            }
+
+            const user = await User.findOne({ where: { email } });
+            if (!user) {
+                return res.status(404).json({ error: "User with this email not found." });
+            }
+
+            const otp = Math.floor(100000 + Math.random() * 900000);
+            const expiry = Date.now() + 5 * 60 * 1000; // OTP valid for 5 minutes
+            otpStore[email] = { otp, expiry };
+            const transporter = nodemailer.createTransport({
+                service: "Gmail",
+                auth: {
+                    user: "ahmadafif613@gmail.com",
+                    pass: "vsbm rxts dwpe mehz",
+                },
+            });
+            await transporter.sendMail({
+                from: "a.afif@tgmena.com",
+                to: email,
+                subject: "Your OTP Code",
+                text: `Your OTP code is ${otp}. It will expire in 5 minutes.`,
+            });
+
+            console.log(`OTP sent to email: ${email} (OTP: ${otp})`);
+            return res.status(200).json({ message: "OTP sent to your email." });
+        }
+
+        // Handle phone verification
+        if (method === 'phone') {
+            if (!phone) {
+                return res.status(400).json({ error: "Phone number is required for phone verification." });
+            }
+
+            const user = await User.findOne({ where: { phone } });
+            if (!user) {
+                return res.status(404).json({ error: "User with this phone number not found." });
+            }
+
+            const otp = Math.floor(100000 + Math.random() * 900000);
+            const expiry = Date.now() + 5 * 60 * 1000; // OTP valid for 5 minutes
+            otpStore[phone] = { otp, expiry };
+
+            await sendOtpSms(phone, otp); // Function to send OTP via SMS
+
+            console.log(`OTP sent to phone: ${phone} (OTP: ${otp})`);
+            return res.status(200).json({ message: "OTP sent to your phone." });
+        }
+    } catch (error) {
+        console.error("Error in sendOtp:", error);
+        error.statusCode = 500;
+        next(error);
+    }
+};
+
+
 
 exports.setUpProfile = async (req, res, next) => {
     const userId = req.userId;
@@ -257,60 +309,62 @@ exports.forgotPassword = async (req, res, next) => {
     }
 };
 
-exports.sendOtp = async (req, res, next) => {
-    const { email } = req.body;
-
-    try {
-        const user = await User.findOne({ where: { email: email } });
-        if (!user) {
-            return res.status(400).json({ error: "User not found." });
-        }
-
-        const otp = Math.floor(100000 + Math.random() * 900000);
-        const expiry = Date.now() + 5 * 60 * 1000;
-
-        otpStore[email] = { otp, expiry };
-
-        await sendOtp(email, otp);
-
-        res.status(200).json({ message: "OTP sent successfully" });
-    } catch (error) {
-        error.statusCode = 500;
-        next(error);
-    }
-};
 
 exports.verifyOtp = async (req, res, next) => {
-    const { phone, otp } = req.body;
+    const { method, email, phone, otp } = req.body;
 
     try {
-        const otpData = otpStore[phone];
+        if (method === 'email') {
+            const otpData = otpStore[email];
 
-        if (!otpData || otpData.expiry < Date.now()) {
-            return res.status(400).json({ error: "OTP expired or invalid." });
+            if (!otpData || otpData.expiry < Date.now()) {
+                return res.status(400).json({ error: "OTP expired or invalid." });
+            }
+
+            if (otpData.otp !== parseInt(otp)) {
+                return res.status(400).json({ error: "Invalid OTP." });
+            }
+
+            delete otpStore[email];
+
+            const user = await User.findOne({ where: { email } });
+            if (user) {
+                user.is_verified = true;
+                await user.save();
+            }
+
+            return res.status(200).json({ message: "Email verified successfully." });
         }
 
-        if (otpData.otp !== parseInt(otp)) {
-            return res.status(400).json({ error: "Invalid OTP." });
+        if (method === 'phone') {
+            const otpData = otpStore[phone];
+
+            if (!otpData || otpData.expiry < Date.now()) {
+                return res.status(400).json({ error: "OTP expired or invalid." });
+            }
+
+            if (otpData.otp !== parseInt(otp)) {
+                return res.status(400).json({ error: "Invalid OTP." });
+            }
+
+            delete otpStore[phone];
+
+            const user = await User.findOne({ where: { phone } });
+            if (user) {
+                user.is_verified = true;
+                await user.save();
+            }
+
+            return res.status(200).json({ message: "Phone verified successfully." });
         }
 
-        delete otpStore[phone];
-
-        // Mark user as verified
-        const user = await User.findOne({ where: { phone } });
-        if (user) {
-            user.is_verified = true;
-            await user.save();
-        }
-
-        res.status(200).json({
-            message: "OTP verified successfully."
-        });
+        res.status(400).json({ error: "Invalid verification method." });
     } catch (error) {
         error.statusCode = 500;
         next(error);
     }
 };
+
 exports.setNewWeight = async (req, res, next) => {
     try {
         const { weight } = req.body
