@@ -17,6 +17,10 @@ const MealPlan = sequelize.define('MealPlan', {
     price_monthly: {
         type: DataTypes.INTEGER,
         allowNull: false
+    },
+    is_active: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: true
     }
 }, {
     tableName: "mealPlans",

@@ -18,6 +18,10 @@ const Package = sequelize.define("Package", {
     type: {
         type: Sequelize.ENUM("group", "personalized"),
         allowNull: false
+    },
+    is_active: {
+        type: Sequelize.BOOLEAN,
+        defaultValue: true
     }
 }, {
     tableName: "packages",

@@ -36,11 +36,11 @@ exports.activeSubscriptionsFitness = async (req, res, next) => {
                 },
             ],
             attributes: [
-                [sequelize.fn('MONTH', sequelize.col('createdAt')), 'month'],
-                [sequelize.fn('COUNT', sequelize.col('id')), 'count'],
+                [sequelize.fn('MONTH', sequelize.col('Subscription.createdAt')), 'month'],
+                [sequelize.fn('COUNT', sequelize.col('Subscription.id')), 'count'],
             ],
             group: ['month'],
-            order: [[sequelize.fn('MONTH', sequelize.col('createdAt')), 'ASC']],
+            order: [[sequelize.fn('MONTH', sequelize.col('Subscription.createdAt')), 'ASC']],
         });
 
         const subscriptionData = new Array(12).fill(0);
@@ -62,8 +62,6 @@ exports.activeSubscriptionsFitness = async (req, res, next) => {
         next(e);
     }
 };
-
-
 exports.activeSubscriptionsMeals = async (req, res, next) => {
     try {
         const currentYear = moment().year();
@@ -76,11 +74,11 @@ exports.activeSubscriptionsMeals = async (req, res, next) => {
                 },
             },
             attributes: [
-                [sequelize.fn('MONTH', sequelize.col('createdAt')), 'month'],
-                [sequelize.fn('COUNT', sequelize.col('id')), 'count'],
+                [sequelize.fn('MONTH', sequelize.col('MealSubscription.createdAt')), 'month'],
+                [sequelize.fn('COUNT', sequelize.col('MealSubscription.id')), 'count'],
             ],
             group: ['month'],
-            order: [[sequelize.fn('MONTH', sequelize.col('createdAt')), 'ASC']],
+            order: [[sequelize.fn('MONTH', sequelize.col('MealSubscription.createdAt')), 'ASC']],
         });
 
         const subscriptionData = new Array(12).fill(0);
@@ -102,6 +100,7 @@ exports.activeSubscriptionsMeals = async (req, res, next) => {
         next(e);
     }
 };
+
 
 exports.newSignUps = async (req, res, next) => {
     try {

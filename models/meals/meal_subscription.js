@@ -67,6 +67,7 @@ const MealSubscription = sequelize.define("MealSubscription", {
                 as: "delivery_time"
             }
         ]
-    }
+    },
+    timestamps: true
 })
 module.exports = MealSubscription
