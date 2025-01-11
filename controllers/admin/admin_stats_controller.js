@@ -18,23 +18,43 @@ exports.activeSubscriptionsFitness = async (req, res, next) => {
     try {
         const { type } = req.query;
 
-        const subscriptions = await Subscription.findAll({
+        const currentYear = moment().year();
+
+        const monthlySubscriptions = await Subscription.findAll({
             where: {
                 is_active: true,
+                createdAt: {
+                    [Op.gte]: new Date(`${currentYear}-01-01`),
+                },
             },
             include: [
                 {
                     model: Package,
                     as: "package",
-                    where: {
-                        type: type
-                    },
-                    attributes: []
-                }
-            ]
+                    where: { type: type },
+                    attributes: [],
+                },
+            ],
+            attributes: [
+                [sequelize.fn('MONTH', sequelize.col('createdAt')), 'month'],
+                [sequelize.fn('COUNT', sequelize.col('id')), 'count'],
+            ],
+            group: ['month'],
+            order: [[sequelize.fn('MONTH', sequelize.col('createdAt')), 'ASC']],
         });
 
-        res.status(200).json({ subscriptions: subscriptions.length });
+        const subscriptionData = new Array(12).fill(0);
+        monthlySubscriptions.forEach(item => {
+            subscriptionData[item.get('month') - 1] = item.get('count');
+        });
+
+        const xaxis = moment.monthsShort();
+
+        res.status(200).json({
+            subscription_data: subscriptionData,
+            xaxis,
+        });
+
     } catch (e) {
         if (!e.statusCode) {
             e.statusCode = 500;
@@ -43,19 +63,46 @@ exports.activeSubscriptionsFitness = async (req, res, next) => {
     }
 };
 
+
 exports.activeSubscriptionsMeals = async (req, res, next) => {
     try {
-        const subscriptions = await MealSubscription.findAll({
+        const currentYear = moment().year();
+
+        const monthlySubscriptions = await MealSubscription.findAll({
             where: {
                 is_active: true,
-            }
-        })
-        res.status(200).json({ subscriptions: subscriptions.length })
-    }
-    catch (e) {
+                createdAt: {
+                    [Op.gte]: new Date(`${currentYear}-01-01`),
+                },
+            },
+            attributes: [
+                [sequelize.fn('MONTH', sequelize.col('createdAt')), 'month'],
+                [sequelize.fn('COUNT', sequelize.col('id')), 'count'],
+            ],
+            group: ['month'],
+            order: [[sequelize.fn('MONTH', sequelize.col('createdAt')), 'ASC']],
+        });
+
+        const subscriptionData = new Array(12).fill(0);
+        monthlySubscriptions.forEach(item => {
+            subscriptionData[item.get('month') - 1] = item.get('count');
+        });
+
+        const xaxis = moment.monthsShort();
+
+        res.status(200).json({
+            subscription_data: subscriptionData,
+            xaxis,
+        });
+
+    } catch (e) {
+        if (!e.statusCode) {
+            e.statusCode = 500;
+        }
         next(e);
     }
-}
+};
+
 exports.newSignUps = async (req, res, next) => {
     try {
         const currentYear = new Date().getFullYear();
