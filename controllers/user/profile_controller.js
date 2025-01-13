@@ -75,12 +75,21 @@ exports.getSubscription = async (req, res, next) => {
                 }
             ],
         });
-        if (!subscription) {
-            const error = new Error("Active subscription not found");
-            error.statusCode = 404;
-            throw error;
-        }
-        res.status(200).json(subscription);
+        const mealSub = await MealSubscription.findOne({
+            where: {
+                user_id: userId,
+                is_active: true,
+            },
+        })
+        // if (!subscription) {
+        //     const error = new Error("Active subscription not found");
+        //     error.statusCode = 404;
+        //     throw error;
+        // }
+        res.status(200).json({
+            fitnessSubscription: subscription,
+            dietSubscription: mealSub
+        });
     } catch (e) {
         next(e);
     }

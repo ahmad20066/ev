@@ -332,7 +332,14 @@ exports.verifyOtp = async (req, res, next) => {
                 user.is_verified = true;
                 await user.save();
             }
-
+            const token = jwt.sign({ userId: user.id, role: user.role, is_set_up: user.is_set_up }, JWT_SECRET, { expiresIn: "7d" });
+            if (!user.is_set_up && user.role != "admin") {
+                return res.status(200).json({
+                    message: "Please setup your profile",
+                    token,
+                    user
+                })
+            }
             return res.status(200).json({ message: "Email verified successfully." });
         }
 
@@ -355,6 +362,14 @@ exports.verifyOtp = async (req, res, next) => {
                 await user.save();
             }
 
+            const token = jwt.sign({ userId: user.id, role: user.role, is_set_up: user.is_set_up }, JWT_SECRET, { expiresIn: "7d" });
+            if (!user.is_set_up && user.role != "admin") {
+                return res.status(200).json({
+                    message: "Please setup your profile",
+                    token,
+                    user
+                })
+            }
             return res.status(200).json({ message: "Phone verified successfully." });
         }
 
