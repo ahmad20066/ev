@@ -29,34 +29,51 @@ exports.cancelSubscription = async (req, res, next) => {
         next(e)
     }
 }
+// Get all subscriptions
 exports.getSubscriptions = async (req, res, next) => {
     try {
-        const userId = req.userId
-        const subscriptions = await Subscription.findAll({
+        const userId = req.userId;
+
+        // Fetch fitness subscriptions
+        const fitnessSubscriptions = await Subscription.findAll({
             where: {
                 user_id: userId
             },
-            include: [{
-                model: Package,
-                as: "package",
-
-            },
-            {
-                model: PricingModel,
-                as: "pricing",
-
-            },
+            include: [
+                {
+                    model: Package,
+                    as: "package",
+                },
+                {
+                    model: PricingModel,
+                    as: "pricing",
+                }
             ]
-        })
-        res.status(200).json(subscriptions)
+        });
+
+        // Fetch diet subscriptions
+        const mealSubscriptions = await MealSubscription.findAll({
+            where: {
+                user_id: userId
+            }
+        });
+
+        res.status(200).json({
+            fitnessSubscriptions: fitnessSubscriptions.length > 0 ? fitnessSubscriptions : null,
+            dietSubscriptions: mealSubscriptions.length > 0 ? mealSubscriptions : null
+        });
     } catch (e) {
-        next(e)
+        next(e);
     }
-}
+};
+
+// Get active subscription
 exports.getSubscription = async (req, res, next) => {
     try {
         const userId = req.userId;
-        const subscription = await Subscription.findOne({
+
+        // Fetch active fitness subscription
+        const fitnessSubscription = await Subscription.findOne({
             where: {
                 user_id: userId,
                 is_active: true,
@@ -75,25 +92,24 @@ exports.getSubscription = async (req, res, next) => {
                 }
             ],
         });
-        const mealSub = await MealSubscription.findOne({
+
+        // Fetch active diet subscription
+        const dietSubscription = await MealSubscription.findOne({
             where: {
                 user_id: userId,
                 is_active: true,
             },
-        })
-        // if (!subscription) {
-        //     const error = new Error("Active subscription not found");
-        //     error.statusCode = 404;
-        //     throw error;
-        // }
+        });
+
         res.status(200).json({
-            fitnessSubscription: subscription,
-            dietSubscription: mealSub
+            fitnessSubscription: fitnessSubscription || null,
+            dietSubscription: dietSubscription || null
         });
     } catch (e) {
         next(e);
     }
 };
+
 exports.getProfile = async (req, res, next) => {
     try {
         const userId = req.userId;
