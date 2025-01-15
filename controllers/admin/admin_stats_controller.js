@@ -27,14 +27,7 @@ exports.activeSubscriptionsFitness = async (req, res, next) => {
                     [Op.gte]: new Date(`${currentYear}-01-01`),
                 },
             },
-            include: [
-                {
-                    model: Package,
-                    as: "package",
-                    where: { type: type },
-                    attributes: [], // No attributes needed from the Package model
-                },
-            ],
+
             attributes: [
                 [sequelize.fn('MONTH', sequelize.col('Subscription.createdAt')), 'month'],
                 [sequelize.fn('COUNT', sequelize.col('Subscription.id')), 'count'],
