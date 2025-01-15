@@ -32,14 +32,14 @@ exports.activeSubscriptionsFitness = async (req, res, next) => {
                     model: Package,
                     as: "package",
                     where: { type: type },
-                    attributes: [],
+                    attributes: [], // No attributes needed from the Package model
                 },
             ],
             attributes: [
                 [sequelize.fn('MONTH', sequelize.col('Subscription.createdAt')), 'month'],
                 [sequelize.fn('COUNT', sequelize.col('Subscription.id')), 'count'],
             ],
-            group: ['month'],
+            group: [sequelize.fn('MONTH', sequelize.col('Subscription.createdAt'))],
             order: [[sequelize.fn('MONTH', sequelize.col('Subscription.createdAt')), 'ASC']],
         });
 
@@ -62,6 +62,7 @@ exports.activeSubscriptionsFitness = async (req, res, next) => {
         next(e);
     }
 };
+
 exports.activeSubscriptionsMeals = async (req, res, next) => {
     try {
         const currentYear = moment().year();

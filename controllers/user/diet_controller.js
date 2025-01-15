@@ -168,7 +168,7 @@ const getUpcomingWeek = () => {
 };
 exports.getMealsForWeek = async (req, res, next) => {
     try {
-        const { day, type } = req.query; // Extract type from query
+        const { day, type } = req.query;
         const upcomingWeek = getUpcomingWeek();
 
         const dates = day ? [day] : upcomingWeek.map(entry => entry.day);
