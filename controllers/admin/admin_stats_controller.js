@@ -20,7 +20,7 @@ exports.activeSubscriptionsFitness = async (req, res, next) => {
 
         const currentYear = moment().year();
 
-        const monthlySubscriptions = await Subscription.findAll({
+        const monthlySubscriptions = await Subscription.unscoped().findAll({
             where: {
                 is_active: true,
                 createdAt: {
