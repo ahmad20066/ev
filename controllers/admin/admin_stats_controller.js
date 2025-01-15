@@ -35,7 +35,7 @@ exports.activeSubscriptionsFitness = async (req, res, next) => {
             ],
             group: [sequelize.fn('MONTH', sequelize.col('Subscription.createdAt'))],
             order: [[sequelize.fn('MONTH', sequelize.col('Subscription.createdAt')), 'ASC']],
-            raw: true
+            // raw: true
         });
 
         const subscriptionData = new Array(12).fill(0);
