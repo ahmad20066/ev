@@ -1,6 +1,6 @@
 const multer = require('multer');
 const path = require('path');
-
+const BASE_URL = process.env.BASE_URL
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
         cb(null, 'uploads/');
@@ -31,13 +31,62 @@ const upload = multer({
 });
 
 exports.uploadSingleImage = (field) => {
-    return upload.single(field);
+    return (req, res, next) => {
+        const singleUpload = upload.single(field);
+
+        singleUpload(req, res, (err) => {
+            if (err) {
+                return next(err);
+            }
+
+            if (req.file) {
+                // Prepend the base URL to the file path
+                req.file.url = `${BASE_URL}/${req.file.path}`;
+            }
+
+            next();
+        });
+    };
 };
 
 exports.uploadMultiImages = (fields) => {
-    console.log(fields)
-    return upload.fields(fields);
+    return (req, res, next) => {
+        const multiUpload = upload.fields(fields);
+
+        multiUpload(req, res, (err) => {
+            if (err) {
+                return next(err);
+            }
+
+            if (req.files) {
+                Object.keys(req.files).forEach(fieldName => {
+                    req.files[fieldName].forEach(file => {
+                        file.url = `${BASE_URL}/${file.path}`; // Prepend base URL to each file
+                    });
+                });
+            }
+
+            next();
+        });
+    };
 };
 exports.uploadAnyImages = () => {
-    return upload.any();
+    return (req, res, next) => {
+        const anyUpload = upload.any();
+
+        anyUpload(req, res, (err) => {
+            if (err) {
+                return next(err);
+            }
+
+            if (req.files) {
+                req.files.forEach(file => {
+                    file.url = `${BASE_URL}/${file.path}`; // Prepend base URL to each file
+                });
+            }
+
+            next();
+        });
+    };
 };
+
