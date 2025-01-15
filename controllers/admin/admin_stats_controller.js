@@ -62,7 +62,7 @@ exports.activeSubscriptionsMeals = async (req, res, next) => {
     try {
         const currentYear = moment().year();
 
-        const monthlySubscriptions = await MealSubscription.findAll({
+        const monthlySubscriptions = await MealSubscription.unscoped().findAll({
             where: {
                 is_active: true,
                 createdAt: {
