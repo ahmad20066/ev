@@ -59,7 +59,6 @@ const io = socketIo(server, {
     },
 });
 
-// Make io available in all routes
 app.use((req, res, next) => {
     req.io = io;
     next();
@@ -89,7 +88,7 @@ app.use((error, req, res, next) => {
 
 sequelize
     .sync({
-        // force: true
+        force: true
         // alter: true
     })
     .then(() => {
