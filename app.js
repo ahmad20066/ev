@@ -1,5 +1,6 @@
 const express = require("express");
 const app = express();
+require('dotenv').config();
 const sequelize = require("./models/index");
 const authRouter = require("./routes/auth_route");
 const adminRouter = require("./routes/admin_route");
@@ -20,7 +21,7 @@ const path = require("path");
 const http = require("http");
 const cancelExpiredSubscriptions = require("./schedulers/subscriptions_scheduler");
 // cancelExpiredSubscriptions();
-require('dotenv').config();
+
 
 const cors = require("cors");
 

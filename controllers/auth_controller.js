@@ -57,7 +57,7 @@ exports.sendOtp = async (req, res, next) => {
                 return res.status(404).json({ error: "User with this email not found." });
             }
 
-            const otp = Math.floor(100000 + Math.random() * 900000);
+            const otp = Math.floor(1000 + Math.random() * 9000);
             const expiry = Date.now() + 5 * 60 * 1000; // OTP valid for 5 minutes
             otpStore[email] = { otp, expiry };
             const transporter = nodemailer.createTransport({

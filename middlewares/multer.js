@@ -1,6 +1,6 @@
 const multer = require('multer');
 const path = require('path');
-const BASE_URL = process.env.BASE_URL
+const BASE_URL = process.env.BASE_URL;
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
         cb(null, 'uploads/');
@@ -31,6 +31,7 @@ const upload = multer({
 });
 
 exports.uploadSingleImage = (field) => {
+
     return (req, res, next) => {
         const singleUpload = upload.single(field);
 
@@ -38,10 +39,10 @@ exports.uploadSingleImage = (field) => {
             if (err) {
                 return next(err);
             }
-
+            console.log(BASE_URL)
             if (req.file) {
                 // Prepend the base URL to the file path
-                req.file.url = `${BASE_URL}/${req.file.path}`;
+                req.file.path = `${BASE_URL}/${req.file.path}`;
             }
 
             next();
@@ -61,7 +62,7 @@ exports.uploadMultiImages = (fields) => {
             if (req.files) {
                 Object.keys(req.files).forEach(fieldName => {
                     req.files[fieldName].forEach(file => {
-                        file.url = `${BASE_URL}/${file.path}`; // Prepend base URL to each file
+                        file.path = `${BASE_URL}/${file.path}`; // Prepend base URL to each file
                     });
                 });
             }
@@ -81,7 +82,7 @@ exports.uploadAnyImages = () => {
 
             if (req.files) {
                 req.files.forEach(file => {
-                    file.url = `${BASE_URL}/${file.path}`; // Prepend base URL to each file
+                    file.path = `${BASE_URL}/${file.path}`; // Prepend base URL to each file
                 });
             }
 
