@@ -173,18 +173,18 @@ exports.register = async (req, res, next) => {
                 const otp = Math.floor(100000 + Math.random() * 900000);
                 otpStore[email] = { otp, expiry: Date.now() + 5 * 60 * 1000 };
 
-                await sendOtpSms(phone, otp);
+                // await sendOtpSms(phone, otp);
 
-                const token = jwt.sign(
-                    { userId: existingUser.id, role: existingUser.role, is_set_up: existingUser.is_set_up },
-                    JWT_SECRET,
-                    { expiresIn: "1h" }
-                );
+                // const token = jwt.sign(
+                //     { userId: existingUser.id, role: existingUser.role, is_set_up: existingUser.is_set_up },
+                //     JWT_SECRET,
+                //     { expiresIn: "1h" }
+                // );
 
                 return res.status(200).json({
-                    message: "User registered successfully. OTP sent to your phone",
+                    message: "User registered successfully. Please verify your account",
                     user: { email: existingUser.email },
-                    token
+                    // token
                 });
             } else {
                 const error = new Error("User already exists.");
@@ -211,15 +211,15 @@ exports.register = async (req, res, next) => {
         });
 
         const otp = Math.floor(100000 + Math.random() * 900000);
-        otpStore[email] = { otp, expiry: Date.now() + 5 * 60 * 1000 };
+        // otpStore[email] = { otp, expiry: Date.now() + 5 * 60 * 1000 };
 
         // await sendOtpSms(phone, otp);
 
-        const token = jwt.sign({ userId: newUser.id, role: newUser.role, is_set_up: newUser.is_set_up }, JWT_SECRET, { expiresIn: "7d" });
+        // const token = jwt.sign({ userId: newUser.id, role: newUser.role, is_set_up: newUser.is_set_up }, JWT_SECRET, { expiresIn: "7d" });
         res.status(201).json({
-            message: "User registered successfully. OTP sent to your phone.",
+            message: "User registered successfully. Please verify your account",
             user: { email: newUser.email },
-            token
+            // token
         });
     } catch (error) {
         console.log(error);
