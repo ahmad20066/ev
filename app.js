@@ -27,7 +27,7 @@ const cors = require("cors");
 
 // // CORS configuration
 const corsOptions = {
-    origin: "http://localhost:3000", // Replace with your frontend URL
+    origin: ["http://localhost:3000", 'http://dash.evolvevw.com'], // Replace with your frontend URL
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"], // Allow specific headers
     credentials: true, // Allow cookies or authentication headers
