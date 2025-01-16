@@ -88,7 +88,7 @@ app.use((error, req, res, next) => {
 
 sequelize
     .sync({
-        force: true
+        // force: true
         // alter: true
     })
     .then(() => {
