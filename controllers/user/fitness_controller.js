@@ -701,29 +701,19 @@ exports.getExercise = async (req, res, next) => {
         const endOfDay = new Date();
         endOfDay.setHours(23, 59, 59, 999);
 
-        const attendance = await WorkoutAttendance.findOne({
+        const completion = await ExerciseCompletion.findOne({
             where: {
                 user_id: req.userId,
-                workout_id,
+                exercise_id: id,
                 createdAt: {
                     [Sequelize.Op.between]: [startOfDay, endOfDay]
                 }
             }
         });
 
-        const completion = await ExerciseCompletion.findOne({
-            where: {
-                user_id: req.userId,
-                exercise_id: id
-            }
-        });
-
-        // Add status to the workout response
         workoutExercise.dataValues.status = completion
             ? 'completed'
-            : attendance
-                ? 'joined'
-                : 'not joined';
+            : 'pending';
         res.status(200).json({
             ...workoutExercise.exercise.toJSON(),
             stats,
