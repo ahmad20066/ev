@@ -563,10 +563,23 @@ exports.getUserBasic = async (req, res, next) => {
             attributes: {
                 exclude: ['sport_id']
             },
-            include: {
-                model: Sport,
-                as: "sport"
-            }
+            include: [
+                {
+                    model: Sport,
+                    as: "sport"
+                },
+                {
+                    model: Subscription,
+                    as: "subscription",
+                    include: {
+                        model: Package,
+                        as: "package",
+                    },
+                    where: {
+                        is_active: true
+                    }
+                }
+            ]
 
         })
         if (!user) {

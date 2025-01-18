@@ -217,36 +217,74 @@ exports.subscribeToPackage = async (req, res, next) => {
         next(e)
     }
 }
+const { Op } = require("sequelize");
+
+const { Op } = require("sequelize");
+
 exports.joinWorkout = async (req, res, next) => {
     try {
-        const { workout_id } = req.body
-        const workout = await Workout.findByPk(workout_id)
+        const { workout_id } = req.body;
+        const workout = await Workout.findByPk(workout_id);
+
         if (!workout) {
-            const error = new Error("Workout Not Found")
+            const error = new Error("Workout Not Found");
             error.statusCode = 404;
             throw error;
         }
-        if (workout.type != 'group') {
-            const error = new Error("You cant join a personalized workout")
+
+        // if (workout.type !== 'group') {
+        //     const error = new Error("You can't join a personalized workout");
+        //     error.statusCode = 403;
+        //     throw error;
+        // }
+
+        const currentDay = new Date().toLocaleString('en-US', { weekday: 'long' }).toLowerCase();
+
+        if (workout.day !== currentDay) {
+            const error = new Error(`You can only join workouts scheduled for today (${currentDay})`);
             error.statusCode = 403;
             throw error;
         }
-        const user_id = req.userId
-        const attendance = new WorkoutAttendance({
+
+        const user_id = req.userId;
+        const startOfDay = new Date();
+        startOfDay.setHours(0, 0, 0, 0);
+        const endOfDay = new Date();
+        endOfDay.setHours(23, 59, 59, 999);
+
+        const oldAttendance = await WorkoutAttendance.findOne({
+            where: {
+                workout_id: workout.id,
+                user_id,
+                createdAt: {
+                    [Op.between]: [startOfDay, endOfDay]
+                }
+            }
+        });
+
+        if (oldAttendance) {
+            const error = new Error("You have already joined a workout for today");
+            error.statusCode = 403;
+            throw error;
+        }
+
+        const attendance = await WorkoutAttendance.create({
             user_id,
             workout_id
-        })
-        await attendance.save()
+        });
+
         res.status(201).json({
             message: "Workout Joined",
-        })
+        });
     } catch (e) {
         if (!e.statusCode) {
-            e.statusCode = 500
+            e.statusCode = 500;
         }
-        next(e)
+        next(e);
     }
-}
+};
+
+
 exports.markExerciseDone = async (req, res, next) => {
     try {
         const { workout_id, exercise_id, stats } = req.body;
@@ -581,9 +619,8 @@ exports.renewSubscription = async (req, res, next) => {
         }
         subscription.is_active = true;
         let endDate = new Date(subscription.end_date);
-        endDate.setDate(endDate.getDate() + subscription.pricing.number_of_days); // Add days to current end_date
+        endDate.setDate(endDate.getDate() + subscription.pricing.number_of_days);
         console.log(subscription.pricing.number_of_days)
-        // Update the subscription's end date
         subscription.end_date = endDate;
         console.log(endDate)
         subscription.end_date = endDate
@@ -625,7 +662,6 @@ exports.getExercise = async (req, res, next) => {
             throw error;
         }
 
-        // Dynamically construct stats object
         const stats = {};
         if (workoutExercise.sets !== null) stats.sets = workoutExercise.sets;
         if (workoutExercise.reps !== null) stats.reps = workoutExercise.reps;
