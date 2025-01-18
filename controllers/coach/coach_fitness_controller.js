@@ -574,27 +574,40 @@ exports.getUserBasic = async (req, res, next) => {
                     include: {
                         model: Package,
                         as: "package",
+                        attributes: ['type'] // Include only the type of the package
                     },
                     where: {
                         is_active: true
-                    }
+                    },
+                    required: false // Allow users without active subscriptions
                 }
             ]
+        });
 
-        })
-        if (user.dataValues.fitnessSubscriptions && user.dataValues.fitnessSubscriptions.length != 0) {
-            user.dataValues.isPersonalized = user.dataValues.fitnessSubscriptions[0].package.type === "personalized";
-
-        }
-        delete user.fitnessSubscriptions;
         if (!user) {
-            throw new Error("User not found")
+            const error = new Error("User not found");
+            error.statusCode = 404;
+            throw error;
         }
-        res.status(200).json(user)
+
+        // Determine if the package type is personalized
+        const hasActiveSubscription = user.fitness_subscriptions && user.fitness_subscriptions.length > 0;
+        const isPersonalized = hasActiveSubscription
+            ? user.fitness_subscriptions[0].package.type === "personalized"
+            : false;
+
+        // Add isPersonalized field to the user object
+        user.dataValues.isPersonalized = isPersonalized;
+
+        // Remove unnecessary field
+        delete user.dataValues.fitness_subscriptions;
+
+        res.status(200).json(user);
     } catch (e) {
-        next(e)
+        next(e);
     }
-}
+};
+
 exports.getUserWorkoutLogs = async (req, res, next) => {
     try {
         const { userId } = req.params;
