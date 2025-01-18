@@ -248,9 +248,8 @@ exports.subscribeToPackage = async (req, res, next) => {
         next(e)
     }
 }
-const { Op } = require("sequelize");
 
-const { Op } = require("sequelize");
+
 
 exports.joinWorkout = async (req, res, next) => {
     try {
