@@ -570,7 +570,7 @@ exports.getUserBasic = async (req, res, next) => {
                 },
                 {
                     model: Subscription,
-                    as: "subscription",
+                    as: "fitness_subscriptions",
                     include: {
                         model: Package,
                         as: "package",
