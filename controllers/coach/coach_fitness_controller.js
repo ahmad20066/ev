@@ -582,6 +582,8 @@ exports.getUserBasic = async (req, res, next) => {
             ]
 
         })
+        user.dataValues.isPersonalized = user.dataValues.fitnessSubscriptions.package.type === "personalized";
+        delete user.fitnessSubscriptions;
         if (!user) {
             throw new Error("User not found")
         }
