@@ -86,6 +86,36 @@ exports.getWorkoutsByDate = async (req, res, next) => {
             throw error;
         }
 
+        // Check attendance and completion status
+        const startOfDay = new Date();
+        startOfDay.setHours(0, 0, 0, 0);
+        const endOfDay = new Date();
+        endOfDay.setHours(23, 59, 59, 999);
+
+        const attendance = await WorkoutAttendance.findOne({
+            where: {
+                user_id: req.userId,
+                workout_id: workout.id,
+                createdAt: {
+                    [Sequelize.Op.between]: [startOfDay, endOfDay]
+                }
+            }
+        });
+
+        const completion = await WorkoutCompletion.findOne({
+            where: {
+                user_id: req.userId,
+                workout_id: workout.id,
+            }
+        });
+
+        // Add status to the workout response
+        workout.dataValues.status = completion
+            ? 'completed'
+            : attendance
+                ? 'joined'
+                : 'not joined';
+
         workout.exercises = workout.exercises.map((exercise) => {
             const stats = exercise.get('stats').dataValues;
             exercise.dataValues.stats = Object.fromEntries(
@@ -102,6 +132,7 @@ exports.getWorkoutsByDate = async (req, res, next) => {
         next(e);
     }
 };
+
 exports.showWorkout = async (req, res, next) => {
     try {
         const { id } = req.params;
