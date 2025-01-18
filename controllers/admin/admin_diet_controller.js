@@ -77,7 +77,12 @@ exports.getAllMealPlans = async (req, res, next) => {
 exports.getMealPlanById = async (req, res, next) => {
     try {
         const { id } = req.params;
-        const mealPlan = await MealPlan.findByPk(id);
+        const mealPlan = await MealPlan.findByPk(id, {
+            include: {
+                model: Type,
+                as: "types",
+            }
+        });
 
         if (!mealPlan) {
             const err = new Error('Meal Plan not found');
