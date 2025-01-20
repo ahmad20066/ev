@@ -7,4 +7,5 @@ router.get("/current-subscription", controller.getSubscription)
 router.get("/me", controller.getProfile)
 router.put("/update", controller.updateProfile)
 router.get("/check-subscription", controller.isSubscribed)
+router.get("/notifications", controller.getNotifications)
 module.exports = router
