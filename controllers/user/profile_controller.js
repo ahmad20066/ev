@@ -8,19 +8,22 @@ const WeightRecord = require("../../models/weight_record");
 exports.cancelSubscription = async (req, res, next) => {
     try {
         const { id, type } = req.body;
+        const user_id = req.userId
         let subscription;
         if (type === "fitness") {
             subscription = await Subscription.findOne({
                 where: {
                     id,
-                    is_active: true
+                    is_active: true,
+                    user_id
                 }
             })
         } else if (type === "diet") {
             subscription = await MealSubscription.findOne({
                 where: {
                     id,
-                    is_active: true
+                    is_active: true,
+                    user_id
                 }
             })
         } else {
