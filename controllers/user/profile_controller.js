@@ -7,13 +7,28 @@ const User = require("../../models/user");
 const WeightRecord = require("../../models/weight_record");
 exports.cancelSubscription = async (req, res, next) => {
     try {
-        const userId = req.userId;
-        const subscription = await Subscription.findOne({
-            where: {
-                user_id: userId,
-                is_active: true
-            }
-        })
+        const { id, type } = req.body;
+        let subscription;
+        if (type === "fitness") {
+            subscription = await Subscription.findOne({
+                where: {
+                    id,
+                    is_active: true
+                }
+            })
+        } else if (type === "diet") {
+            subscription = await MealSubscription.findOne({
+                where: {
+                    id,
+                    is_active: true
+                }
+            })
+        } else {
+            const error = new Error("Invalid type")
+            error.statusCode = 400
+            throw error;
+        }
+
         console.log(subscription)
         if (!subscription) {
             const error = new Error("You have no active subscription to cancel")
