@@ -141,9 +141,9 @@ router.put("/pricing/:id", packageController.updatePricing);
 router.delete("/pricing/:id", packageController.deletePricing);
 
 //Sports
-router.post("/sports", sportsController.createSport);
+router.post("/sports", imageMiddleWare.uploadSingleImage("image"), sportsController.createSport);
 router.get("/sports", sportsController.getAllSports);
-router.put("/sports/:id", sportsController.updateSport);
+router.put("/sports/:id", imageMiddleWare.uploadSingleImage("image"), sportsController.updateSport);
 router.delete("/sports/:id", sportsController.deleteSport)
 
 
