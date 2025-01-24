@@ -11,5 +11,11 @@ const Sport = sequelize.define("Sport", {
         type: Sequelize.BOOLEAN,
         defaultValue: true
     }
+}, {
+    defaultScope: {
+        attributes: {
+            exclude: ['is_active']
+        }
+    }
 })
 module.exports = Sport
