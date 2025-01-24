@@ -148,7 +148,11 @@ exports.setUpProfile = async (req, res, next) => {
 };
 exports.getAllSports = async (req, res, next) => {
     try {
-        const sports = await Sport.findAll();
+        const sports = await Sport.findAll({
+            where: {
+                is_active: true
+            }
+        });
         res.status(200).json(sports);
     } catch (error) {
         next(error);

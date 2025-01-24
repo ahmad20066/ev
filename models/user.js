@@ -70,10 +70,10 @@ const User = sequelize.define("User", {
     },
 
 
-    dietary_preferences: {
-        type: Sequelize.STRING,
-        allowNull: true, // Example: keto, vegan, etc.
-    },
+    // dietary_preferences: {
+    //     type: Sequelize.STRING,
+    //     allowNull: true, // Example: keto, vegan, etc.
+    // },
     is_set_up: {
         type: Sequelize.BOOLEAN,
         defaultValue: false

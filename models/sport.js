@@ -6,6 +6,10 @@ const Sport = sequelize.define("Sport", {
     },
     image: {
         type: Sequelize.STRING,
+    },
+    is_active: {
+        type: Sequelize.BOOLEAN,
+        defaultValue: true
     }
 })
 module.exports = Sport

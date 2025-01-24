@@ -13,7 +13,11 @@ exports.createSport = async (req, res, next) => {
 
 exports.getAllSports = async (req, res, next) => {
     try {
-        const sports = await Sport.findAll();
+        const sports = await Sport.findAll({
+            where: {
+                is_active: true
+            }
+        });
         res.status(200).json({ sports });
     } catch (error) {
         next(error);
@@ -49,7 +53,8 @@ exports.deleteSport = async (req, res, next) => {
             return res.status(404).json({ message: "Sport not found" });
         }
 
-        await sport.destroy();
+        sport.is_active = false;
+        await sport.save()
         res.status(200).json({ message: "Sport deleted successfully" });
     } catch (error) {
         next(error);
