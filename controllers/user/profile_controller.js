@@ -160,10 +160,10 @@ exports.getProfile = async (req, res, next) => {
 exports.updateProfile = async (req, res, next) => {
     try {
         const userId = req.userId;
-        const { name, email, phone } = req.body;
+        const { name, email, phone, age } = req.body;
 
-        if (!name && !email && !phone) {
-            const error = new Error("You must provide at least one field to update: name, email, or phone.");
+        if (!name && !email && !phone && !age) {
+            const error = new Error("You must provide at least one field to update: name, email,age, or phone.");
             error.statusCode = 400;
             throw error;
         }
@@ -180,6 +180,7 @@ exports.updateProfile = async (req, res, next) => {
         if (name) updatedData.name = name;
         if (email) updatedData.email = email;
         if (phone) updatedData.phone = phone;
+        if (age) updatedData.age = age;
 
         await user.update(updatedData);
 
