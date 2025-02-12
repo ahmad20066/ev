@@ -130,5 +130,5 @@ router.get("/user/workout", controller.getUserWorkout)
 router.get("/group-workout", controller.getGroupWorkouts)
 router.get("/user/:id", controller.getUserDetails)
 
-
+router.get("/daysOfMonth", controller.getDatesForMonth)
 module.exports = router;

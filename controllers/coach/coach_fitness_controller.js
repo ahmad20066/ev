@@ -23,7 +23,7 @@ const Meal = require('../../models/meals/meal');
 const { sendNotification } = require('../../helpers/noitifcations_helper');
 exports.createWorkout = async (req, res, next) => {
     try {
-        let { title, user_id, description, duration, exercises, difficulty_level, calories_burned, day, package_id } = req.body;
+        let { title, user_id, description, duration, exercises, difficulty_level, calories_burned, date, package_id, motivational_message } = req.body;
         const coach = req.userId;
         console.log(req.files);
         const image = req.file.path;
@@ -67,7 +67,7 @@ exports.createWorkout = async (req, res, next) => {
         if (type == "group") {
             const previousWorkout = await Workout.findOne({
                 where: {
-                    day,
+                    date,
                     package_id,
                     is_active: true
                 }
@@ -79,7 +79,7 @@ exports.createWorkout = async (req, res, next) => {
         } else {
             const previousWorkout = await Workout.findOne({
                 where: {
-                    day,
+                    date,
                     user_id,
                     is_active: true
                 }
@@ -98,21 +98,20 @@ exports.createWorkout = async (req, res, next) => {
             difficulty_level,
             calories_burned,
             coach,
-            day,
+            date,
             user_id,
             package_id,
+            motivational_message,
             image
         });
 
         await Promise.all(exercises.map(async (exercise) => {
-            const { exercise_id, sets, reps, duration } = exercise;
+            const { exercise_id } = exercise;
 
             await WorkoutExercise.create({
                 workout_id: workout.id,
                 exercise_id,
-                sets,
-                reps,
-                duration
+
             });
         }));
 
@@ -120,19 +119,7 @@ exports.createWorkout = async (req, res, next) => {
             include: [{
                 model: Exercise,
                 as: 'exercises',
-                through: {
-                    attributes: ['sets', 'reps', 'duration'],
-                    as: "stats"
-                }
             }]
-        });
-        workoutWithExercises.exercises = workoutWithExercises.exercises.map((exercise) => {
-            const stats = exercise.get('stats').dataValues;
-            console.log(stats)
-            exercise.dataValues.stats = Object.fromEntries(
-                Object.entries(stats).filter(([key, value]) => value != null)
-            );
-            return exercise;
         });
         console.log("ssss")
         if (type === 'personalized' && user) {
@@ -150,6 +137,7 @@ exports.createWorkout = async (req, res, next) => {
     }
 };
 
+
 exports.getWorkout = async (req, res, next) => {
     try {
         const workoutId = req.params.id;
@@ -161,7 +149,7 @@ exports.getWorkout = async (req, res, next) => {
                     as: 'exercises',
                     through: {
                         model: WorkoutExercise,
-                        attributes: ['sets', 'reps']
+
                     }
                 },
                 {
@@ -184,7 +172,7 @@ exports.getWorkout = async (req, res, next) => {
 exports.updateWorkout = async (req, res, next) => {
     try {
         const workoutId = req.params.id;
-        const { title, type, description, duration, difficulty_level, calories_burned, day, exercises, package_id } = req.body;
+        const { title, type, description, duration, difficulty_level, calories_burned, date, exercises, package_id } = req.body;
 
         const workout = await Workout.findByPk(workoutId);
 
@@ -199,7 +187,7 @@ exports.updateWorkout = async (req, res, next) => {
         workout.difficulty_level = difficulty_level || workout.difficulty_level;
         workout.calories_burned = calories_burned || workout.calories_burned;
         workout.package_id = package_id || workout.package_id;
-        workout.day = day || workout.day; // Update 'day' field
+        workout.date = date || workout.date;
 
         await workout.save();
 
@@ -220,22 +208,20 @@ exports.updateWorkout = async (req, res, next) => {
             });
 
             await Promise.all(exercises.map(async (exercise) => {
-                const { exercise_id, sets, reps } = exercise;
+                const { exercise_id } = exercise;
 
                 const existingExercise = await WorkoutExercise.findOne({
                     where: { workout_id: workoutId, exercise_id },
                 });
 
                 if (existingExercise) {
-                    existingExercise.sets = sets;
-                    existingExercise.reps = reps;
-                    await existingExercise.save();
+
+                    await existingExercise.destroy();
                 } else {
                     await WorkoutExercise.create({
                         workout_id: workoutId,
                         exercise_id,
-                        sets,
-                        reps,
+
                     });
                 }
             }));
@@ -245,9 +231,7 @@ exports.updateWorkout = async (req, res, next) => {
             include: [{
                 model: Exercise,
                 as: 'exercises',
-                through: {
-                    attributes: ['sets', 'reps'],
-                },
+
             }],
         });
 
@@ -753,7 +737,7 @@ exports.getWorkoutRequests = async (req, res, next) => {
 // }
 exports.getUserWorkout = async (req, res, next) => {
     try {
-        const { user_id, day } = req.query
+        const { user_id, date } = req.query
         const user = await User.findByPk(user_id)
         if (!user) {
             const error = new Error("User not found")
@@ -764,7 +748,7 @@ exports.getUserWorkout = async (req, res, next) => {
             where: {
                 user_id,
                 type: "personalized",
-                day: day,
+                date,
                 is_active: true
             }
         })
@@ -777,24 +761,39 @@ exports.getUserWorkout = async (req, res, next) => {
         next(e)
     }
 }
+exports.getDatesForMonth = async (req, res, next) => {
+    try {
+        const today = new Date();
+        const dates = [];
+
+        for (let i = 0; i < 30; i++) {
+            let futureDate = new Date();
+            futureDate.setDate(today.getDate() + i);
+            const formattedDate = futureDate.toISOString().split('T')[0];
+            const dayOfWeek = futureDate.toLocaleString('en-US', { weekday: 'long' });
+            dates.push({ date: formattedDate, day: dayOfWeek });
+        }
+
+        res.status(200).json({ dates });
+    } catch (error) {
+        next(error);
+    }
+};
 exports.getGroupWorkouts = async (req, res, next) => {
     try {
-        const { package_id, day } = req.query
+        const { package_id, date } = req.query
 
         const workout = await Workout.findOne({
             where: {
                 package_id,
-                day,
+                date,
                 is_active: true
             },
             include: [
                 {
                     model: Exercise,
                     as: 'exercises',
-                    through: {
-                        model: WorkoutExercise,
-                        attributes: ['sets', 'reps']
-                    }
+
                 },
                 {
                     model: WorkoutRating,

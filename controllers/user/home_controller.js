@@ -100,10 +100,7 @@ exports.getWorkoutById = async (req, res, next) => {
                 include: {
                     model: Exercise,
                     as: "exercises",
-                    through: {
-                        attributes: ['sets', 'reps', 'duration'],
-                        as: "stats"
-                    }
+
                 }
 
             })

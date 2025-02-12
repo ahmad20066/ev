@@ -20,23 +20,12 @@ const Renewal = require('../../models/fitness/renewal');
 const { duration } = require('moment');
 const sequelize = require('../../models');
 const WeightRecord = require('../../models/weight_record');
-
-
 exports.getWorkoutsByDate = async (req, res, next) => {
     try {
-        let day = req.query.day;
+        let date = req.query.date;
 
-        if (!day) {
-            const error = new Error("Day is required. Use one of: sunday, monday, tuesday, wednesday, thursday, friday, saturday.");
-            error.statusCode = 422;
-            throw error;
-        }
-
-        const daysOfWeek = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
-        day = day.toLowerCase();
-
-        if (!daysOfWeek.includes(day)) {
-            const error = new Error("Invalid day. Use one of: sunday, monday, tuesday, wednesday, thursday, friday, saturday.");
+        if (!date) {
+            const error = new Error("Date is required.");
             error.statusCode = 422;
             throw error;
         }
@@ -60,7 +49,7 @@ exports.getWorkoutsByDate = async (req, res, next) => {
 
         const type = subscription.package.type;
         const where = {
-            day: day,
+            date: date,
             type: type,
             ...(type === "personalized" ? { user_id: req.userId } : {}),
             package_id: subscription.package_id,
@@ -70,68 +59,20 @@ exports.getWorkoutsByDate = async (req, res, next) => {
         const workout = await Workout.findOne({
             where: where,
             order: [['createdAt', 'DESC']],
-            include: {
-                model: Exercise,
-                as: "exercises",
-                through: {
-                    attributes: ['sets', 'reps', 'duration'],
-                    as: "stats"
-                }
-            }
         });
 
         if (!workout) {
-            const error = new Error("You do not have workouts for this day");
+            const error = new Error("You do not have workouts for this date");
             error.statusCode = 400;
             throw error;
         }
 
-        // Check attendance and completion status
-        const startOfDay = new Date();
-        startOfDay.setHours(0, 0, 0, 0);
-        const endOfDay = new Date();
-        endOfDay.setHours(23, 59, 59, 999);
-
-        const attendance = await WorkoutAttendance.findOne({
-            where: {
-                user_id: req.userId,
-                workout_id: workout.id,
-                createdAt: {
-                    [Sequelize.Op.between]: [startOfDay, endOfDay]
-                }
-            }
-        });
-
-        const completion = await WorkoutCompletion.findOne({
-            where: {
-                user_id: req.userId,
-                workout_id: workout.id,
-            }
-        });
-
-        // Add status to the workout response
-        workout.dataValues.status = completion
-            ? 'completed'
-            : attendance
-                ? 'joined'
-                : 'not joined';
-
-        workout.exercises = workout.exercises.map((exercise) => {
-            const stats = exercise.get('stats').dataValues;
-            exercise.dataValues.stats = Object.fromEntries(
-                Object.entries(stats).filter(([key, value]) => value != null)
-            );
-            return exercise;
-        });
-
         res.status(200).json(workout);
     } catch (e) {
-        if (!e.statusCode) {
-            e.statusCode = 500;
-        }
         next(e);
     }
 };
+
 
 exports.showWorkout = async (req, res, next) => {
     try {
@@ -140,10 +81,6 @@ exports.showWorkout = async (req, res, next) => {
             include: {
                 model: Exercise,
                 as: "exercises",
-                through: {
-                    attributes: ['sets', 'reps', 'duration'],
-                    as: "stats"
-                }
             }
         })
         if (!workout) {
@@ -248,9 +185,6 @@ exports.subscribeToPackage = async (req, res, next) => {
         next(e)
     }
 }
-
-
-
 exports.joinWorkout = async (req, res, next) => {
     try {
         const { workout_id } = req.body;
@@ -262,16 +196,10 @@ exports.joinWorkout = async (req, res, next) => {
             throw error;
         }
 
-        // if (workout.type !== 'group') {
-        //     const error = new Error("You can't join a personalized workout");
-        //     error.statusCode = 403;
-        //     throw error;
-        // }
+        const currentDate = new Date().toISOString().split('T')[0];
 
-        const currentDay = new Date().toLocaleString('en-US', { weekday: 'long' }).toLowerCase();
-
-        if (workout.day !== currentDay) {
-            const error = new Error(`You can only join workouts scheduled for today (${currentDay})`);
+        if (workout.date !== currentDate) {
+            const error = new Error(`You can only join workouts scheduled for today (${currentDate})`);
             error.statusCode = 403;
             throw error;
         }
@@ -298,7 +226,7 @@ exports.joinWorkout = async (req, res, next) => {
             throw error;
         }
 
-        const attendance = await WorkoutAttendance.create({
+        await WorkoutAttendance.create({
             user_id,
             workout_id
         });
@@ -313,8 +241,6 @@ exports.joinWorkout = async (req, res, next) => {
         next(e);
     }
 };
-
-
 exports.markExerciseDone = async (req, res, next) => {
     try {
         const { workout_id, exercise_id, stats } = req.body;
@@ -693,9 +619,7 @@ exports.getExercise = async (req, res, next) => {
         }
 
         const stats = {};
-        if (workoutExercise.sets !== null) stats.sets = workoutExercise.sets;
-        if (workoutExercise.reps !== null) stats.reps = workoutExercise.reps;
-        if (workoutExercise.duration !== null) stats.duration = workoutExercise.duration;
+
         const startOfDay = new Date();
         startOfDay.setHours(0, 0, 0, 0);
         const endOfDay = new Date();
@@ -856,14 +780,14 @@ exports.getPerformanceStats = async (req, res, next) => {
         // 6. Recent Activity (Last 5 Workouts and Exercises)
         const recentWorkouts = await WorkoutAttendance.findAll({
             where: { user_id: userId },
-            include: [{ model: Workout, as: "workout", attributes: ["title", "day", "duration"] }],
+            include: [{ model: Workout, as: "workout", attributes: ["title", "date", "duration"] }],
             order: [["createdAt", "DESC"]],
             limit: 5,
         });
 
         const recentWorkoutList = recentWorkouts.map(record => ({
             title: record.workout.title,
-            day: record.workout.day,
+            date: record.workout.date,
             duration: record.workout.duration,
             attendedAt: record.createdAt,
         }));

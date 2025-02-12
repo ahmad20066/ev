@@ -47,8 +47,8 @@ const Workout = sequelize.define("Workout", {
         },
         allowNull: true,
     },
-    day: {
-        type: Sequelize.ENUM("sunday", "monday", "wednesday", "tuesday", "thursday", "friday", "saturday"),
+    date: {
+        type: Sequelize.DATEONLY,
     },
     package_id: {
         type: Sequelize.INTEGER,
@@ -57,6 +57,10 @@ const Workout = sequelize.define("Workout", {
             key: "id"
         },
         allowNull: false
+    },
+    motivational_message: {
+        type: Sequelize.STRING,
+
     },
     is_Active: {
         type: Sequelize.BOOLEAN,
