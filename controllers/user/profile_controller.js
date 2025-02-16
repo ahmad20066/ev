@@ -3,6 +3,7 @@ const Notification = require("../../models/noitifcation");
 const Package = require("../../models/package");
 const PricingModel = require("../../models/pricing_model");
 const Subscription = require("../../models/subscription");
+const Answer = require("../../models/survey/answer");
 const User = require("../../models/user");
 const WeightRecord = require("../../models/weight_record");
 exports.cancelSubscription = async (req, res, next) => {
@@ -85,7 +86,6 @@ exports.getSubscriptions = async (req, res, next) => {
     }
 };
 
-// Get active subscription
 exports.getSubscription = async (req, res, next) => {
     try {
         const userId = req.userId;
@@ -119,8 +119,31 @@ exports.getSubscription = async (req, res, next) => {
             },
         });
 
+        let surveyCompleted = false;
+        if (fitnessSubscription) {
+            const survey = await Survey.findOne({
+                where: {
+                    package_id: fitnessSubscription.package.id
+                }
+            });
+
+            if (survey) {
+                const surveyAnswered = await Answer.findOne({
+                    where: {
+                        user_id: userId,
+                    },
+                    include: {
+                        model: Question,
+                        as: "question",
+                        where: { survey_id: survey.id }
+                    }
+                });
+                surveyCompleted = !!surveyAnswered;
+            }
+        }
+
         res.status(200).json({
-            fitnessSubscription: fitnessSubscription || null,
+            fitnessSubscription: fitnessSubscription ? { ...fitnessSubscription.toJSON(), surveyCompleted } : null,
             dietSubscription: dietSubscription || null
         });
     } catch (e) {
