@@ -7,6 +7,10 @@ const Sport = sequelize.define("Sport", {
     image: {
         type: Sequelize.STRING,
     },
+    title_ar: {
+        type: Sequelize.STRING
+    },
+
     is_active: {
         type: Sequelize.BOOLEAN,
         defaultValue: true

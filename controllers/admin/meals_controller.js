@@ -8,7 +8,7 @@ const Type = require("../../models/meals/type");
 
 exports.createMeal = async (req, res, next) => {
     try {
-        const { name, description, calories, types, protein, carb, fats, fiber, ingredients } = req.body;
+        const { name, name_ar, description, description_ar, calories, types, protein, carb, fats, fiber, ingredients } = req.body;
 
         let images = [];
         if (req.files) {
@@ -21,7 +21,9 @@ exports.createMeal = async (req, res, next) => {
 
         const meal = await Meal.create({
             name,
+            name_ar,
             description,
+            description_ar,
             calories,
             images: images,
             protein,
@@ -123,7 +125,7 @@ exports.deleteMeal = async (req, res, next) => {
 exports.updateMeal = async (req, res, next) => {
     try {
         const { id } = req.params; // Get meal ID from route params
-        const { name, description, calories, types, protein, carb, fats, fiber, ingredients } = req.body;
+        const { name, name_ar, description, description_ar, calories, types, protein, carb, fats, fiber, ingredients } = req.body;
 
         // Find the meal by ID
         const meal = await Meal.findByPk(id);
@@ -143,7 +145,9 @@ exports.updateMeal = async (req, res, next) => {
         }
 
         meal.name = name || meal.name;
+        meal.name_ar = name_ar || meal.name_ar;
         meal.description = description || meal.description;
+        meal.description_ar = description_ar || meal.description_ar;
         meal.calories = calories || meal.calories;
         meal.images = images;
         meal.protein = protein || meal.protein;
@@ -304,14 +308,14 @@ exports.getMealsForWeek = async (req, res, next) => {
 
 exports.createIngredient = async (req, res) => {
     try {
-        const { title } = req.body;
+        const { title, title_ar } = req.body;
         let image;
 
         if (req.file) {
             image = req.file.path;
         }
 
-        const ingredient = await Ingredient.create({ title, image });
+        const ingredient = await Ingredient.create({ title, title_ar, image });
         res.status(201).json({
             message: "ingredient created succesfully",
             ingredient
@@ -333,7 +337,7 @@ exports.getAllIngredients = async (req, res) => {
 
 exports.updateIngredient = async (req, res) => {
     try {
-        const { title } = req.body;
+        const { title, title_ar } = req.body;
         const ingredient = await Ingredient.findByPk(req.params.id);
 
         if (!ingredient) {
@@ -344,6 +348,7 @@ exports.updateIngredient = async (req, res) => {
         }
 
         ingredient.title = title || ingredient.title;
+        ingredient.title_ar = title_ar || ingredient.title_ar;
 
         if (req.file) {
             ingredient.image = req.file.path;

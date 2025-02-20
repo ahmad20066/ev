@@ -12,6 +12,14 @@ const Meal = sequelize.define('Meal', {
         type: DataTypes.TEXT,
         allowNull: true,
     },
+    name_ar: {
+        type: DataTypes.STRING,
+        allowNull: false,
+    },
+    description_ar: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+    },
     calories: {
         type: DataTypes.FLOAT,
         allowNull: true,

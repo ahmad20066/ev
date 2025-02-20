@@ -3,14 +3,12 @@ const Exercise = require('../../models/fitness/exercise');
 
 exports.createExercise = async (req, res, next) => {
     try {
-        const { name, description, duration, notes } = req.body;
+        const { name, name_ar, description_ar, description, duration, notes, notes_ar } = req.body;
 
-        // Process multiple uploaded images for `image_urls`
         const image_urls = req.files.images
             ? req.files.images.map((file) => file.path)
             : [];
         console.log(req.files);
-        // Handle single files for target muscles image and video
         const target_muscles_image = req.files.target_muscles_image
             ? req.files.target_muscles_image[0].path
             : null;
@@ -18,15 +16,17 @@ exports.createExercise = async (req, res, next) => {
             ? req.files.video[0].path
             : null;
 
-        // Create exercise and save JSON string for `image_urls`
         const exercise = await Exercise.create({
             name,
+            name_ar,
             description,
+            description_ar,
             duration,
-            image_urls: JSON.stringify(image_urls), // Convert array to JSON string
+            image_urls: JSON.stringify(image_urls),
             target_muscles_image,
             video_url,
-            notes: notes, // Ensure notes is stored as JSON string
+            notes: notes,
+            notes_ar,
         });
 
         res.status(201).json({
@@ -39,32 +39,31 @@ exports.createExercise = async (req, res, next) => {
 };
 exports.updateExercise = async (req, res, next) => {
     try {
-        const { id } = req.params; // Get exercise ID from route params
-        const { name, description, duration, notes } = req.body;
+        const { id } = req.params;
+        const { name, description, name_ar, description_ar, duration, notes } = req.body;
 
-        // Find the exercise by ID
         const exercise = await Exercise.findByPk(id);
 
         if (!exercise) {
             return res.status(404).json({ message: 'Exercise not found' });
         }
 
-        // Process multiple uploaded images for `image_urls`
         const image_urls = req.files.images
             ? req.files.images.map((file) => file.path)
-            : JSON.parse(exercise.image_urls); // Retain existing images if none are uploaded
+            : JSON.parse(exercise.image_urls);
 
-        // Handle single files for target muscles image and video
         const target_muscles_image = req.files.target_muscles_image
             ? req.files.target_muscles_image[0].path
-            : exercise.target_muscles_image; // Retain existing image if none is uploaded
+            : exercise.target_muscles_image;
 
         const video_url = req.files.video
             ? req.files.video[0].path
-            : exercise.video_url; // Retain existing video if none is uploaded
+            : exercise.video_url;
 
         exercise.name = name || exercise.name;
+        exercise.name_ar = name_ar || exercise.name_ar;
         exercise.description = description || exercise.description;
+        exercise.description_ar = description_ar || exercise.description_ar;
 
         exercise.image_urls = JSON.stringify(image_urls);
         exercise.target_muscles_image = target_muscles_image;

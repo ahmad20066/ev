@@ -6,7 +6,15 @@ const Exercise = sequelize.define('Exercise', {
         type: DataTypes.STRING,
         allowNull: false,
     },
+    name_ar: {
+        type: DataTypes.STRING,
+        allowNull: false,
+    },
     description: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+    },
+    description_ar: {
         type: DataTypes.TEXT,
         allowNull: true,
     },
@@ -27,6 +35,14 @@ const Exercise = sequelize.define('Exercise', {
         allowNull: true,
         get() {
             const rawValue = this.getDataValue('notes');
+            return rawValue ? JSON.parse(rawValue) : null;
+        },
+    },
+    notes_ar: {
+        type: DataTypes.JSON,
+        allowNull: true,
+        get() {
+            const rawValue = this.getDataValue('notes_ar');
             return rawValue ? JSON.parse(rawValue) : null;
         },
     },

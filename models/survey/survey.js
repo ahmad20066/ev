@@ -6,6 +6,10 @@ const Survey = sequelize.define("Survey", {
         type: Sequelize.STRING,
 
     },
+    title_ar: {
+        type: Sequelize.STRING,
+        allowNull: false
+    },
     package_id: {
         type: Sequelize.INTEGER,
         references: {

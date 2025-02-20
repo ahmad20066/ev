@@ -2,9 +2,9 @@ const Sport = require("../../models/sport");
 
 exports.createSport = async (req, res, next) => {
     try {
-        const { title } = req.body;
+        const { title, title_ar } = req.body;
         const image = req.file.path;
-        const sport = await Sport.create({ title, image });
+        const sport = await Sport.create({ title, title_ar, image });
         res.status(201).json({ message: "Sport created successfully", sport });
     } catch (error) {
         next(error);
@@ -26,7 +26,7 @@ exports.getAllSports = async (req, res, next) => {
 exports.updateSport = async (req, res, next) => {
     try {
         const { id } = req.params;
-        const { title } = req.body;
+        const { title, title_ar } = req.body;
         const image = req.file?.path;
 
         const sport = await Sport.findByPk(id);
@@ -35,6 +35,7 @@ exports.updateSport = async (req, res, next) => {
         }
 
         sport.title = title || sport.title;
+        sport.title_ar = title_ar || sport.title_ar;
         sport.image = image || sport.image
         await sport.save();
 

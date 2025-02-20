@@ -6,24 +6,32 @@ const OrderMeal = require("../../models/meals/order_meal");
 const UserMealSelection = require("../../models/meals/user_meal_selection");
 const User = require("../../models/user");
 
+const { Op } = require("sequelize"); // Ensure Sequelize operators are available
+
 exports.createOrders = async (req, res, next) => {
     try {
         const dayNames = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
 
-        const getNextDateForDay = (dayIndex) => {
+        const getNextDateForDay = (dayOffset) => {
             const today = new Date();
-            const currentDay = today.getDay();
-            const diff = (dayIndex + 7 - currentDay) % 7;
-            const nextDate = new Date(today);
-            nextDate.setDate(today.getDate() + diff);
-            return nextDate;
+            const targetDate = new Date(today);
+            targetDate.setDate(today.getDate() + dayOffset);
+            return targetDate;
         };
 
         const orders = [];
+        const orderData = [];
+        const orderMealData = [];
 
-        for (const dayName of dayNames) {
+        for (let dayOffset = 0; dayOffset < 30; dayOffset++) {
+            const orderDate = getNextDateForDay(dayOffset);
+            const dayName = dayNames[orderDate.getDay()];
+
             const subscriptions = await MealSubscription.findAll({
-                where: { is_active: true },
+                where: {
+                    is_active: true,
+                    start_date: { [Op.lte]: new Date() } // Include all active subscriptions
+                },
                 include: [
                     {
                         model: UserMealSelection,
@@ -34,70 +42,123 @@ exports.createOrders = async (req, res, next) => {
                 ],
             });
 
-            console.log(`Processing orders for ${dayName}`);
+            console.log(`Processing orders for ${orderDate.toISOString().split('T')[0]} (${dayName})`);
+
+            const existingOrders = await Order.findAll({
+                where: {
+                    order_date: orderDate,
+                    user_id: subscriptions.map(s => s.user_id),
+                },
+                attributes: ['id', 'user_id', 'meal_subscription_id', 'order_date'],
+            });
+            const existingOrdersMap = new Map(existingOrders.map(o => [`${o.user_id}-${o.meal_subscription_id}-${o.order_date}`, o.id]));
 
             for (const subscription of subscriptions) {
-                const orderDate = getNextDateForDay(dayNames.indexOf(dayName));
+                const orderStartDate = new Date(subscription.start_date);
+                const twoDaysAfterSubscription = new Date(orderStartDate);
+                twoDaysAfterSubscription.setDate(orderStartDate.getDate() + 2); // Order starts two days after subscription date
 
-                // Destructure the result to get the order object
-                const [order, created] = await Order.findOrCreate({
-                    where: {
+                if (orderDate < twoDaysAfterSubscription) {
+                    // Skip order creation if the order date is before two days after the subscription
+                    continue;
+                }
+
+                const orderKey = `${subscription.user_id}-${subscription.id}-${orderDate}`;
+                let orderId = existingOrdersMap.get(orderKey);
+
+                if (!orderId) {
+                    const order = {
                         user_id: subscription.user_id,
                         meal_subscription_id: subscription.id,
-                        order_date: orderDate
-                    },
-                });
-
-                orders.push(order);
-
-                for (const selection of subscription.selections) {
-                    // Check if an OrderMeal already exists for the same order and meal
-                    const [orderMeal, created] = await OrderMeal.findOrCreate({
-                        where: {
-                            order_id: order.id, // Now order.id will be correctly defined
-                            meal_id: selection.meal_id,
-                        },
-                        defaults: { quantity: 1 }, // Create a new record with quantity = 1 if not found
-                    });
-
-                    if (!created) {
-                        // If the row already exists, increment the quantity
-                        orderMeal.quantity += 1;
-                        await orderMeal.save();
-                    }
+                        order_date: orderDate,
+                    };
+                    orderData.push(order);
                 }
             }
         }
 
-        // Respond with the created orders
+        if (orderData.length > 0) {
+            const createdOrders = await Order.bulkCreate(orderData, { returning: true });
+            createdOrders.forEach(order => {
+                const orderKey = `${order.user_id}-${order.meal_subscription_id}-${order.order_date}`;
+                existingOrdersMap.set(orderKey, order.id);
+            });
+        }
+
+        for (let dayOffset = 0; dayOffset < 30; dayOffset++) {
+            const orderDate = getNextDateForDay(dayOffset);
+            const dayName = dayNames[orderDate.getDay()];
+
+            const subscriptions = await MealSubscription.findAll({
+                where: {
+                    is_active: true,
+                    start_date: { [Op.lte]: new Date() } // Include all active subscriptions
+                },
+                include: [
+                    {
+                        model: UserMealSelection,
+                        as: "selections",
+                        where: { day: dayName },
+                        required: false,
+                    },
+                ],
+            });
+
+            for (const subscription of subscriptions) {
+                const orderStartDate = new Date(subscription.start_date);
+                const twoDaysAfterSubscription = new Date(orderStartDate);
+                twoDaysAfterSubscription.setDate(orderStartDate.getDate() + 2);
+
+                if (orderDate < twoDaysAfterSubscription) {
+                    // Skip meal assignments if order date is before two days after subscription
+                    continue;
+                }
+
+                const orderKey = `${subscription.user_id}-${subscription.id}-${orderDate}`;
+                const orderId = existingOrdersMap.get(orderKey);
+
+                if (!orderId) continue;
+
+                for (const selection of subscription.selections) {
+                    orderMealData.push({
+                        order_id: orderId,
+                        meal_id: selection.meal_id,
+                        quantity: 1,
+                    });
+                }
+            }
+        }
+
+        if (orderMealData.length > 0) {
+            await OrderMeal.bulkCreate(orderMealData, {
+                updateOnDuplicate: ['quantity'],
+            });
+        }
+
         res.status(200).json({
             message: "Success",
-            orders,
+            orders: orderData,
         });
     } catch (e) {
         next(e);
     }
 };
 
-
-
 exports.getOrders = async (req, res, next) => {
     try {
-        // Get the day parameter from the request query
         const { day } = req.query;
 
         if (!day) {
             return res.status(400).json({ message: "Please provide a valid day." });
         }
 
-        // Convert the day string to a Date object
+
         const targetDate = new Date(day);
 
         if (isNaN(targetDate)) {
             return res.status(400).json({ message: "Invalid date format. Use YYYY-MM-DD." });
         }
 
-        // Query orders by the specified date
         const orders = await Order.findAll({
             where: {
                 order_date: targetDate

@@ -7,6 +7,10 @@ const Choice = sequelize.define("Choice", {
         type: Sequelize.STRING,
         allowNull: false,
     },
+    text_ar: {
+        type: Sequelize.STRING,
+        allowNull: false
+    },
     question_id: {
         type: Sequelize.INTEGER,
         allowNull: false,

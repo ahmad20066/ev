@@ -1,6 +1,7 @@
 const Sequelize = require("sequelize");
 const sequelize = require("../index");
 const Package = require("../package");
+
 const Workout = sequelize.define("Workout", {
     id: {
         type: Sequelize.INTEGER,
@@ -15,6 +16,10 @@ const Workout = sequelize.define("Workout", {
         type: Sequelize.STRING,
         allowNull: false,
     },
+    title_ar: {
+        type: Sequelize.STRING,
+        allowNull: false, // Set to `true` if optional
+    },
     type: {
         type: Sequelize.ENUM("personalized", "group"),
         allowNull: false
@@ -24,6 +29,10 @@ const Workout = sequelize.define("Workout", {
         allowNull: false
     },
     description: {
+        type: Sequelize.STRING,
+        allowNull: true,
+    },
+    description_ar: {
         type: Sequelize.STRING,
         allowNull: true,
     },
@@ -60,7 +69,11 @@ const Workout = sequelize.define("Workout", {
     },
     motivational_message: {
         type: Sequelize.STRING,
-
+        allowNull: true,
+    },
+    motivational_message_ar: {
+        type: Sequelize.STRING,
+        allowNull: true,
     },
     is_Active: {
         type: Sequelize.BOOLEAN,
@@ -70,4 +83,5 @@ const Workout = sequelize.define("Workout", {
     tableName: "workouts",
     timestamps: true,
 });
+
 module.exports = Workout;

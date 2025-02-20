@@ -4,6 +4,11 @@ const DeliveryTime = sequelize.define("DeliveryTime", {
     title: {
         type: Sequelize.STRING,
         allowNull: false
-    }
+    },
+    title_ar: {
+        type: Sequelize.STRING,
+        allowNull: false
+    },
+
 })
 module.exports = DeliveryTime

@@ -5,6 +5,10 @@ const PricingModel = sequelize.define("Pricing", {
         type: Sequelize.STRING,
         allowNull: false
     },
+    title_ar: {
+        type: Sequelize.STRING,
+        allowNull: false
+    },
     price: {
         type: Sequelize.DOUBLE,
         allowNull: false

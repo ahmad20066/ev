@@ -23,7 +23,7 @@ const Meal = require('../../models/meals/meal');
 const { sendNotification } = require('../../helpers/noitifcations_helper');
 exports.createWorkout = async (req, res, next) => {
     try {
-        let { title, user_id, description, duration, exercises, difficulty_level, calories_burned, date, package_id, motivational_message } = req.body;
+        let { title, title_ar, user_id, description, description_ar, duration, exercises, difficulty_level, calories_burned, date, package_id, motivational_message, motivational_message_ar } = req.body;
         const coach = req.userId;
         console.log(req.files);
         const image = req.file.path;
@@ -92,7 +92,9 @@ exports.createWorkout = async (req, res, next) => {
 
         const workout = await Workout.create({
             title,
+            title_ar,
             description,
+            description_ar,
             type,
             duration,
             difficulty_level,
@@ -102,6 +104,7 @@ exports.createWorkout = async (req, res, next) => {
             user_id,
             package_id,
             motivational_message,
+            motivational_message_ar,
             image
         });
 

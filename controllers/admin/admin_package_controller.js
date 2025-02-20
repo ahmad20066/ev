@@ -3,10 +3,10 @@ const PricingModel = require("../../models/pricing_model");
 
 exports.createPackage = async (req, res, next) => {
     try {
-        const { name, description, prices, type } = req.body;
+        const { name, name_ar, description, description_ar, prices, type } = req.body;
 
 
-        const newPackage = await Package.create({ name, description, type });
+        const newPackage = await Package.create({ name, name_ar, description_ar, description, type });
 
         if (prices && prices.length > 0) {
             const pricingData = prices.map(price => ({
@@ -77,7 +77,7 @@ exports.getPackageById = async (req, res, next) => {
 exports.updatePackage = async (req, res, next) => {
     try {
         const { id } = req.params;
-        const { name, description, prices, type } = req.body;
+        const { name, name_ar, description_ar, description, prices, type } = req.body;
 
         const package = await Package.findByPk(id);
         if (!package) {
@@ -87,7 +87,14 @@ exports.updatePackage = async (req, res, next) => {
             return;
         }
 
-        await package.update({ name, description, type });
+        const updatedFields = {};
+        if (name !== undefined) updatedFields.name = name;
+        if (name_ar !== undefined) updatedFields.name_ar = name_ar;
+        if (description !== undefined) updatedFields.description = description;
+        if (description_ar !== undefined) updatedFields.description_ar = description_ar;
+        if (type !== undefined) updatedFields.type = type;
+
+        await package.update(updatedFields);
 
         if (prices && prices.length > 0) {
             await PricingModel.destroy({ where: { package_id: id } });
@@ -99,12 +106,13 @@ exports.updatePackage = async (req, res, next) => {
             await PricingModel.bulkCreate(pricingData);
         }
 
-        res.status(200).json({ message: "Package updated succesfully", package });
+        res.status(200).json({ message: "Package updated successfully", package });
     } catch (e) {
         e.statusCode = 500;
         next(e);
     }
 };
+
 
 exports.deletePackage = async (req, res, next) => {
     try {
@@ -133,14 +141,13 @@ exports.deletePackage = async (req, res, next) => {
 };
 exports.createPricing = async (req, res, next) => {
     try {
-        const { title, price, number_of_days, package_id } = req.body;
+        const { title, title_ar, price, number_of_days, package_id } = req.body;
 
-        // Validate input
-        if (!title || !price || !number_of_days) {
+        if (!title || !title_ar || !price || !number_of_days) {
             return res.status(400).json({ message: "All fields (title, price, number_of_days) are required." });
         }
 
-        const pricing = await PricingModel.create({ title, price, number_of_days, package_id });
+        const pricing = await PricingModel.create({ title, title_ar, price, number_of_days, package_id });
         res.status(201).json({ message: "Pricing created successfully.", pricing });
     } catch (error) {
         console.error(error);
@@ -178,7 +185,7 @@ exports.getPricingById = async (req, res, next) => {
 exports.updatePricing = async (req, res, next) => {
     try {
         const { id } = req.params;
-        const { title, price, number_of_days, package_id } = req.body;
+        const { title, title_ar, price, number_of_days, package_id } = req.body;
 
         const pricing = await PricingModel.findByPk(id);
 
@@ -186,7 +193,7 @@ exports.updatePricing = async (req, res, next) => {
             return res.status(404).json({ message: "Pricing not found." });
         }
 
-        const updatedPricing = await pricing.update({ title, price, number_of_days, package_id });
+        const updatedPricing = await pricing.update({ title, title_ar, price, number_of_days, package_id });
         res.status(200).json({ message: "Pricing updated successfully.", updatedPricing });
     } catch (error) {
         console.error(error);

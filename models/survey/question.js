@@ -7,6 +7,10 @@ const Question = sequelize.define("Question", {
         type: Sequelize.STRING,
         allowNull: false,
     },
+    title_ar: {
+        type: Sequelize.STRING,
+        allowNull: false
+    },
     image: {
         type: Sequelize.STRING,
         allowNull: true,

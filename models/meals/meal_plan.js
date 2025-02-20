@@ -6,6 +6,10 @@ const MealPlan = sequelize.define('MealPlan', {
         type: DataTypes.STRING,
         allowNull: false
     },
+    title_ar: {
+        type: DataTypes.STRING,
+        allowNull: false
+    },
     calories: {
         type: DataTypes.INTEGER,
         allowNull: false

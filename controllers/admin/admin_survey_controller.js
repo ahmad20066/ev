@@ -57,11 +57,11 @@ exports.createSurvey = async (req, res, next) => {
 };
 exports.updateSurvey = async (req, res, next) => {
     try {
-        const { id } = req.params; // ID of the survey to update
-        const { title } = req.body; // New title for the survey
+        const { id } = req.params;
+        const { title, title_ar } = req.body; // Both English and Arabic titles
 
-        if (!title) {
-            return res.status(400).json({ message: "Title is required" });
+        if (!title || !title_ar) {
+            return res.status(400).json({ message: "Both title and title_ar are required" });
         }
 
         const survey = await Survey.findByPk(id);
@@ -69,14 +69,16 @@ exports.updateSurvey = async (req, res, next) => {
             return res.status(404).json({ message: "Survey not found" });
         }
 
-        survey.title = title; // Update the title
-        await survey.save(); // Save the changes
+        survey.title = title;
+        survey.title_ar = title_ar;
+        await survey.save();
 
         res.status(200).json({ message: "Survey updated successfully", survey });
     } catch (error) {
         next(error);
     }
 };
+
 
 
 exports.getSurveys = async (req, res, next) => {
@@ -140,11 +142,11 @@ exports.getPackageSurvey = async (req, res, next) => {
 
 exports.createQuestion = async (req, res, next) => {
     try {
-        const { title, type, survey_id, choices } = req.body;
+        const { title, title_ar, type, survey_id, choices, choices_ar } = req.body;
         const image = req.file ? req.file.path : null;
 
-        if (!title || !type || !survey_id) {
-            return res.status(400).json({ message: "Title, type, and survey_id are required" });
+        if (!title || !title_ar || !type || !survey_id) {
+            return res.status(400).json({ message: "Title (both languages), type, and survey_id are required" });
         }
 
         const survey = await Survey.findByPk(survey_id);
@@ -152,11 +154,12 @@ exports.createQuestion = async (req, res, next) => {
             return res.status(404).json({ message: "Survey not found" });
         }
 
-        const question = await Question.create({ title, type, image, survey_id });
+        const question = await Question.create({ title, title_ar, type, image, survey_id });
 
-        if (type === "choice" && Array.isArray(choices) && choices.length > 0) {
-            const choiceData = choices.map((choiceText) => ({
+        if (type === "choice" && Array.isArray(choices) && Array.isArray(choices_ar) && choices.length === choices_ar.length) {
+            const choiceData = choices.map((choiceText, index) => ({
                 text: choiceText,
+                text_ar: choices_ar[index],
                 question_id: question.id,
             }));
             await Choice.bulkCreate(choiceData);
@@ -167,6 +170,7 @@ exports.createQuestion = async (req, res, next) => {
         next(error);
     }
 };
+
 
 exports.getQuestions = async (req, res, next) => {
     try {
@@ -188,45 +192,31 @@ exports.getQuestions = async (req, res, next) => {
 
 exports.updateQuestion = async (req, res, next) => {
     try {
-        const { id } = req.params; // Get question ID from route parameters
-        const { title, type, survey_id, choices } = req.body;
+        const { id } = req.params;
+        const { title, title_ar, type, choices, choices_ar } = req.body;
         const image = req.file ? req.file.path : null;
 
-        // Find the question by ID
         const question = await Question.findByPk(id);
         if (!question) {
             return res.status(404).json({ message: "Question not found" });
         }
 
-        // Validate survey existence if survey_id is provided
-        if (survey_id) {
-            const survey = await Survey.findByPk(survey_id);
-            if (!survey) {
-                return res.status(404).json({ message: "Survey not found" });
-            }
-            question.survey_id = survey_id;
-        }
-
-        // Update question fields
         if (title) question.title = title;
+        if (title_ar) question.title_ar = title_ar;
         if (type) question.type = type;
         if (image) question.image = image;
 
-        await question.save(); // Save updated question
+        await question.save();
 
-        // Handle choices if the question type is "choice"
-        if (type === "choice" && Array.isArray(choices)) {
-            // Remove existing choices for the question
+        if (type === "choice" && Array.isArray(choices) && Array.isArray(choices_ar) && choices.length === choices_ar.length) {
             await Choice.destroy({ where: { question_id: question.id } });
 
-            // Add new choices if provided
-            if (choices.length > 0) {
-                const choiceData = choices.map((choiceText) => ({
-                    text: choiceText,
-                    question_id: question.id,
-                }));
-                await Choice.bulkCreate(choiceData);
-            }
+            const choiceData = choices.map((choiceText, index) => ({
+                text: choiceText,
+                text_ar: choices_ar[index],
+                question_id: question.id,
+            }));
+            await Choice.bulkCreate(choiceData);
         }
 
         const updatedQuestion = await Question.findByPk(question.id, {
@@ -238,6 +228,7 @@ exports.updateQuestion = async (req, res, next) => {
         next(error);
     }
 };
+
 
 
 exports.deleteQuestion = async (req, res, next) => {

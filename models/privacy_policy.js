@@ -4,6 +4,10 @@ const PrivacyPolicy = sequelize.define("PrivacyPolicy", {
     content: {
         type: Sequelize.TEXT,
         allowNull: false
+    },
+    content_ar: {
+        type: Sequelize.TEXT,
+        allowNull: false
     }
 })
 module.exports = PrivacyPolicy

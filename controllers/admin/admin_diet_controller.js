@@ -6,11 +6,12 @@ const Type = require('../../models/meals/type');
 
 exports.createMealPlan = async (req, res, next) => {
     try {
-        const { title, calories, price_monthly, types } = req.body;
+        const { title, title_ar, calories, price_monthly, types } = req.body;
         const image = req.file.path;
 
         const newMealPlan = await MealPlan.create({
             title,
+            title_ar,
             calories,
             image,
             price_monthly,
@@ -99,7 +100,7 @@ exports.getMealPlanById = async (req, res, next) => {
 };
 exports.updateMealPlan = async (req, res, next) => {
     const { id } = req.params;
-    const { title, calories, price_monthly, types } = req.body;
+    const { title, title_ar, calories, price_monthly, types } = req.body;
     const image = req.file ? req.file.path : null;
 
     try {
@@ -112,6 +113,7 @@ exports.updateMealPlan = async (req, res, next) => {
         }
 
         mealPlan.title = title || mealPlan.title;
+        mealPlan.title_ar = title_ar || mealPlan.title;
         mealPlan.calories = calories || mealPlan.calories;
         mealPlan.price_monthly = price_monthly || mealPlan.price_monthly;
         if (image) {

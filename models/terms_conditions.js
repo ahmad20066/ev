@@ -6,6 +6,10 @@ const TermsAndConditions = sequelize.define("TermsAndConditions", {
         type: DataTypes.TEXT,
         allowNull: false,
     },
+    content_ar: {
+        type: DataTypes.TEXT,
+        allowNull: false,
+    },
 }, {
     timestamps: true,
     tableName: "terms_and_conditions",

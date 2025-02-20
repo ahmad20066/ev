@@ -2,14 +2,14 @@ const DeliveryTime = require("../../models/meals/delivery_time");
 
 exports.createDeliveryTime = async (req, res, next) => {
     try {
-        const { title } = req.body;
+        const { title, title_ar } = req.body;
 
 
-        if (!title) {
+        if (!title || !title_ar) {
             return res.status(400).json({ error: "Title is required." });
         }
 
-        const deliveryTime = await DeliveryTime.create({ title });
+        const deliveryTime = await DeliveryTime.create({ title, title_ar });
 
         res.status(201).json({
             message: "Delivery time created successfully.",
@@ -31,7 +31,7 @@ exports.getAllDeliveryTimes = async (req, res, next) => {
 exports.updateDeliveryTime = async (req, res, next) => {
     try {
         const { id } = req.params;
-        const { title } = req.body;
+        const { title, title_ar } = req.body;
 
         // Validate input
         if (!title) {
@@ -44,7 +44,8 @@ exports.updateDeliveryTime = async (req, res, next) => {
             return res.status(404).json({ error: "Delivery time not found." });
         }
 
-        deliveryTime.title = title;
+        if (title) deliveryTime.title = title;
+        if (title_ar) deliveryTime.title_ar = title_ar;
         await deliveryTime.save();
 
         res.status(200).json({

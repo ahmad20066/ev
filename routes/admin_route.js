@@ -1,7 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const activityLevelController = require('../controllers/activity_level_controller');
-const healthGoalController = require('../controllers/health_goal_controller');
+
 // const fitnessPlanController = require('../controllers/admin_fitness_plan_controller');
 const imageMiddleWare = require('../middlewares/multer');
 const fitnessController = require("../controllers/admin/admin_fitness_controller")
