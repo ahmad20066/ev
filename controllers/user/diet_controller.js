@@ -16,7 +16,13 @@ const dayNames = ["sunday", "monday", "tuesday", "wednesday", "thursday", "frida
 
 exports.getMealPlans = async (req, res, next) => {
     try {
-        const mealPlans = await MealPlan.findAll();
+        const mealPlans = await MealPlan.findAll({
+            include: {
+                model: Type,
+                as: "types",
+                through: { attributes: [] }
+            }
+        });
         res.status(200).json(mealPlans);
     } catch (error) {
         error.statusCode = 500;
@@ -238,6 +244,15 @@ exports.getMealSelections = async (req, res, next) => {
             include: {
                 model: Meal,
                 as: "meal",
+                include: [
+                    {
+                        model: Ingredient,
+                        as: "ingredients",
+                        through: {
+                            attributes: ["quantity"] // Fetch quantity from MealIngredient
+                        }
+                    }
+                ]
             },
         });
 
@@ -248,7 +263,15 @@ exports.getMealSelections = async (req, res, next) => {
         const meals = selections.map(selection => ({
             selection_id: selection.id,
             type: selection.meal.types?.length > 0 ? selection.meal.types[0].title : null,
-            meal: selection.meal,
+            meal: {
+                ...selection.meal.toJSON(),
+                ingredients: selection.meal.ingredients.map(ingredient => ({
+                    id: ingredient.id,
+                    name: ingredient.title,
+                    unit: ingredient.unit,
+                    quantity: ingredient.MealIngredient.quantity
+                }))
+            }
         }));
 
         res.status(200).json({
