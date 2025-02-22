@@ -13,6 +13,10 @@ const MealDay = sequelize.define("MealDay", {
     day: {
         type: Sequelize.ENUM("sunday", "monday", "wednesday", "tuesday", "thursday", "friday", "saturday"),
         allowNull: false
-    }
+    },
+    date: {
+        type: DataTypes.DATEONLY,
+        allowNull: false,
+    },
 })
 module.exports = MealDay
