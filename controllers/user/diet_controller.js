@@ -12,6 +12,8 @@ const Address = require("../../models/meals/address");
 const Ingredient = require("../../models/meals/ingredient");
 const MealRenewal = require("../../models/meals/meal_renewal");
 const OrderMeal = require("../../models/meals/order_meal");
+const dayNames = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+
 exports.getMealPlans = async (req, res, next) => {
     try {
         const mealPlans = await MealPlan.findAll();
