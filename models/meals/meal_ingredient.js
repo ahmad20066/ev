@@ -18,7 +18,7 @@ const MealIngredient = sequelize.define("MealIngredient", {
         }
     },
     quantity: {
-        type: Sequelize.DECIMAL,
+        type: Sequelize.FLOAT,
         allowNull: false,
         defaultValue: 0
     },

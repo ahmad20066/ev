@@ -6,17 +6,20 @@ const MealIngredient = require("../../models/meals/meal_ingredient");
 const MealType = require("../../models/meals/meal_type");
 const Type = require("../../models/meals/type");
 
+const qs = require("qs");
+
 exports.createMeal = async (req, res, next) => {
     try {
+        req.body = qs.parse(req.body); // Convert form-data into a proper object structure
+        console.log("Parsed Request Body:", req.body); // Debugging line
+
         const { name, name_ar, description, description_ar, calories, types, protein, carb, fats, fiber, ingredients } = req.body;
 
         let images = [];
-        if (req.files) {
-            if (Array.isArray(req.files)) {
-                images = req.files.map(file => file.path);
-            } else if (req.files['images']) {
-                images = req.files['images'].map(file => file.path);
-            }
+        if (req.files && req.files['images']) {
+            images = Array.isArray(req.files['images'])
+                ? req.files['images'].map(file => file.path)
+                : [req.files['images'].path];
         }
 
         const meal = await Meal.create({
@@ -25,11 +28,11 @@ exports.createMeal = async (req, res, next) => {
             description,
             description_ar,
             calories,
-            images: images,
+            images,
             protein,
             carb,
             fats,
-            fiber,
+            fiber
         });
 
         if (types && Array.isArray(types)) {
@@ -41,19 +44,20 @@ exports.createMeal = async (req, res, next) => {
         }
 
         if (ingredients && Array.isArray(ingredients)) {
+            console.log("Raw Ingredients:", ingredients); // Debugging line
             const mealIngredients = ingredients.map(item => ({
                 meal_id: meal.id,
-                ingredient_id: item.ingredient_id,
-                quantity: item.quantity
+                ingredient_id: Number(item.ingredient_id), // Ensure it's a number
+                quantity: Number(item.quantity) // Convert quantity to a float
             }));
-            console.log(mealIngredients)
+            console.log("Processed Ingredients Before Insert:", mealIngredients); // Debugging line
             await MealIngredient.bulkCreate(mealIngredients);
         }
 
         const mealWithDetails = await Meal.findByPk(meal.id, {
             include: [
                 { model: Type, as: 'types', through: { attributes: [] } },
-                { model: Ingredient, as: 'ingredients', through: { attributes: [] } },
+                { model: Ingredient, as: 'ingredients', through: { attributes: ['quantity'] } },
             ],
         });
 
@@ -62,6 +66,7 @@ exports.createMeal = async (req, res, next) => {
             meal: mealWithDetails,
         });
     } catch (e) {
+        console.error("Error:", e);
         next(e);
     }
 };
@@ -310,7 +315,7 @@ exports.getMealsForWeek = async (req, res, next) => {
 };
 
 
-exports.createIngredient = async (req, res) => {
+exports.createIngredient = async (req, res, next) => {
     try {
         const { title, title_ar, stock, unit } = req.body;
         let image;
