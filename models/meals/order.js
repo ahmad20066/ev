@@ -2,7 +2,6 @@ const { DataTypes } = require('sequelize');
 const sequelize = require('../index');
 const MealSubscription = require('./meal_subscription');
 const User = require('../user');
-const Meal = require('./meal');
 const Order = sequelize.define('Order', {
     id: {
         type: DataTypes.INTEGER,
@@ -17,7 +16,6 @@ const Order = sequelize.define('Order', {
         },
         allowNull: false,
     },
-
     meal_subscription_id: {
         type: DataTypes.INTEGER,
         references: {

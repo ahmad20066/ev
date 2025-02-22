@@ -191,21 +191,7 @@ exports.updateMeal = async (req, res, next) => {
         next(e);
     }
 };
-const getUpcomingWeek = () => {
-    const today = new Date();
-    const week = [];
-    const daysOfWeek = ["sunday", "monday", "wednesday", "tuesday", "thursday", "friday", "saturday"];
 
-    for (let i = 0; i < 7; i++) {
-        const date = new Date();
-        date.setDate(today.getDate() + i);
-        const day = daysOfWeek[date.getDay()];
-        const formattedDate = date.toISOString().split("T")[0];
-        week.push({ date: formattedDate, day });
-    }
-
-    return week;
-};
 exports.assignMealsToDays = async (req, res, next) => {
     try {
         const { assignments } = req.body;
@@ -274,29 +260,45 @@ exports.getUpcomingWeek = async (req, res, next) => {
         next(error);
     }
 };
+const daysOfWeek = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+
+function getUpcomingWeek() {
+    const today = new Date();
+    const week = [];
+
+    for (let i = 0; i < 7; i++) {
+        const date = new Date(today);
+        date.setDate(today.getDate() + i);
+        const dayName = daysOfWeek[date.getDay()];
+        const formattedDate = date.toISOString().split("T")[0];
+        week.push({ date: formattedDate, day: dayName });
+    }
+    return week;
+}
+
 exports.getMealsForWeek = async (req, res, next) => {
     try {
         const upcomingWeek = getUpcomingWeek();
-        const dates = upcomingWeek.map(entry => entry.day);
+        const dayList = upcomingWeek.map(entry => entry.day);
 
-        const meals = await MealDay.findAll({
-            where: {
-                day: dates
-            },
+        const mealDays = await MealDay.findAll({
+            where: { day: dayList },
             include: {
                 model: Meal,
                 as: "meal",
                 include: {
                     model: Ingredient,
-                    as: 'ingredients',
-                    through: { attributes: [] },
-                },
+                    as: "ingredients",
+                    through: { attributes: [] }
+                }
             }
         });
-        console.log(meals)
+
         const groupedByDay = upcomingWeek.map(entry => ({
-            day: entry,
-            meals: meals.filter(m => m.day == entry.day).map(m => m.meal)
+            day: entry.day,
+            meals: mealDays
+                .filter(m => m.day === entry.day)
+                .map(m => m.meal)
         }));
 
         res.status(200).json(groupedByDay);
@@ -308,14 +310,14 @@ exports.getMealsForWeek = async (req, res, next) => {
 
 exports.createIngredient = async (req, res) => {
     try {
-        const { title, title_ar } = req.body;
+        const { title, title_ar, stock, unit } = req.body;
         let image;
 
         if (req.file) {
             image = req.file.path;
         }
 
-        const ingredient = await Ingredient.create({ title, title_ar, image });
+        const ingredient = await Ingredient.create({ title, title_ar, image, stock, unit });
         res.status(201).json({
             message: "ingredient created succesfully",
             ingredient
@@ -332,12 +334,9 @@ exports.getAllIngredients = async (req, res) => {
         next(error)
     }
 };
-
-
-
 exports.updateIngredient = async (req, res) => {
     try {
-        const { title, title_ar } = req.body;
+        const { title, title_ar, stock, unit } = req.body;
         const ingredient = await Ingredient.findByPk(req.params.id);
 
         if (!ingredient) {
@@ -349,6 +348,8 @@ exports.updateIngredient = async (req, res) => {
 
         ingredient.title = title || ingredient.title;
         ingredient.title_ar = title_ar || ingredient.title_ar;
+        ingredient.unit = unit || ingredient.unit;
+        ingredient.stock = stock || ingredient.stock;
 
         if (req.file) {
             ingredient.image = req.file.path;

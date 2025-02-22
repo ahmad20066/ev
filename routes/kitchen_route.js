@@ -4,6 +4,7 @@ const controller = require("../controllers/kitchen/orders_controller");
 const { body, validationResult } = require('express-validator');
 router.get("/orders", controller.getOrders)
 router.get("/orders/:id", controller.getOrderById)
+router.post("/orders/:id/finalize", controller.finalizeOrder)
 router.post("/order-status", [
     body("status").isIn(['pending', 'done']).withMessage("Please enter a valid status")
 ], (req, res, next) => {

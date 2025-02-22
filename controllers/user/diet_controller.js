@@ -11,6 +11,7 @@ const DeliveryTime = require("../../models/meals/delivery_time");
 const Address = require("../../models/meals/address");
 const Ingredient = require("../../models/meals/ingredient");
 const MealRenewal = require("../../models/meals/meal_renewal");
+const OrderMeal = require("../../models/meals/order_meal");
 exports.getMealPlans = async (req, res, next) => {
     try {
         const mealPlans = await MealPlan.findAll();
@@ -22,88 +23,88 @@ exports.getMealPlans = async (req, res, next) => {
 };
 exports.subscribeToMealPlan = async (req, res, next) => {
     try {
-        const { meal_plan_id, delivery_time_id, address_label, street, city, building, state, postal_code, delivery_notes } = req.body;
-        const oldSubscription = await MealSubscription.findOne({
-            where: {
-                user_id: req.userId,
-                is_active: true
-            }
-        })
-        if (oldSubscription) {
-            const error = new Error("You are already subscribed");
-            error.statusCode = 400;
-            throw error;
+        const {
+            meal_plan_id,
+            delivery_time_id,
+            address_label,
+            street,
+            city,
+            building,
+            state,
+            postal_code,
+            delivery_notes
+        } = req.body;
+        const oldSub = await MealSubscription.findOne({
+            where: { user_id: req.userId, is_active: true }
+        });
+        if (oldSub) {
+            const e = new Error("You are already subscribed");
+            e.statusCode = 400;
+            throw e;
         }
         const mealPlan = await MealPlan.findByPk(meal_plan_id, {
-            include: {
-                model: Type,
-                as: "types",
-            },
+            include: { model: Type, as: "types" }
         });
-
         if (!mealPlan) {
-            const error = new Error("Meal Plan not found");
-            error.statusCode = 404;
-            throw error;
+            const e = new Error("Meal Plan not found");
+            e.statusCode = 404;
+            throw e;
         }
-        const delivery_time = await DeliveryTime.findByPk(delivery_time_id)
-        if (!delivery_time) {
-            const error = new Error("Delivery time not found");
-            error.statusCode = 404;
-            throw error;
+        const deliveryTime = await DeliveryTime.findByPk(delivery_time_id);
+        if (!deliveryTime) {
+            const e = new Error("Delivery time not found");
+            e.statusCode = 404;
+            throw e;
         }
+        const address = await Address.create({
+            address_label,
+            city,
+            street,
+            building,
+            state,
+            postal_code,
+            delivery_notes
+        });
         const startDate = new Date();
-        const address = await Address.create({ address_label, city, street, building, state, postal_code, delivery_notes });
-        let endDate;
-
-        endDate = new Date(startDate);
-        endDate.setMonth(startDate.getMonth() + 1);
-
-        const mealSubscription = await MealSubscription.create({
-            type: "monthly",
-            meal_plan_id: meal_plan_id,
+        const endDate = new Date();
+        endDate.setDate(startDate.getDate() + 30);
+        const subscription = await MealSubscription.create({
             user_id: req.userId,
+            meal_plan_id,
             start_date: startDate,
             end_date: endDate,
+            type: "monthly",
             delivery_time_id,
             address_id: address.id,
+            is_active: true
         });
-
-        const upcomingWeek = getUpcomingWeek();
-
-        for (const { day } of upcomingWeek) {
-            console.log("1")
-            for (const type of mealPlan.types) {
-                console.log("2")
-                console.log(type)
+        const selections = [];
+        let current = new Date(startDate);
+        while (current <= endDate) {
+            const dayIndex = current.getDay();
+            const dayName = dayNames[dayIndex];
+            for (const t of mealPlan.types) {
                 const meal = await Meal.findOne({
-                    include: {
-                        model: Type,
-                        as: "types",
-                        where: { id: type.id },
-                    },
+                    include: [{ model: Type, as: "types", where: { id: t.id } }]
                 });
-                console.log(meal)
-
                 if (meal) {
-                    await UserMealSelection.create({
+                    selections.push({
                         user_id: req.userId,
-                        day,
+                        meal_subscription_id: subscription.id,
                         meal_id: meal.id,
-                        meal_subscription_id: mealSubscription.id,
+                        date: current.toISOString().split("T")[0],
+                        day: dayName
                     });
                 }
             }
+            current.setDate(current.getDate() + 1);
         }
-
-        res.status(201).json({
-            message: "Subscription Successful",
-            subscription: mealSubscription,
-        });
+        if (selections.length > 0) {
+            await UserMealSelection.bulkCreate(selections);
+        }
+        res.status(201).json({ message: "Subscription Successful", subscription });
     } catch (e) {
-        if (!e.statusCode) {
-            e.statusCode = 500;
-        }
+        if (!e.statusCode) e.statusCode = 500;
         next(e);
     }
 };
@@ -151,32 +152,39 @@ exports.getMealSubscriptions = async (req, res, next) => {
     }
 }
 
-const getUpcomingWeek = () => {
+const daysOfWeek = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+function getDateOfCurrentWeek(dayName) {
+    const targetIndex = daysOfWeek.indexOf(dayName.toLowerCase());
+    if (targetIndex === -1) return null;
+
     const today = new Date();
-    const week = [];
-    const daysOfWeek = ["sunday", "monday", "wednesday", "tuesday", "thursday", "friday", "saturday"];
+    const currentDayIndex = today.getDay();
 
-    for (let i = 0; i < 7; i++) {
-        const date = new Date();
-        date.setDate(today.getDate() + i);
-        const day = daysOfWeek[date.getDay()];
-        const formattedDate = date.toISOString().split("T")[0];
-        week.push({ date: formattedDate, day });
-    }
 
-    return week;
-};
+    const startOfWeek = new Date(today);
+    startOfWeek.setHours(0, 0, 0, 0);
+    startOfWeek.setDate(startOfWeek.getDate() - currentDayIndex);
+
+    const targetDate = new Date(startOfWeek);
+    targetDate.setDate(startOfWeek.getDate() + targetIndex);
+
+    return targetDate;
+}
+
 exports.getMealsForWeek = async (req, res, next) => {
     try {
         const { day, type } = req.query;
-        const upcomingWeek = getUpcomingWeek();
-
-        const dates = day ? [day] : upcomingWeek.map(entry => entry.day);
-
+        if (!day) {
+            return res.status(400).json({ message: "Please specify a day (e.g., ?day=monday)" });
+        }
+        const targetDate = getDateOfCurrentWeek(day);
+        if (!targetDate) {
+            return res.status(400).json({ message: "Invalid day parameter" });
+        }
+        const formattedDate = targetDate.toISOString().split("T")[0];
         const whereClause = {
-            day: dates,
+            date: formattedDate
         };
-
         const includeOptions = [
             {
                 model: Meal,
@@ -187,51 +195,35 @@ exports.getMealsForWeek = async (req, res, next) => {
                         {
                             model: Type,
                             as: "types",
-                            where: { id: type },
-
-                        },
+                            where: { id: type }
+                        }
                     ]
-                    : [],
-            },
+                    : []
+            }
         ];
-
-        const meals = await MealDay.findAll({
+        const mealDays = await MealDay.findAll({
             where: whereClause,
-            include: includeOptions,
+            include: includeOptions
         });
-
-        let groupedByDay;
-
-        if (day) {
-            groupedByDay = {
-                day,
-                meals: meals.filter(m => m.day === day).map(m => m.meal),
-            };
-        } else {
-            groupedByDay = upcomingWeek.map(entry => ({
-                day: entry.day,
-                meals: meals.filter(m => m.day === entry.day).map(m => m.meal),
-            }));
-        }
-
-        res.status(200).json(groupedByDay);
+        const meals = mealDays.map(m => m.meal);
+        res.status(200).json({
+            date: formattedDate,
+            day: day.toLowerCase(),
+            meals
+        });
     } catch (error) {
         next(error);
     }
 };
-
-
-
-
 exports.getMealSelections = async (req, res, next) => {
     try {
         const userId = req.userId;
-        let { day } = req.query;  // Change 'date' to 'day'
+        let { day } = req.query;
 
         if (!day) {
             const today = new Date();
             const dayNames = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
-            day = dayNames[today.getDay()]; // Get the current day as a string (e.g., "monday")
+            day = dayNames[today.getDay()];
         }
 
         console.log(`UserID: ${userId}, Day: ${day}`);
@@ -239,7 +231,7 @@ exports.getMealSelections = async (req, res, next) => {
         const selections = await UserMealSelection.findAll({
             where: {
                 user_id: userId,
-                day: day,  // Match by 'day' instead of 'date'
+                day: day,
             },
             include: {
                 model: Meal,
@@ -252,13 +244,13 @@ exports.getMealSelections = async (req, res, next) => {
         }
 
         const meals = selections.map(selection => ({
-            selection_id: selection.id, // Include selection id
+            selection_id: selection.id,
             type: selection.meal.types?.length > 0 ? selection.meal.types[0].title : null,
             meal: selection.meal,
         }));
 
         res.status(200).json({
-            day: day,  // Return the 'day' instead of 'date'
+            day: day,
             meals,
         });
     } catch (error) {
@@ -284,49 +276,59 @@ exports.changeSelection = async (req, res, next) => {
     try {
         const userId = req.userId;
         const { selection_id, meal_id } = req.body;
-
         if (!selection_id || !meal_id) {
-            const error = new Error("Both selection_id and meal_id are required.");
-            error.statusCode = 400;
-            throw error;
+            const e = new Error("Both selection_id and meal_id are required.");
+            e.statusCode = 400;
+            throw e;
         }
-
-        // Find the selection by id and verify it belongs to the user
         const selection = await UserMealSelection.findOne({
-            where: {
-                id: selection_id,
-                user_id: userId,
-            },
+            where: { id: selection_id, user_id: userId }
         });
-
         if (!selection) {
-            const error = new Error("No selection found for the specified id.");
-            error.statusCode = 404;
-            throw error;
+            const e = new Error("No selection found for the specified id.");
+            e.statusCode = 404;
+            throw e;
         }
-
         const today = new Date();
         const targetDate = new Date(selection.date);
-
-        const daysDifference = Math.ceil((targetDate - today) / (1000 * 60 * 60 * 24));
-
-        if (daysDifference < 2) {
-            const error = new Error("You can only change your selection at least 2 days in advance.");
-            error.statusCode = 403;
-            throw error;
+        const diff = Math.ceil((targetDate - today) / (1000 * 60 * 60 * 24));
+        if (diff < 2) {
+            const e = new Error("You can only change your selection at least 2 days in advance.");
+            e.statusCode = 403;
+            throw e;
         }
-
         selection.meal_id = meal_id;
         await selection.save();
-
-        res.status(200).json({
-            message: "Meal selection updated successfully.",
-            // updatedSelection: selection,
+        const subscriptionId = selection.meal_subscription_id;
+        const existingOrder = await Order.findOne({
+            where: {
+                user_id: userId,
+                meal_subscription_id: subscriptionId,
+                order_date: targetDate
+            }
         });
+        if (existingOrder) {
+            const existingOrderMeal = await OrderMeal.findOne({
+                where: { order_id: existingOrder.id }
+            });
+            if (existingOrderMeal) {
+                existingOrderMeal.meal_id = meal_id;
+                await existingOrderMeal.save();
+            } else {
+                await OrderMeal.create({
+                    order_id: existingOrder.id,
+                    meal_id,
+                    quantity: 1
+                });
+            }
+        }
+        res.status(200).json({ message: "Meal selection updated successfully." });
     } catch (error) {
+        if (!error.statusCode) error.statusCode = 500;
         next(error);
     }
 };
+
 exports.getAllDeliveryTimes = async (req, res, next) => {
     try {
         const deliveryTimes = await DeliveryTime.findAll();
@@ -338,38 +340,59 @@ exports.getAllDeliveryTimes = async (req, res, next) => {
 };
 exports.renewSubscription = async (req, res, next) => {
     try {
-        const { subscription_id } = req.query
-        const subscription = await MealSubscription.findByPk(subscription_id,)
+        const { subscription_id } = req.query;
+        const subscription = await MealSubscription.findByPk(subscription_id, {
+            include: { model: MealPlan, as: "meal_plan", include: [{ model: Type, as: "types" }] }
+        });
         if (!subscription) {
-            const error = new Error("Subscription not found")
-            error.statusCode = 404
-            throw error;
+            const e = new Error("Subscription not found");
+            e.statusCode = 404;
+            throw e;
         }
         if (subscription.is_active) {
-            const error = new Error("Subscription already active")
-            error.statusCode = 400
-            throw error;
+            const e = new Error("Subscription already active");
+            e.statusCode = 400;
+            throw e;
         }
         subscription.is_active = true;
-        let endDate = new Date(subscription.end_date);
-        endDate.setDate(endDate.getDate() + 30);
-
-        subscription.end_date = endDate;
-        console.log(endDate)
-        subscription.end_date = endDate
-        await subscription.save()
-        const renewal = new MealRenewal({
-            subscription_id
-        })
+        const oldEnd = new Date(subscription.end_date);
+        const newEnd = new Date(oldEnd);
+        newEnd.setDate(oldEnd.getDate() + 30);
+        subscription.end_date = newEnd;
+        await subscription.save();
+        const selections = [];
+        let current = new Date(oldEnd);
+        current.setDate(current.getDate() + 1);
+        while (current <= newEnd) {
+            const dayIndex = current.getDay();
+            const dayName = dayNames[dayIndex];
+            for (const t of subscription.meal_plan.types) {
+                const meal = await Meal.findOne({
+                    include: [{ model: Type, as: "types", where: { id: t.id } }]
+                });
+                if (meal) {
+                    selections.push({
+                        user_id: subscription.user_id,
+                        meal_subscription_id: subscription.id,
+                        meal_id: meal.id,
+                        date: current.toISOString().split("T")[0],
+                        day: dayName
+                    });
+                }
+            }
+            current.setDate(current.getDate() + 1);
+        }
+        if (selections.length > 0) {
+            await UserMealSelection.bulkCreate(selections);
+        }
+        const renewal = new MealRenewal({ subscription_id });
         await renewal.save();
-        res.status(201).json({
-            message: "Subscription renewed",
-            subscription
-        })
+        res.status(201).json({ message: "Subscription renewed", subscription });
     } catch (e) {
-        next(e)
+        if (!e.statusCode) e.statusCode = 500;
+        next(e);
     }
-}
+};
 exports.getAllTypes = async (req, res, next) => {
     try {
         const types = await Type.findAll();

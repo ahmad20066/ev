@@ -12,6 +12,16 @@ const Ingredient = sequelize.define("Ingredient", {
     image: {
         type: Sequelize.STRING,
         allowNull: true
+    },
+    stock: {
+        type: Sequelize.DECIMAL,
+        allowNull: false,
+        defaultValue: 0
+    },
+    unit: {
+        type: Sequelize.STRING,
+        allowNull: false,
+        defaultValue: 'g'
     }
 })
 module.exports = Ingredient

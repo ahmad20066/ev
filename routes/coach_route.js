@@ -131,4 +131,6 @@ router.get("/group-workout", controller.getGroupWorkouts)
 router.get("/user/:id", controller.getUserDetails)
 
 router.get("/daysOfMonth", controller.getDatesForMonth)
+
+router.get("/leaderboards", controller.exerciseLeaderBoard)
 module.exports = router;

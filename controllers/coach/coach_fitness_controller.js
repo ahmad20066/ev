@@ -21,6 +21,7 @@ const { startOfYear, endOfYear } = require('date-fns');
 const Sport = require('../../models/sport');
 const Meal = require('../../models/meals/meal');
 const { sendNotification } = require('../../helpers/noitifcations_helper');
+const ExerciseStat = require('../../models/fitness/exercise_stat');
 exports.createWorkout = async (req, res, next) => {
     try {
         let { title, title_ar, user_id, description, description_ar, duration, exercises, difficulty_level, calories_burned, date, package_id, motivational_message, motivational_message_ar } = req.body;
@@ -594,7 +595,6 @@ exports.getUserBasic = async (req, res, next) => {
         next(e);
     }
 };
-
 exports.getUserWorkoutLogs = async (req, res, next) => {
     try {
         const { userId } = req.params;
@@ -656,7 +656,6 @@ exports.getUserWorkoutLogs = async (req, res, next) => {
         next(error);
     }
 };
-
 exports.getWorkoutRequests = async (req, res, next) => {
     try {
 
@@ -763,7 +762,7 @@ exports.getUserWorkout = async (req, res, next) => {
     } catch (e) {
         next(e)
     }
-}
+};
 exports.getDatesForMonth = async (req, res, next) => {
     try {
         const today = new Date();
@@ -811,9 +810,77 @@ exports.getGroupWorkouts = async (req, res, next) => {
     } catch (e) {
         next(e)
     }
-}
+};
+exports.exerciseLeaderBoard = async (req, res, next) => {
+    try {
+        const exercise_id = req.query.exercise_id;
 
+        if (!exercise_id) {
+            const error = new Error("Exercise ID is required");
+            error.statusCode = 400;
+            throw error;
+        }
 
+        const exerciseCompletions = await ExerciseCompletion.findAll({
+            where: { exercise_id },
+            include: [
+                {
+                    model: ExerciseStat,
+                    attributes: ['set', 'reps', 'weight'],
+                    order: [['weight', 'DESC']],
+                },
+                {
+                    model: User,
+                    as: "user",
+                    attributes: ['id', 'name'],
+                }
+            ]
+        });
+
+        if (exerciseCompletions.length === 0) {
+            return res.status(200).json([]);
+        }
+
+        const leaderboard = exerciseCompletions
+            .map(completion => {
+                const topStat = completion.ExerciseStats[0];
+
+                if (topStat) {
+                    return {
+                        user: {
+                            id: completion.user.id,
+                            name: completion.user.name,
+
+                        },
+                        stats: {
+                            set: topStat.set,
+                            reps: topStat.reps,
+                            weight: topStat.weight,
+                        }
+                    };
+                }
+
+                return null;
+            })
+            .filter(item => item !== null)
+            .sort((a, b) => b.stats.weight - a.stats.weight);
+
+        leaderboard.forEach((entry, index) => {
+            entry.rank = index + 1;
+        });
+
+        res.status(200).json(
+            leaderboard
+        );
+
+    } catch (error) {
+        console.error(error);
+        if (!error.statusCode) {
+            error.statusCode = 500;
+        }
+        next(error);
+    }
+};
 
 
 

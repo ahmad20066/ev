@@ -17,5 +17,11 @@ const MealIngredient = sequelize.define("MealIngredient", {
             key: "id"
         }
     },
+    quantity: {
+        type: Sequelize.DECIMAL,
+        allowNull: false,
+        defaultValue: 0
+    },
+
 })
 module.exports = MealIngredient
