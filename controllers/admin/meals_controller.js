@@ -41,9 +41,10 @@ exports.createMeal = async (req, res, next) => {
         }
 
         if (ingredients && Array.isArray(ingredients)) {
-            const mealIngredients = ingredients.map(ingredientId => ({
+            const mealIngredients = ingredients.map(item => ({
                 meal_id: meal.id,
-                ingredient_id: ingredientId
+                ingredient_id: item.ingredient_id,
+                quantity: item.quantity
             }));
             await MealIngredient.bulkCreate(mealIngredients);
         }
