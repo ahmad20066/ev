@@ -217,7 +217,7 @@ exports.getMealsForWeek = async (req, res, next) => {
         const meals = mealDays.map(m => m.meal);
         res.status(200).json({
             date: date,
-            day: day.toLowerCase(),
+            day: new Date(date).getDay(),
             meals
         });
     } catch (error) {
