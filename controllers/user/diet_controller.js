@@ -186,9 +186,9 @@ exports.getMealsForWeek = async (req, res, next) => {
             return res.status(400).json({ message: "Please specify a date" });
         }
         // const targetDate = getDateOfCurrentWeek(day);
-        if (!targetDate) {
-            return res.status(400).json({ message: "Invalid day parameter" });
-        }
+        // if (!targetDate) {
+        //     return res.status(400).json({ message: "Invalid day parameter" });
+        // }
         const formattedDate = date.toISOString().split("T")[0];
         const whereClause = {
             date: date
