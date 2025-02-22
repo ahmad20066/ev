@@ -17,6 +17,7 @@ const MealDay = sequelize.define("MealDay", {
     date: {
         type: Sequelize.DATEONLY,
         allowNull: false,
+        defaultValue: new Date()
     },
 })
 module.exports = MealDay
