@@ -46,6 +46,7 @@ exports.createMeal = async (req, res, next) => {
                 ingredient_id: item.ingredient_id,
                 quantity: item.quantity
             }));
+            console.log(mealIngredients)
             await MealIngredient.bulkCreate(mealIngredients);
         }
 
