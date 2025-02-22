@@ -15,7 +15,7 @@ const MealDay = sequelize.define("MealDay", {
         allowNull: false
     },
     date: {
-        type: DataTypes.DATEONLY,
+        type: Sequelize.DATEONLY,
         allowNull: false,
     },
 })
