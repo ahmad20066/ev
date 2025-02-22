@@ -181,17 +181,17 @@ function getDateOfCurrentWeek(dayName) {
 
 exports.getMealsForWeek = async (req, res, next) => {
     try {
-        const { day, type } = req.query;
-        if (!day) {
-            return res.status(400).json({ message: "Please specify a day (e.g., ?day=monday)" });
+        const { date, type } = req.query;
+        if (!date) {
+            return res.status(400).json({ message: "Please specify a date" });
         }
-        const targetDate = getDateOfCurrentWeek(day);
+        // const targetDate = getDateOfCurrentWeek(day);
         if (!targetDate) {
             return res.status(400).json({ message: "Invalid day parameter" });
         }
-        const formattedDate = targetDate.toISOString().split("T")[0];
+        const formattedDate = date.toISOString().split("T")[0];
         const whereClause = {
-            date: formattedDate
+            date: date
         };
         const includeOptions = [
             {
@@ -216,7 +216,7 @@ exports.getMealsForWeek = async (req, res, next) => {
         });
         const meals = mealDays.map(m => m.meal);
         res.status(200).json({
-            date: formattedDate,
+            date: date,
             day: day.toLowerCase(),
             meals
         });
