@@ -6,7 +6,15 @@ const FAQ = sequelize.define("FAQ", {
         type: DataTypes.STRING,
         allowNull: false,
     },
+    question_ar: {
+        type: DataTypes.STRING,
+        allowNull: false,
+    },
     answer: {
+        type: DataTypes.TEXT,
+        allowNull: false,
+    },
+    answer_ar: {
         type: DataTypes.TEXT,
         allowNull: false,
     },

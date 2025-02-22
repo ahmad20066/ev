@@ -31,7 +31,7 @@ exports.deleteSurvey = async (req, res, next) => {
 };
 exports.createSurvey = async (req, res, next) => {
     try {
-        const { title, package_id } = req.body;
+        const { title, title_ar, package_id } = req.body;
 
         if (!title || !package_id) {
             return res.status(400).json({ message: "Title and package_id are required" });
@@ -49,7 +49,7 @@ exports.createSurvey = async (req, res, next) => {
             });
         }
 
-        const survey = await Survey.create({ title, package_id });
+        const survey = await Survey.create({ title, title_ar, package_id });
         res.status(201).json({ message: "Survey created", survey });
     } catch (error) {
         next(error);
