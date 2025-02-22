@@ -209,6 +209,7 @@ exports.getMealsForWeek = async (req, res, next) => {
                     : []
             }
         ];
+        console.log(whereClause)
         const mealDays = await MealDay.findAll({
             where: whereClause,
             include: includeOptions
