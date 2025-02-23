@@ -233,26 +233,8 @@ exports.assignMealsToDays = async (req, res, next) => {
                 )
         );
 
-        const recordsToDelete = existingRecords.filter(
-            existingRecord =>
-                !newRecords.some(
-                    newRecord =>
-                        newRecord.meal_id === existingRecord.meal_id &&
-                        newRecord.day === existingRecord.day &&
-                        newRecord.date === existingRecord.date
-                )
-        );
-
         if (recordsToAdd.length > 0) {
             await MealDay.bulkCreate(recordsToAdd);
-        }
-
-        if (recordsToDelete.length > 0) {
-            await MealDay.destroy({
-                where: {
-                    [Sequelize.Op.or]: recordsToDelete,
-                },
-            });
         }
 
         const updatedRecords = await MealDay.findAll({
