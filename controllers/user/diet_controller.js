@@ -204,6 +204,13 @@ exports.getMealsForWeek = async (req, res, next) => {
                             model: Type,
                             as: "types",
                             where: { id: type }
+                        },
+                        {
+                            model: Ingredient,
+                            as: "ingredients",
+                            through: {
+                                attributes: ["quantity"]
+                            }
                         }
                     ]
                     : []
@@ -250,7 +257,7 @@ exports.getMealSelections = async (req, res, next) => {
                         model: Ingredient,
                         as: "ingredients",
                         through: {
-                            attributes: ["quantity"] // Fetch quantity from MealIngredient
+                            attributes: ["quantity"]
                         }
                     }
                 ]
@@ -287,7 +294,26 @@ exports.getMealSelections = async (req, res, next) => {
 exports.getMealById = async (req, res, next) => {
     try {
         const { id } = req.params
-        const meal = await Meal.findByPk(id,)
+        const meal = await Meal.findByPk(id, {
+            include: [
+                { model: Type, as: 'types', through: { attributes: [] } },
+                {
+                    model: Ingredient, as: 'ingredients', attributes: {
+                        exclude: ['stock'],
+                    }, through: {
+                        attributes: {
+
+                            include: ['quantity']
+                        }
+                    }
+                },
+            ]
+        })
+        console.log(meal.ingredients)
+        meal.ingredients.forEach((ingredient) => {
+            ingredient.dataValues.quantity = ingredient.MealIngredient.quantity;
+            delete ingredient.dataValues.MealIngredient;
+        });
         if (!meal) {
             const error = new Error("Meal not found")
             error.statusCode = 404;
