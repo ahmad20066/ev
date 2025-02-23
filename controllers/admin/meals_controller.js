@@ -199,7 +199,6 @@ exports.updateMeal = async (req, res, next) => {
     }
 };
 
-const { Sequelize } = require("sequelize");
 
 exports.assignMealsToDays = async (req, res, next) => {
     try {
