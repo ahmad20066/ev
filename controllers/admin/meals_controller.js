@@ -199,19 +199,28 @@ exports.updateMeal = async (req, res, next) => {
     }
 };
 
+const { Sequelize } = require("sequelize");
+
 exports.assignMealsToDays = async (req, res, next) => {
     try {
         const { assignments } = req.body;
 
+        const getDayFromDate = (dateString) => {
+            const daysOfWeek = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+            const date = new Date(dateString);
+            return daysOfWeek[date.getUTCDay()];
+        };
+
         const newRecords = assignments.flatMap(assignment =>
             assignment.meal_ids.map(meal_id => ({
-                day: assignment.day,
+                date: assignment.date,
+                day: getDayFromDate(assignment.date),
                 meal_id,
             }))
         );
 
         const existingRecords = await MealDay.findAll({
-            attributes: ["meal_id", "day"],
+            attributes: ["meal_id", "day", "date"],
             raw: true,
         });
 
@@ -220,7 +229,8 @@ exports.assignMealsToDays = async (req, res, next) => {
                 !existingRecords.some(
                     existingRecord =>
                         existingRecord.meal_id === newRecord.meal_id &&
-                        existingRecord.day === newRecord.day
+                        existingRecord.day === newRecord.day &&
+                        existingRecord.date === newRecord.date
                 )
         );
 
@@ -229,10 +239,10 @@ exports.assignMealsToDays = async (req, res, next) => {
                 !newRecords.some(
                     newRecord =>
                         newRecord.meal_id === existingRecord.meal_id &&
-                        newRecord.day === existingRecord.day
+                        newRecord.day === existingRecord.day &&
+                        newRecord.date === existingRecord.date
                 )
         );
-
 
         if (recordsToAdd.length > 0) {
             await MealDay.bulkCreate(recordsToAdd);
@@ -247,7 +257,7 @@ exports.assignMealsToDays = async (req, res, next) => {
         }
 
         const updatedRecords = await MealDay.findAll({
-            attributes: ["meal_id", "day"],
+            attributes: ["meal_id", "day", "date"],
         });
 
         res.status(201).json({
@@ -258,6 +268,7 @@ exports.assignMealsToDays = async (req, res, next) => {
         next(error);
     }
 };
+
 
 exports.getUpcomingWeek = async (req, res, next) => {
     try {
