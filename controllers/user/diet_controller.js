@@ -310,15 +310,16 @@ exports.getMealById = async (req, res, next) => {
             ]
         })
         console.log(meal.ingredients)
-        meal.ingredients.forEach((ingredient) => {
-            ingredient.dataValues.quantity = ingredient.MealIngredient.quantity;
-            delete ingredient.dataValues.MealIngredient;
-        });
         if (!meal) {
             const error = new Error("Meal not found")
             error.statusCode = 404;
             throw error;
         }
+        meal.ingredients.forEach((ingredient) => {
+            ingredient.dataValues.quantity = ingredient.MealIngredient.quantity;
+            delete ingredient.dataValues.MealIngredient;
+        });
+
         res.status(200).json(meal)
     } catch (e) {
         next(e)
