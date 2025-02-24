@@ -25,13 +25,13 @@ exports.createExercise = async (req, res, next) => {
             image_urls: JSON.stringify(image_urls),
             target_muscles_image,
             video_url,
-            notes: notes,
-            notes_ar,
+            notes: JSON.parse(notes),
+            notes_ar: JSON.parse(notes_ar),
         });
 
         res.status(201).json({
             message: 'Exercise created successfully',
-            exercise,
+
         });
     } catch (error) {
         next(error);
@@ -88,7 +88,7 @@ exports.getExercises = async (req, res, next) => {
                 is_active: true
             }
         });
-
+        console.log(exercises)
         res.status(200).json(exercises);
     } catch (error) {
         next(error);

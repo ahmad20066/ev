@@ -23,7 +23,11 @@ const Exercise = sequelize.define('Exercise', {
         allowNull: true,
         get() {
             const rawValue = this.getDataValue('image_urls');
-            return rawValue ? JSON.parse(rawValue) : null;
+            if (rawValue) {
+                return JSON.parse(rawValue)
+            } else {
+                return null
+            }
         }
     },
     target_muscles_image: {
@@ -35,7 +39,14 @@ const Exercise = sequelize.define('Exercise', {
         allowNull: true,
         get() {
             const rawValue = this.getDataValue('notes');
-            return rawValue ? JSON.parse(rawValue) : null;
+            console.log(rawValue)
+            console.log(JSON.parse(rawValue))
+            if (rawValue) {
+                return JSON.parse(rawValue)
+            } else {
+                return null
+            }
+
         },
     },
     notes_ar: {
@@ -43,7 +54,11 @@ const Exercise = sequelize.define('Exercise', {
         allowNull: true,
         get() {
             const rawValue = this.getDataValue('notes_ar');
-            return rawValue ? JSON.parse(rawValue) : null;
+            if (rawValue) {
+                return JSON.parse(rawValue)
+            } else {
+                return null
+            }
         },
     },
     video_url: {

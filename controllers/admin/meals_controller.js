@@ -10,8 +10,8 @@ const qs = require("qs");
 
 exports.createMeal = async (req, res, next) => {
     try {
-        req.body = qs.parse(req.body); // Convert form-data into a proper object structure
-        console.log("Parsed Request Body:", req.body); // Debugging line
+        req.body = qs.parse(req.body);
+        console.log("Parsed Request Body:", req.body);
 
         const { name, name_ar, description, description_ar, calories, types, protein, carb, fats, fiber, ingredients } = req.body;
 
@@ -107,9 +107,24 @@ exports.showMeal = async (req, res, next) => {
     try {
         const { id } = req.params;
         const meal = await Meal.findByPk(id, {
+            include: [
+                { model: Type, as: 'types', through: { attributes: [] } },
+                {
+                    model: Ingredient, as: 'ingredients', attributes: {
+                        exclude: ['stock'],
+                    }, through: {
+                        attributes: {
 
+                            include: ['quantity']
+                        }
+                    }
+                },
+            ]
         });
-
+        meal.ingredients.forEach((ingredient) => {
+            ingredient.dataValues.quantity = ingredient.MealIngredient.quantity;
+            delete ingredient.dataValues.MealIngredient;
+        });
         if (!meal) {
             const error = new Error("Meal not found");
             error.statusCode = 404;
@@ -291,7 +306,6 @@ function getUpcomingWeek() {
     }
     return week;
 }
-
 exports.getMealsForWeek = async (req, res, next) => {
     try {
         const upcomingWeek = getUpcomingWeek();
@@ -322,8 +336,6 @@ exports.getMealsForWeek = async (req, res, next) => {
         next(error);
     }
 };
-
-
 exports.createIngredient = async (req, res, next) => {
     try {
         const { title, title_ar, stock, unit } = req.body;
@@ -380,7 +392,6 @@ exports.updateIngredient = async (req, res) => {
         next(error)
     }
 };
-
 exports.deleteIngredient = async (req, res) => {
     try {
         const ingredient = await Ingredient.findByPk(req.params.id);
