@@ -3,7 +3,7 @@ const Exercise = require('../../models/fitness/exercise');
 
 exports.createExercise = async (req, res, next) => {
     try {
-        const { name, name_ar, description_ar, description, duration, notes, notes_ar } = req.body;
+        const { name, name_ar, description_ar, description, duration, notes, notes_ar, cooling_time } = req.body;
 
         const image_urls = req.files.images
             ? req.files.images.map((file) => file.path)
@@ -21,6 +21,7 @@ exports.createExercise = async (req, res, next) => {
             name_ar,
             description,
             description_ar,
+            cooling_time,
             duration,
             image_urls: JSON.stringify(image_urls),
             target_muscles_image,
@@ -40,7 +41,7 @@ exports.createExercise = async (req, res, next) => {
 exports.updateExercise = async (req, res, next) => {
     try {
         const { id } = req.params;
-        const { name, description, name_ar, description_ar, duration, notes } = req.body;
+        const { name, description, name_ar, description_ar, duration, notes, cooling_time } = req.body;
 
         const exercise = await Exercise.findByPk(id);
 
@@ -63,6 +64,7 @@ exports.updateExercise = async (req, res, next) => {
         exercise.name = name || exercise.name;
         exercise.name_ar = name_ar || exercise.name_ar;
         exercise.description = description || exercise.description;
+        exercise.cooling_time = cooling_time || exercise.cooling_time;
         exercise.description_ar = description_ar || exercise.description_ar;
 
         exercise.image_urls = JSON.stringify(image_urls);

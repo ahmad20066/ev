@@ -5,8 +5,11 @@ const { body, validationResult } = require('express-validator');
 router.get("/orders", controller.getOrders)
 router.get("/orders/:id", controller.getOrderById)
 router.post("/orders/:id/finalize", controller.finalizeOrder)
+router.post("/add-stock", [
+    body("stock").notEmpty().isNumeric().withMessage("Please Enter a valid stock")
+], controller.addStock)
 router.post("/order-status", [
-    body("status").isIn(['pending', 'done']).withMessage("Please enter a valid status")
+    body("status").notEmpty().isIn(['pending', 'done']).withMessage("Please enter a valid status")
 ], (req, res, next) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -16,4 +19,5 @@ router.post("/order-status", [
     }
     controller.changeOrderStatus(req, res, next)
 })
+router.get("/daysOfMonth", controller.getDatesForMonth)
 module.exports = router

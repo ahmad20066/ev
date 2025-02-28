@@ -61,6 +61,10 @@ const Exercise = sequelize.define('Exercise', {
         //     }
         // },
     },
+    cooling_time: {
+        type: DataTypes.DOUBLE,
+
+    },
     video_url: {
         type: DataTypes.STRING,
         allowNull: true,

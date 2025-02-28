@@ -280,3 +280,39 @@ exports.finalizeOrder = async (req, res, next) => {
         next(err);
     }
 };
+exports.addStock = async (req, res, next) => {
+    try {
+        const { stock, ingredient_id } = req.body
+        const ingredient = await Ingredient.findByPk(ingredient_id)
+        if (!ingredient) {
+            const error = new Error("Ingredient not found")
+            error.statusCode = 404
+            throw error
+        }
+        ingredient.stock += stock
+        await ingredient.save()
+        res.status(201).json({
+            Message: "Stock updated successfully"
+        })
+    } catch (e) {
+        next(e)
+    }
+}
+exports.getDatesForMonth = async (req, res, next) => {
+    try {
+        const today = new Date();
+        const dates = [];
+
+        for (let i = 0; i < 30; i++) {
+            let futureDate = new Date();
+            futureDate.setDate(today.getDate() + i);
+            const formattedDate = futureDate.toISOString().split('T')[0];
+            const dayOfWeek = futureDate.toLocaleString('en-US', { weekday: 'long' });
+            dates.push({ date: formattedDate, day: dayOfWeek });
+        }
+
+        res.status(200).json({ dates });
+    } catch (error) {
+        next(error);
+    }
+};
