@@ -52,6 +52,7 @@ exports.createOrders = async (req, res, next) => {
         });
         const existingMap = new Map();
         for (const o of allOrders) {
+            console.log(typeof (o.order_date))
             const k = `${o.user_id}-${o.meal_subscription_id}-${o.order_date.toISOString().split("T")[0]}`;
             existingMap.set(k, o.id);
         }

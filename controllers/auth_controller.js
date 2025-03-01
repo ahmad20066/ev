@@ -60,6 +60,7 @@ exports.sendOtp = async (req, res, next) => {
             const otp = Math.floor(1000 + Math.random() * 9000);
             const expiry = Date.now() + 5 * 60 * 1000; // OTP valid for 5 minutes
             otpStore[email] = { otp, expiry };
+            console.log(otp)
             const transporter = nodemailer.createTransport({
                 service: "Gmail",
                 auth: {
@@ -78,7 +79,6 @@ exports.sendOtp = async (req, res, next) => {
             return res.status(200).json({ message: "OTP sent to your email." });
         }
 
-        // Handle phone verification
         if (method === 'phone') {
             if (!phone) {
                 return res.status(400).json({ error: "Phone number is required for phone verification." });
