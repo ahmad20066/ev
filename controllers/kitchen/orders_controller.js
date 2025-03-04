@@ -10,93 +10,81 @@ const UserMealSelection = require("../../models/meals/user_meal_selection");
 const User = require("../../models/user");
 
 const { Op } = require("sequelize");
-
+function getDatesBetween(start, end) {
+    const dateArr = [];
+    let current = new Date(start);
+    while (current <= end) {
+        dateArr.push(new Date(current)); // push a copy
+        current.setDate(current.getDate() + 1);
+    }
+    return dateArr;
+}
 exports.createOrders = async (req, res, next) => {
     try {
-        const ordersToCreate = [];
         const now = new Date();
-        for (let i = 0; i < 30; i++) {
-            const targetDate = new Date(now);
-            targetDate.setDate(now.getDate() + i);
-            const activeSubs = await MealSubscription.findAll({
-                where: {
-                    is_active: true,
-                    start_date: { [Op.lte]: targetDate },
-                    end_date: { [Op.gte]: targetDate }
-                }
-            });
-            for (const sub of activeSubs) {
-                const existingOrder = await Order.findOne({
+
+        // 1) Fetch all active meal subscriptions
+        const activeSubs = await MealSubscription.findAll({
+            where: { is_active: true },
+            attributes: ["id", "user_id", "start_date", "end_date"],
+        });
+
+        for (const sub of activeSubs) {
+            const subStart = new Date(sub.start_date);
+            const subEnd = new Date(sub.end_date);
+
+            if (subEnd < now) {
+                continue;
+            }
+
+            const datesInRange = getDatesBetween(subStart, subEnd);
+
+            for (const dateObj of datesInRange) {
+
+                const [order] = await Order.findOrCreate({
                     where: {
                         user_id: sub.user_id,
                         meal_subscription_id: sub.id,
-                        order_date: targetDate
-                    }
-                });
-                if (!existingOrder) {
-                    ordersToCreate.push({
+                        order_date: dateObj,
+                    },
+                    defaults: {
                         user_id: sub.user_id,
                         meal_subscription_id: sub.id,
-                        order_date: targetDate
+                        order_date: dateObj,
+                    },
+                });
+
+
+                const userSelections = await UserMealSelection.findAll({
+                    where: {
+                        meal_subscription_id: sub.id,
+                        date: dateObj,
+                    },
+                    attributes: ["meal_id", "date"],
+                });
+
+                if (userSelections.length > 0) {
+                    const orderMeals = userSelections.map((selection) => ({
+                        order_id: order.id,
+                        meal_id: selection.meal_id,
+                        quantity: 1,
+                    }));
+
+                    await OrderMeal.bulkCreate(orderMeals, {
+                        updateOnDuplicate: ["quantity"],
                     });
                 }
             }
         }
-        if (ordersToCreate.length > 0) {
-            await Order.bulkCreate(ordersToCreate, { returning: true });
-        }
-        const allOrders = await Order.findAll({
-            where: {
-                order_date: { [Op.between]: [now, new Date(now.getTime() + 29 * 86400000)] }
-            }
+
+        res.status(200).json({
+            message: "Orders created/updated for all active subscriptions successfully",
         });
-        const existingMap = new Map();
-        for (const o of allOrders) {
-            console.log(typeof (o.order_date))
-            const k = `${o.user_id}-${o.meal_subscription_id}-${o.order_date.toISOString().split("T")[0]}`;
-            existingMap.set(k, o.id);
-        }
-        const orderMeals = [];
-        for (let i = 0; i < 30; i++) {
-            const date = new Date(now);
-            date.setDate(now.getDate() + i);
-            const subs = await MealSubscription.findAll({
-                where: {
-                    is_active: true,
-                    start_date: { [Op.lte]: date },
-                    end_date: { [Op.gte]: date }
-                }
-            });
-            for (const s of subs) {
-                const sel = await UserMealSelection.findAll({
-                    where: {
-                        meal_subscription_id: s.id,
-                        date: date.toISOString().split("T")[0]
-                    }
-                });
-                const orderKey = `${s.user_id}-${s.id}-${date.toISOString().split("T")[0]}`;
-                const oid = existingMap.get(orderKey);
-                if (oid) {
-                    for (const choice of sel) {
-                        orderMeals.push({
-                            order_id: oid,
-                            meal_id: choice.meal_id,
-                            quantity: 1
-                        });
-                    }
-                }
-            }
-        }
-        if (orderMeals.length > 0) {
-            await OrderMeal.bulkCreate(orderMeals, { updateOnDuplicate: ["quantity"] });
-        }
-        res.status(200).json({ message: "Orders created/updated" });
-    } catch (e) {
-        if (!e.statusCode) e.statusCode = 500;
-        next(e);
+    } catch (err) {
+        if (!err.statusCode) err.statusCode = 500;
+        next(err);
     }
 };
-
 exports.getOrders = async (req, res, next) => {
     try {
         const { day } = req.query;
@@ -112,12 +100,14 @@ exports.getOrders = async (req, res, next) => {
             include: [
                 {
                     model: User,
-                    as: "user"
+                    as: "user",
+                    required: false
                 },
                 {
                     model: Meal,
                     as: "meals",
-                    through: { attributes: [] }
+                    through: { attributes: [] },
+                    required: false
                 },
                 {
                     model: MealSubscription,
@@ -125,7 +115,8 @@ exports.getOrders = async (req, res, next) => {
                     include: {
                         model: Address,
                         as: "address"
-                    }
+                    },
+                    required: false
                 }
             ]
         });
@@ -216,28 +207,37 @@ exports.changeOrderStatus = async (req, res, next) => {
     }
 };
 
-exports.finalizeOrder = async (req, res, next) => {
+exports.checkStock = async (req, res, next) => {
     const t = await sequelize.transaction();
     try {
-        const { orderId } = req.params;
+        const orderId = req.query.order_id;
+        if (!orderId) {
+            return res.status(400).json({ message: "Please provide order ID" });
+        }
+
         const order = await Order.findByPk(orderId, { transaction: t });
         if (!order) {
             await t.rollback();
-            return res.status(404).json({ error: "Order not found" });
+            return res.status(404).json({ message: "Order not found" });
         }
+
         const orderMeals = await OrderMeal.findAll({
             where: { order_id: orderId },
             transaction: t
         });
+
         let totalRequiredIngredients = new Map();
+
         for (const om of orderMeals) {
             const mealIngredients = await MealIngredient.findAll({
                 where: { meal_id: om.meal_id },
                 transaction: t
             });
+
             for (const mi of mealIngredients) {
                 const totalUsage = Number(mi.quantity) * om.quantity;
                 const ingId = mi.ingredient_id;
+
                 if (!totalRequiredIngredients.has(ingId)) {
                     totalRequiredIngredients.set(ingId, 0);
                 }
@@ -247,7 +247,9 @@ exports.finalizeOrder = async (req, res, next) => {
                 );
             }
         }
+
         const insufficientIngredients = [];
+
         for (const [ingredientId, requiredQty] of totalRequiredIngredients.entries()) {
             const ingredient = await Ingredient.findByPk(ingredientId, { transaction: t });
             if (!ingredient) continue;
@@ -260,27 +262,26 @@ exports.finalizeOrder = async (req, res, next) => {
                 });
             }
         }
+
+        await t.commit();
         if (insufficientIngredients.length > 0) {
-            await t.rollback();
             return res.status(400).json({
                 message: "Insufficient stock for one or more ingredients",
                 insufficientIngredients
             });
+        } else {
+            return res.status(200).json({
+                message: insufficientIngredients.length > 0 ? "Insufficient stock for one or more ingredients" : "Stock is sufficient",
+                insufficientIngredients
+            });
         }
-        for (const [ingredientId, requiredQty] of totalRequiredIngredients.entries()) {
-            const ingredient = await Ingredient.findByPk(ingredientId, { transaction: t });
-            ingredient.stock = Number(ingredient.stock) - requiredQty;
-            await ingredient.save({ transaction: t });
-        }
-        order.status = "done";
-        await order.save({ transaction: t });
-        await t.commit();
-        return res.status(200).json({ message: "Order finalized successfully" });
+
     } catch (err) {
         await t.rollback();
         next(err);
     }
 };
+
 exports.addStock = async (req, res, next) => {
     try {
         const { stock, ingredient_id } = req.body

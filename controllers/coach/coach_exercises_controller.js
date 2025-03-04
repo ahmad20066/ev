@@ -1,4 +1,3 @@
-
 const Exercise = require('../../models/fitness/exercise');
 
 exports.createExercise = async (req, res, next) => {
@@ -8,7 +7,7 @@ exports.createExercise = async (req, res, next) => {
         const image_urls = req.files.images
             ? req.files.images.map((file) => file.path)
             : [];
-        console.log(req.files);
+
         const target_muscles_image = req.files.target_muscles_image
             ? req.files.target_muscles_image[0].path
             : null;
@@ -32,12 +31,14 @@ exports.createExercise = async (req, res, next) => {
 
         res.status(201).json({
             message: 'Exercise created successfully',
-
+            message_ar: 'تم إنشاء التمرين بنجاح',
+            exercise
         });
     } catch (error) {
         next(error);
     }
 };
+
 exports.updateExercise = async (req, res, next) => {
     try {
         const { id } = req.params;
@@ -46,7 +47,7 @@ exports.updateExercise = async (req, res, next) => {
         const exercise = await Exercise.findByPk(id);
 
         if (!exercise) {
-            return res.status(404).json({ message: 'Exercise not found' });
+            return res.status(404).json({ message: 'Exercise not found', message_ar: 'لم يتم العثور على التمرين' });
         }
 
         const image_urls = req.files.images
@@ -66,7 +67,6 @@ exports.updateExercise = async (req, res, next) => {
         exercise.description = description || exercise.description;
         exercise.cooling_time = cooling_time || exercise.cooling_time;
         exercise.description_ar = description_ar || exercise.description_ar;
-
         exercise.image_urls = JSON.stringify(image_urls);
         exercise.target_muscles_image = target_muscles_image;
         exercise.video_url = video_url;
@@ -76,7 +76,8 @@ exports.updateExercise = async (req, res, next) => {
 
         res.status(200).json({
             message: 'Exercise updated successfully',
-            exercise,
+            message_ar: 'تم تحديث التمرين بنجاح',
+            exercise
         });
     } catch (error) {
         next(error);
@@ -86,37 +87,35 @@ exports.updateExercise = async (req, res, next) => {
 exports.getExercises = async (req, res, next) => {
     try {
         const exercises = await Exercise.findAll({
-            where: {
-                is_active: true
-            }
+            where: { is_active: true }
         });
-        console.log(exercises)
-        res.status(200).json(exercises);
+        res.status(200).json({ message: 'Exercises retrieved successfully', message_ar: 'تم استرجاع التمارين بنجاح', exercises });
     } catch (error) {
         next(error);
     }
 };
+
 exports.getExercise = async (req, res, next) => {
     try {
-        const { id } = req.params
+        const { id } = req.params;
         const exercise = await Exercise.findByPk(id);
         if (!exercise) {
-            const error = new Error("Exercise not found")
-            error.statusCode = 404;
-            throw error;
+            return res.status(404).json({ message: 'Exercise not found', message_ar: 'لم يتم العثور على التمرين' });
         }
-
-        res.status(200).json(exercise);
+        res.status(200).json({ message: 'Exercise retrieved successfully', message_ar: 'تم استرجاع التمرين بنجاح', exercise });
     } catch (error) {
         next(error);
     }
 };
+
 exports.deleteExercise = async (req, res, next) => {
     try {
         const exercise = await Exercise.findByPk(req.params.id);
-        if (!exercise) return res.status(404).json({ message: 'Exercise not found' });
+        if (!exercise) {
+            return res.status(404).json({ message: 'Exercise not found', message_ar: 'لم يتم العثور على التمرين' });
+        }
         await exercise.destroy();
-        res.status(200).json({ message: 'Exercise deleted successfully' });
+        res.status(200).json({ message: 'Exercise deleted successfully', message_ar: 'تم حذف التمرين بنجاح' });
     } catch (error) {
         next(error);
     }

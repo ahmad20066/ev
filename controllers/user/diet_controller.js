@@ -234,12 +234,15 @@ exports.getMealsForWeek = async (req, res, next) => {
 exports.getMealSelections = async (req, res, next) => {
     try {
         const userId = req.userId;
-        let { day } = req.query;
-
-        if (!day) {
-            const today = new Date();
-            const dayNames = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
-            day = dayNames[today.getDay()];
+        let { date } = req.query;
+        const dayNames = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+        date = new Date(date)
+        let day
+        day = dayNames[date.getDay()];
+        if (!date) {
+            const error = new Error("Please provide a date")
+            error.statusCode = 400
+            throw error;
         }
 
         console.log(`UserID: ${userId}, Day: ${day}`);
@@ -248,6 +251,7 @@ exports.getMealSelections = async (req, res, next) => {
             where: {
                 user_id: userId,
                 day: day,
+                date: date
             },
             include: {
                 model: Meal,

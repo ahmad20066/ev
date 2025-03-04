@@ -26,69 +26,38 @@ exports.createWorkout = async (req, res, next) => {
     try {
         let { title, title_ar, user_id, description, description_ar, duration, exercises, difficulty_level, calories_burned, date, package_id, motivational_message, motivational_message_ar } = req.body;
         const coach = req.userId;
-        console.log(req.files);
         const image = req.file.path;
+
         let user;
         if (user_id) {
-            user = await User.findByPk(user_id)
+            user = await User.findByPk(user_id);
             if (!user) {
-                const error = new Error("User not found");
-                error.statusCode = 404;
-                throw error;
+                return res.status(404).json({ message: "User not found", message_ar: "لم يتم العثور على المستخدم" });
             }
-            const subscription = await Subscription.findOne({
-                where: {
-                    user_id,
-                    is_active: true
-                }
-            })
+            const subscription = await Subscription.findOne({ where: { user_id, is_active: true } });
             if (!subscription) {
-                const error = new Error("No Active subscription for this user");
-                error.statusCode = 400;
-                throw error;
+                return res.status(400).json({ message: "No Active subscription for this user", message_ar: "لا يوجد اشتراك نشط لهذا المستخدم" });
             }
-            package_id = subscription.package_id
+            package_id = subscription.package_id;
         }
+
         const package = await Package.findByPk(package_id);
         if (!package) {
-            const error = new Error("Package not found");
-            error.statusCode = 404;
-            throw error;
+            return res.status(404).json({ message: "Package not found", message_ar: "لم يتم العثور على الحزمة" });
         }
 
         const type = package.type;
-        if (type == "personalized" && !user_id) {
-            const error = new Error("Personalized workouts require a user id");
-            error.statusCode = 422;
-            throw error;
+        if (type === "personalized" && !user_id) {
+            return res.status(422).json({ message: "Personalized workouts require a user id", message_ar: "التمارين الشخصية تتطلب معرف المستخدم" });
         }
-        if (type == "group" && user_id) {
-            user_id = undefined
+        if (type === "group" && user_id) {
+            user_id = undefined;
         }
-        if (type == "group") {
-            const previousWorkout = await Workout.findOne({
-                where: {
-                    date,
-                    package_id,
-                    is_active: true
-                }
-            })
-            if (previousWorkout) {
-                previousWorkout.is_active = false;
-                await previousWorkout.save()
-            }
-        } else {
-            const previousWorkout = await Workout.findOne({
-                where: {
-                    date,
-                    user_id,
-                    is_active: true
-                }
-            })
-            if (previousWorkout) {
-                previousWorkout.is_active = false;
-                await previousWorkout.save()
-            }
+
+        const previousWorkout = await Workout.findOne({ where: { date, package_id, is_active: true } });
+        if (previousWorkout) {
+            previousWorkout.is_active = false;
+            await previousWorkout.save();
         }
 
         const workout = await Workout.create({
@@ -110,32 +79,16 @@ exports.createWorkout = async (req, res, next) => {
         });
 
         await Promise.all(exercises.map(async (exercise) => {
-            const { exercise_id } = exercise;
-
-            await WorkoutExercise.create({
-                workout_id: workout.id,
-                exercise_id,
-
-            });
+            await WorkoutExercise.create({ workout_id: workout.id, exercise_id: exercise.exercise_id });
         }));
 
-        const workoutWithExercises = await Workout.findByPk(workout.id, {
-            include: [{
-                model: Exercise,
-                as: 'exercises',
-            }]
-        });
-        console.log("ssss")
+        const workoutWithExercises = await Workout.findByPk(workout.id, { include: [{ model: Exercise, as: 'exercises' }] });
+
         if (type === 'personalized' && user) {
-            sendNotification(user.id, user.fcm_token, "Coach created your workout", "Coach created your workout you can now view it", {
-                workout_id: workout.id,
-                type: "workout_created"
-            })
+            sendNotification(user.id, user.fcm_token, "Coach created your workout", "Coach created your workout you can now view it", { workout_id: workout.id, type: "workout_created" });
         }
-        res.status(201).json({
-            message: 'Workout created successfully',
-            workout: workoutWithExercises
-        });
+
+        res.status(201).json({ message: "Workout created successfully", message_ar: "تم إنشاء التمرين بنجاح", workout: workoutWithExercises });
     } catch (error) {
         next(error);
     }
@@ -164,7 +117,7 @@ exports.getWorkout = async (req, res, next) => {
         });
 
         if (!workout) {
-            return res.status(404).json({ message: 'Workout not found' });
+            return res.status(404).json({ message: 'Workout not found', message_ar: "لم يتم العثور على التمرين" });
         }
 
         res.status(200).json({ workout });
@@ -239,7 +192,7 @@ exports.updateWorkout = async (req, res, next) => {
             }],
         });
 
-        res.status(200).json({ message: 'Workout updated successfully', workout: updatedWorkout });
+        res.status(200).json({ message: 'Workout updated successfully', message_ar: "تم تعديل التمرين بنجاح", workout: updatedWorkout });
     } catch (error) {
         next(error);
     }
@@ -248,15 +201,11 @@ exports.deleteWorkout = async (req, res, next) => {
     try {
         const workoutId = req.params.id;
         const workout = await Workout.findByPk(workoutId);
-
         if (!workout) {
-            return res.status(404).json({ message: 'Workout not found' });
+            return res.status(404).json({ message: "Workout not found", message_ar: "لم يتم العثور على التمرين" });
         }
-
-
         await workout.destroy();
-
-        res.status(200).json({ message: 'Workout and associated exercises deleted successfully' });
+        res.status(200).json({ message: "Workout deleted successfully", message_ar: "تم حذف التمرين بنجاح" });
     } catch (error) {
         next(error);
     }

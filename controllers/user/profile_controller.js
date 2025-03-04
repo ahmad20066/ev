@@ -112,7 +112,6 @@ exports.getSubscription = async (req, res, next) => {
             ],
         });
 
-        // Fetch active diet subscription
         const dietSubscription = await MealSubscription.findOne({
             where: {
                 user_id: userId,

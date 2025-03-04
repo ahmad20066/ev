@@ -4,7 +4,7 @@ const controller = require("../controllers/kitchen/orders_controller");
 const { body, validationResult } = require('express-validator');
 router.get("/orders", controller.getOrders)
 router.get("/orders/:id", controller.getOrderById)
-router.post("/orders/:id/finalize", controller.finalizeOrder)
+// router.post("/orders/:id/finalize", controller.finalizeOrder)
 router.post("/add-stock", [
     body("stock").notEmpty().isNumeric().withMessage("Please Enter a valid stock")
 ], controller.addStock)
@@ -20,4 +20,5 @@ router.post("/order-status", [
     controller.changeOrderStatus(req, res, next)
 })
 router.get("/daysOfMonth", controller.getDatesForMonth)
+router.get("/check-stock", controller.checkStock)
 module.exports = router
