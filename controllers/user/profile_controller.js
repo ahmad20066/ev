@@ -4,6 +4,7 @@ const Package = require("../../models/package");
 const PricingModel = require("../../models/pricing_model");
 const Subscription = require("../../models/subscription");
 const Answer = require("../../models/survey/answer");
+const Survey = require("../../models/survey/survey");
 const User = require("../../models/user");
 const WeightRecord = require("../../models/weight_record");
 exports.cancelSubscription = async (req, res, next) => {
