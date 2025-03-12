@@ -41,12 +41,10 @@ exports.sendOtp = async (req, res, next) => {
     const { method, email, phone } = req.body;
 
     try {
-        // Validate method
         if (!['email', 'phone'].includes(method)) {
             return res.status(400).json({ error: "Invalid verification method. Choose 'email' or 'phone'." });
         }
 
-        // Handle email verification
         if (method === 'email') {
             if (!email) {
                 return res.status(400).json({ error: "Email is required for email verification." });
@@ -58,7 +56,7 @@ exports.sendOtp = async (req, res, next) => {
             }
 
             const otp = Math.floor(1000 + Math.random() * 9000);
-            const expiry = Date.now() + 5 * 60 * 1000; // OTP valid for 5 minutes
+            const expiry = Date.now() + 5 * 60 * 1000;
             otpStore[email] = { otp, expiry };
             console.log(otp)
             const transporter = nodemailer.createTransport({
@@ -430,13 +428,13 @@ exports.resetPassword = async (req, res, next) => {
     try {
         const otpData = otpStore[email];
 
-        // if (!otpData || otpData.expiry < Date.now()) {
-        //     return res.status(400).json({ error: "OTP expired or invalid." });
-        // }
+        if (!otpData || otpData.expiry < Date.now()) {
+            return res.status(400).json({ error: "OTP expired or invalid." });
+        }
 
-        // if (otpData.otp !== parseInt(otp)) {
-        //     return res.status(400).json({ error: "Invalid OTP." });
-        // }
+        if (otpData.otp !== parseInt(otp)) {
+            return res.status(400).json({ error: "Invalid OTP." });
+        }
 
         delete otpStore[email];
 

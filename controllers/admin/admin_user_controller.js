@@ -11,12 +11,12 @@ const Sport = require("../../models/sport");
 
 // Create User
 exports.createUser = async (req, res, next) => {
-    const { name, email, phone, password, role } = req.body;
+    const { name, email, phone, password, role, } = req.body;
 
     try {
         const validRoles = ["consumer", "admin", "kitchen_staff", "coach"];
         if (!validRoles.includes(role)) {
-            return res.status(400).json({ message: "Invalid role", message_ar: "دور غير صالح" });
+            return res.status(400).json({ message: "Invalid role. Must be one of consumer, admin, kitchen_staff, or coach." });
         }
 
         const existingUser = await User.findOne({
@@ -24,7 +24,7 @@ exports.createUser = async (req, res, next) => {
         });
 
         if (existingUser) {
-            return res.status(400).json({ message: "User with this email or phone already exists", message_ar: "المستخدم بهذا البريد الإلكتروني أو الهاتف موجود بالفعل" });
+            return res.status(400).json({ message: "User with this email or phone already exists." });
         }
 
         const hashedPassword = await bcrypt.hash(password, 10);
@@ -40,7 +40,6 @@ exports.createUser = async (req, res, next) => {
 
         res.status(201).json({
             message: "User created successfully",
-            message_ar: "تم إنشاء المستخدم بنجاح",
             user: { id: newUser.id, name: newUser.name, email: newUser.email, role: newUser.role },
         });
     } catch (error) {
@@ -61,7 +60,7 @@ exports.getUsers = async (req, res, next) => {
             include: { model: WeightRecord, as: "weight" },
         });
 
-        res.status(200).json({ message: "Users retrieved successfully", message_ar: "تم استرجاع المستخدمين بنجاح", users });
+        res.status(200).json(users);
     } catch (e) {
         next(e);
     }
@@ -79,7 +78,7 @@ exports.getDeactivatedUsers = async (req, res, next) => {
             include: { model: WeightRecord, as: "weight" },
         });
 
-        res.status(200).json({ message: "Deactivated users retrieved successfully", message_ar: "تم استرجاع المستخدمين المعطلين بنجاح", users });
+        res.status(200).json(users);
     } catch (e) {
         next(e);
     }
@@ -96,7 +95,7 @@ exports.getUsersActiveSubscription = async (req, res, next) => {
             },
         });
 
-        res.status(200).json({ message: "Active users retrieved successfully", message_ar: "تم استرجاع المستخدمين النشطين بنجاح", activeUsers });
+        res.status(200).json({ activeUsers });
     } catch (error) {
         next(error);
     }
@@ -119,10 +118,10 @@ exports.getUserDetails = async (req, res, next) => {
         });
 
         if (!user) {
-            return res.status(404).json({ message: "User not found", message_ar: "لم يتم العثور على المستخدم" });
+            return res.status(404).json({ message: "User not found" });
         }
 
-        res.status(200).json({ message: "User retrieved successfully", message_ar: "تم استرجاع المستخدم بنجاح", user });
+        res.status(200).json(user);
     } catch (e) {
         next(e);
     }
@@ -136,7 +135,7 @@ exports.deactivateUser = async (req, res, next) => {
         const user = await User.findByPk(id);
 
         if (!user) {
-            return res.status(404).json({ message: "User not found", message_ar: "لم يتم العثور على المستخدم" });
+            return res.status(404).json({ message: "User not found" });
         }
 
         await user.update({
@@ -144,7 +143,7 @@ exports.deactivateUser = async (req, res, next) => {
             deactivated_at: new Date(),
         });
 
-        res.status(200).json({ message: "User has been deactivated", message_ar: "تم تعطيل المستخدم" });
+        res.status(200).json({ message: "User has been deactivated" });
     } catch (error) {
         next(error);
     }
@@ -158,7 +157,7 @@ exports.reactivateUser = async (req, res, next) => {
         const user = await User.findByPk(id);
 
         if (!user) {
-            return res.status(404).json({ message: "User not found", message_ar: "لم يتم العثور على المستخدم" });
+            return res.status(404).json({ message: "User not found" });
         }
 
         await user.update({
@@ -166,7 +165,7 @@ exports.reactivateUser = async (req, res, next) => {
             deactivated_at: null,
         });
 
-        res.status(200).json({ message: "User has been reactivated", message_ar: "تم إعادة تفعيل المستخدم" });
+        res.status(200).json({ message: "User has been reactivated" });
     } catch (error) {
         next(error);
     }

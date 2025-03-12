@@ -89,7 +89,7 @@ exports.getExercises = async (req, res, next) => {
         const exercises = await Exercise.findAll({
             where: { is_active: true }
         });
-        res.status(200).json({ message: 'Exercises retrieved successfully', message_ar: 'تم استرجاع التمارين بنجاح', exercises });
+        res.status(200).json(exercises);
     } catch (error) {
         next(error);
     }
@@ -102,7 +102,7 @@ exports.getExercise = async (req, res, next) => {
         if (!exercise) {
             return res.status(404).json({ message: 'Exercise not found', message_ar: 'لم يتم العثور على التمرين' });
         }
-        res.status(200).json({ message: 'Exercise retrieved successfully', message_ar: 'تم استرجاع التمرين بنجاح', exercise });
+        res.status(200).json(exercise);
     } catch (error) {
         next(error);
     }
