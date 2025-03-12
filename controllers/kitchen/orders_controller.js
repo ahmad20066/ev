@@ -291,7 +291,9 @@ exports.addStock = async (req, res, next) => {
             error.statusCode = 404
             throw error
         }
+        console.log(ingredient.stock)
         ingredient.stock += stock
+        console.log(ingredient.stock)
         await ingredient.save()
         res.status(201).json({
             Message: "Stock updated successfully"

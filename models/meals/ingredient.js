@@ -14,7 +14,7 @@ const Ingredient = sequelize.define("Ingredient", {
         allowNull: true
     },
     stock: {
-        type: Sequelize.DECIMAL,
+        type: Sequelize.INTEGER,
         allowNull: false,
         defaultValue: 0
     },
