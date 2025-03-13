@@ -127,6 +127,7 @@ exports.getOrders = async (req, res, next) => {
 };
 
 exports.getOrderById = async (req, res, next) => {
+    const t = await sequelize.transaction();
     try {
         const orderId = req.params.id;
         const order = await Order.findOne({
@@ -149,16 +150,59 @@ exports.getOrderById = async (req, res, next) => {
                         as: "address"
                     }
                 }
-            ]
+            ],
+            transaction: t
         });
+
         if (!order) {
+            await t.rollback();
             return res.status(404).json({ message: "Order not found" });
         }
-        res.status(200).json(order);
+
+        // Check stock availability
+        const orderMeals = await OrderMeal.findAll({
+            where: { order_id: orderId },
+            transaction: t
+        });
+
+        let totalRequiredIngredients = new Map();
+        for (const om of orderMeals) {
+            const mealIngredients = await MealIngredient.findAll({
+                where: { meal_id: om.meal_id },
+                transaction: t
+            });
+
+            for (const mi of mealIngredients) {
+                const totalUsage = Number(mi.quantity) * om.quantity;
+                const ingId = mi.ingredient_id;
+
+                if (!totalRequiredIngredients.has(ingId)) {
+                    totalRequiredIngredients.set(ingId, 0);
+                }
+                totalRequiredIngredients.set(
+                    ingId,
+                    totalRequiredIngredients.get(ingId) + totalUsage
+                );
+            }
+        }
+
+        let isStockSufficient = true;
+        for (const [ingredientId, requiredQty] of totalRequiredIngredients.entries()) {
+            const ingredient = await Ingredient.findByPk(ingredientId, { transaction: t });
+            if (!ingredient || Number(ingredient.stock) < requiredQty) {
+                isStockSufficient = false;
+                break;
+            }
+        }
+
+        await t.commit();
+        res.status(200).json({ ...order.toJSON(), sufficient: isStockSufficient });
     } catch (e) {
+        await t.rollback();
         next(e);
     }
 };
+
 
 exports.changeOrderStatus = async (req, res, next) => {
     const t = await sequelize.transaction();
