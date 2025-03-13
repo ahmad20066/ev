@@ -187,21 +187,29 @@ exports.getOrderById = async (req, res, next) => {
         }
 
         let isStockSufficient = true;
+        let insufficientIngredients = [];
+
         for (const [ingredientId, requiredQty] of totalRequiredIngredients.entries()) {
             const ingredient = await Ingredient.findByPk(ingredientId, { transaction: t });
             if (!ingredient || Number(ingredient.stock) < requiredQty) {
                 isStockSufficient = false;
-                break;
+                insufficientIngredients.push({
+                    ingredientId,
+                    ingredientName: ingredient ? ingredient.title : "Unknown",
+                    required: requiredQty,
+                    available: ingredient ? ingredient.stock : 0
+                });
             }
         }
 
         await t.commit();
-        res.status(200).json({ ...order.toJSON(), sufficient: isStockSufficient });
+        res.status(200).json({ ...order.toJSON(), isStockSufficient, insufficientIngredients });
     } catch (e) {
         await t.rollback();
         next(e);
     }
 };
+
 
 
 exports.changeOrderStatus = async (req, res, next) => {
