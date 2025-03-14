@@ -293,24 +293,26 @@ exports.getUpcomingWeek = async (req, res, next) => {
 };
 const daysOfWeek = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
 
-function getUpcomingWeek() {
+function getUpcomingMonth() {
     const today = new Date();
-    const week = [];
+    const month = [];
 
-    for (let i = 0; i < 7; i++) {
+    for (let i = 0; i < 30; i++) { // Loop for the next 30 days
         const date = new Date(today);
         date.setDate(today.getDate() + i);
-        const dayName = daysOfWeek[date.getDay()];
+        const dayName = date.toLocaleDateString("en-US", { weekday: "long" }).toLowerCase(); // Get full day name
         const formattedDate = date.toISOString().split("T")[0];
-        week.push({ date: formattedDate, day: dayName });
+        month.push({ date: formattedDate, day: dayName });
     }
-    return week;
+    return month;
 }
+
 exports.getMealsForWeek = async (req, res, next) => {
     try {
-        const upcomingWeek = getUpcomingWeek();
-        const dayList = upcomingWeek.map(entry => entry.day);
+        const upcomingMonth = getUpcomingMonth();
+        const dayList = upcomingMonth.map(entry => entry.day);
 
+        // Fetch meals for the upcoming 30 days
         const mealDays = await MealDay.findAll({
             where: { day: dayList },
             include: {
@@ -324,8 +326,10 @@ exports.getMealsForWeek = async (req, res, next) => {
             }
         });
 
-        const groupedByDay = upcomingWeek.map(entry => ({
+        // Structure meals based on days and dates
+        const groupedByDay = upcomingMonth.map(entry => ({
             day: entry.day,
+            date: entry.date,
             meals: mealDays
                 .filter(m => m.day === entry.day)
                 .map(m => m.meal)
@@ -336,6 +340,7 @@ exports.getMealsForWeek = async (req, res, next) => {
         next(error);
     }
 };
+
 exports.createIngredient = async (req, res, next) => {
     try {
         const { title, title_ar, stock, unit } = req.body;

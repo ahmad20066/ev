@@ -81,14 +81,10 @@ exports.updateTerms = async (req, res, next) => {
 exports.getFAQs = async (req, res, next) => {
     try {
         const faqs = await FAQ.findAll();
-        res.status(200).json({
-            message: "FAQs retrieved successfully",
-            faqs: faqs.map(faq => ({
-                id: faq.id,
-                question: { en: faq.question, ar: faq.question_ar },
-                answer: { en: faq.answer, ar: faq.answer_ar }
-            }))
-        });
+        res.status(200).json(
+
+            faqs
+        );
     } catch (error) {
         next(error);
     }
