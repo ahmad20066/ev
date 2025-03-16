@@ -159,7 +159,6 @@ exports.getOrderById = async (req, res, next) => {
             return res.status(404).json({ message: "Order not found" });
         }
 
-        // Check stock availability
         const orderMeals = await OrderMeal.findAll({
             where: { order_id: orderId },
             transaction: t

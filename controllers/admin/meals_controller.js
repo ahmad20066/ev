@@ -1,4 +1,4 @@
-const { Sequelize } = require("sequelize");
+const { Sequelize, Op } = require("sequelize");
 const Ingredient = require("../../models/meals/ingredient");
 const Meal = require("../../models/meals/meal");
 const MealDay = require("../../models/meals/meal_day");
