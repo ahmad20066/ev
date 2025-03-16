@@ -59,6 +59,10 @@ exports.getWorkoutsByDate = async (req, res, next) => {
         const workout = await Workout.findOne({
             where: where,
             order: [['createdAt', 'DESC']],
+            include: {
+                model: Exercise,
+                as: "exercises",
+            }
         });
 
         if (!workout) {
