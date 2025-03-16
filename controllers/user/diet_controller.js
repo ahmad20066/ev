@@ -373,8 +373,9 @@ exports.changeSelection = async (req, res, next) => {
                 order_date: targetDate
             }
         });
-
+        console.log(existingOrder.id)
         if (existingOrder) {
+
             let existingOrderMeal = await OrderMeal.findOne({
                 where: { order_id: existingOrder.id }
             });
@@ -382,13 +383,11 @@ exports.changeSelection = async (req, res, next) => {
             if (existingOrderMeal) {
                 console.log("Before update:", existingOrderMeal.meal_id);
 
-                // **Use update method explicitly**
                 await OrderMeal.update(
                     { meal_id: meal_id },
                     { where: { order_id: existingOrder.id } }
                 );
 
-                // Re-fetch to confirm the update
                 existingOrderMeal = await OrderMeal.findOne({
                     where: { order_id: existingOrder.id }
                 });
