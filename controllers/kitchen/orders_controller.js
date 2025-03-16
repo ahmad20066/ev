@@ -23,7 +23,6 @@ exports.createOrders = async (req, res, next) => {
     try {
         const now = new Date();
 
-        // 1) Fetch all active meal subscriptions
         const activeSubs = await MealSubscription.findAll({
             where: { is_active: true },
             attributes: ["id", "user_id", "start_date", "end_date"],

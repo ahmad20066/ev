@@ -1,4 +1,5 @@
 const MealSubscription = require("../../models/meals/meal_subscription");
+const Order = require("../../models/meals/order");
 const Notification = require("../../models/noitifcation");
 const Package = require("../../models/package");
 const PricingModel = require("../../models/pricing_model");
@@ -11,8 +12,9 @@ const WeightRecord = require("../../models/weight_record");
 exports.cancelSubscription = async (req, res, next) => {
     try {
         const { id, type } = req.body;
-        const user_id = req.userId
+        const user_id = req.userId;
         let subscription;
+
         if (type === "fitness") {
             subscription = await Subscription.findOne({
                 where: {
@@ -20,7 +22,7 @@ exports.cancelSubscription = async (req, res, next) => {
                     is_active: true,
                     user_id
                 }
-            })
+            });
         } else if (type === "diet") {
             subscription = await MealSubscription.findOne({
                 where: {
@@ -28,28 +30,36 @@ exports.cancelSubscription = async (req, res, next) => {
                     is_active: true,
                     user_id
                 }
-            })
+            });
+
+            if (subscription) {
+                await Order.destroy({
+                    where: { user_id }
+                });
+            }
         } else {
-            const error = new Error("Invalid type")
-            error.statusCode = 400
+            const error = new Error("Invalid type");
+            error.statusCode = 400;
             throw error;
         }
 
-        console.log(subscription)
         if (!subscription) {
-            const error = new Error("You have no active subscription to cancel")
-            error.statusCode = 404
+            const error = new Error("You have no active subscription to cancel");
+            error.statusCode = 404;
             throw error;
         }
+
         subscription.is_active = false;
-        await subscription.save()
+        await subscription.save();
+
         res.status(201).json({
-            message: "Subscription canceled successfully"
-        })
+            message: "Subscription canceled successfully, meal orders deleted if applicable."
+        });
     } catch (e) {
-        next(e)
+        next(e);
     }
-}
+};
+
 // Get all subscriptions
 exports.getSubscriptions = async (req, res, next) => {
     try {
