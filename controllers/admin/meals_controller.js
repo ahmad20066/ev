@@ -269,8 +269,7 @@ exports.assignMealsToDays = async (req, res, next) => {
         const recordsToDelete = existingRecords.filter(existingRecord =>
             !newRecords.some(newRecord =>
                 newRecord.meal_id === existingRecord.meal_id &&
-                newRecord.date === existingRecord.date &&
-                newRecord.day === existingRecord.day
+                newRecord.date === existingRecord.date
             )
         );
 
@@ -278,8 +277,7 @@ exports.assignMealsToDays = async (req, res, next) => {
         const recordsToAdd = newRecords.filter(newRecord =>
             !existingRecords.some(existingRecord =>
                 existingRecord.meal_id === newRecord.meal_id &&
-                existingRecord.date === newRecord.date &&
-                existingRecord.day === newRecord.day
+                existingRecord.date === newRecord.date
             )
         );
 
