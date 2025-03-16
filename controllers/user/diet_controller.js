@@ -334,30 +334,38 @@ exports.changeSelection = async (req, res, next) => {
     try {
         const userId = req.userId;
         const { selection_id, meal_id } = req.body;
+
         if (!selection_id || !meal_id) {
             const e = new Error("Both selection_id and meal_id are required.");
             e.statusCode = 400;
             throw e;
         }
+
         const selection = await UserMealSelection.findOne({
             where: { id: selection_id, user_id: userId }
         });
+
         if (!selection) {
             const e = new Error("No selection found for the specified id.");
             e.statusCode = 404;
             throw e;
         }
+
         const today = new Date();
         const targetDate = new Date(selection.date);
         const diff = Math.ceil((targetDate - today) / (1000 * 60 * 60 * 24));
+
         if (diff < 2) {
             const e = new Error("You can only change your selection at least 2 days in advance.");
             e.statusCode = 403;
             throw e;
         }
+
         selection.meal_id = meal_id;
         await selection.save();
+
         const subscriptionId = selection.meal_subscription_id;
+
         const existingOrder = await Order.findOne({
             where: {
                 user_id: userId,
@@ -365,13 +373,27 @@ exports.changeSelection = async (req, res, next) => {
                 order_date: targetDate
             }
         });
+
         if (existingOrder) {
-            const existingOrderMeal = await OrderMeal.findOne({
+            let existingOrderMeal = await OrderMeal.findOne({
                 where: { order_id: existingOrder.id }
             });
+
             if (existingOrderMeal) {
-                existingOrderMeal.meal_id = meal_id;
-                await existingOrderMeal.save();
+                console.log("Before update:", existingOrderMeal.meal_id);
+
+                // **Use update method explicitly**
+                await OrderMeal.update(
+                    { meal_id: meal_id },
+                    { where: { order_id: existingOrder.id } }
+                );
+
+                // Re-fetch to confirm the update
+                existingOrderMeal = await OrderMeal.findOne({
+                    where: { order_id: existingOrder.id }
+                });
+
+                console.log("After update:", existingOrderMeal.meal_id);
             } else {
                 await OrderMeal.create({
                     order_id: existingOrder.id,
@@ -380,12 +402,15 @@ exports.changeSelection = async (req, res, next) => {
                 });
             }
         }
+
         res.status(200).json({ message: "Meal selection updated successfully." });
     } catch (error) {
         if (!error.statusCode) error.statusCode = 500;
         next(error);
     }
 };
+
+
 
 exports.getAllDeliveryTimes = async (req, res, next) => {
     try {
