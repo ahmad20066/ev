@@ -330,8 +330,7 @@ exports.getMealById = async (req, res, next) => {
         next(e)
     }
 }
-const { Op } = require("sequelize");
-const { sequelize } = require("../models"); // Make sure to import your Sequelize instance
+
 
 exports.changeSelection = async (req, res, next) => {
     const transaction = await sequelize.transaction(); // Start transaction
