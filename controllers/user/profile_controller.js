@@ -1,5 +1,6 @@
 const MealSubscription = require("../../models/meals/meal_subscription");
 const Order = require("../../models/meals/order");
+const UserMealSelection = require("../../models/meals/user_meal_selection");
 const Notification = require("../../models/noitifcation");
 const Package = require("../../models/package");
 const PricingModel = require("../../models/pricing_model");
@@ -36,6 +37,9 @@ exports.cancelSubscription = async (req, res, next) => {
                 await Order.destroy({
                     where: { user_id }
                 });
+                await UserMealSelection.destroy({
+                    where: { user_id }
+                })
             }
         } else {
             const error = new Error("Invalid type");
