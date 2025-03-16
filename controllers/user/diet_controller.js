@@ -373,22 +373,30 @@ exports.changeSelection = async (req, res, next) => {
                 order_date: targetDate
             }
         });
-        console.log(existingOrder.id)
-        if (existingOrder) {
 
+        if (existingOrder) {
             let existingOrderMeal = await OrderMeal.findOne({
                 where: { order_id: existingOrder.id }
             });
 
             if (existingOrderMeal) {
                 console.log("Before update:", existingOrderMeal.meal_id);
-                console.log(existingOrderMeal)
 
-                await OrderMeal.update(
-                    { meal_id: meal_id },
-                    { where: { order_id: existingOrder.id } }
-                );
+                // **Check for existing conflicting meal**
+                const conflictMeal = await OrderMeal.findOne({
+                    where: { order_id: existingOrder.id, meal_id }
+                });
 
+                if (conflictMeal) {
+                    // **Delete the duplicate entry before updating**
+                    console.log("Deleting conflicting order meal:", conflictMeal);
+                    await conflictMeal.destroy();
+                }
+
+                // **Update meal_id after resolving conflict**
+                await existingOrderMeal.update({ meal_id });
+
+                // Re-fetch to confirm the update
                 existingOrderMeal = await OrderMeal.findOne({
                     where: { order_id: existingOrder.id }
                 });
@@ -409,6 +417,7 @@ exports.changeSelection = async (req, res, next) => {
         next(error);
     }
 };
+
 
 
 
