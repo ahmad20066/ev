@@ -382,6 +382,7 @@ exports.changeSelection = async (req, res, next) => {
 
             if (existingOrderMeal) {
                 console.log("Before update:", existingOrderMeal.meal_id);
+                console.log(existingOrderMeal)
 
                 await OrderMeal.update(
                     { meal_id: meal_id },
