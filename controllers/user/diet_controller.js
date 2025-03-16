@@ -388,15 +388,27 @@ exports.changeSelection = async (req, res, next) => {
                 });
 
                 if (conflictMeal) {
-                    // **Delete the duplicate entry before updating**
                     console.log("Deleting conflicting order meal:", conflictMeal);
                     await conflictMeal.destroy();
                 }
 
-                // **Update meal_id after resolving conflict**
-                await existingOrderMeal.update({ meal_id });
+                // **Explicitly mark as changed before saving**
+                existingOrderMeal.set({ meal_id });  // Ensure Sequelize detects change
+                await existingOrderMeal.save();  // Persist the change
 
-                // Re-fetch to confirm the update
+                // **Alternative: Direct Update (Force Execution)**
+                const [rowsUpdated] = await OrderMeal.update(
+                    { meal_id },
+                    { where: { order_id: existingOrder.id } }
+                );
+
+                if (rowsUpdated > 0) {
+                    console.log(`Successfully updated OrderMeal for order_id ${existingOrder.id}`);
+                } else {
+                    console.log(`No update performed for order_id ${existingOrder.id}`);
+                }
+
+                // **Re-fetch to confirm**
                 existingOrderMeal = await OrderMeal.findOne({
                     where: { order_id: existingOrder.id }
                 });
@@ -413,10 +425,10 @@ exports.changeSelection = async (req, res, next) => {
 
         res.status(200).json({ message: "Meal selection updated successfully." });
     } catch (error) {
-        if (!error.statusCode) error.statusCode = 500;
         next(error);
     }
 };
+
 
 
 
