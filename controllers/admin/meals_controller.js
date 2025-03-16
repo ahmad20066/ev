@@ -264,7 +264,8 @@ exports.assignMealsToDays = async (req, res, next) => {
             attributes: ["meal_id", "day", "date"],
             raw: true,
         });
-
+        console.log(existingRecords)
+        console.log(newRecords)
         // Determine which records should be deleted (present in DB but missing from new assignments)
         const recordsToDelete = existingRecords.filter(existingRecord =>
             !newRecords.some(newRecord =>
@@ -272,7 +273,7 @@ exports.assignMealsToDays = async (req, res, next) => {
                 newRecord.date === existingRecord.date
             )
         );
-
+        console.log(recordsToDelete)
         // Determine which records should be added (present in new assignments but not in DB)
         const recordsToAdd = newRecords.filter(newRecord =>
             !existingRecords.some(existingRecord =>
@@ -341,12 +342,16 @@ function getUpcomingMonth() {
 
 exports.getMealsForWeek = async (req, res, next) => {
     try {
+        // Get upcoming month data (array of objects with { day, date })
         const upcomingMonth = getUpcomingMonth();
-        const dayList = upcomingMonth.map(entry => entry.day);
+        // Extract unique dates (e.g., ["2025-03-16", "2025-03-17", ...])
+        const dateList = upcomingMonth.map(entry => entry.date);
 
-        // Fetch meals for the upcoming 30 days
+        // Fetch meals for the upcoming dates
         const mealDays = await MealDay.findAll({
-            where: { day: dayList },
+            where: {
+                date: { [Op.in]: dateList }
+            },
             include: {
                 model: Meal,
                 as: "meal",
@@ -358,12 +363,12 @@ exports.getMealsForWeek = async (req, res, next) => {
             }
         });
 
-        // Structure meals based on days and dates
+        // Group meals by each day based on the exact date
         const groupedByDay = upcomingMonth.map(entry => ({
             day: entry.day,
             date: entry.date,
             meals: mealDays
-                .filter(m => m.day === entry.day)
+                .filter(m => m.date === entry.date)
                 .map(m => m.meal)
         }));
 
