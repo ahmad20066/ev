@@ -13,6 +13,7 @@ const Ingredient = require("../../models/meals/ingredient");
 const MealRenewal = require("../../models/meals/meal_renewal");
 const OrderMeal = require("../../models/meals/order_meal");
 const Order = require("../../models/meals/order");
+const sequelize = require("../../models");
 const dayNames = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
 
 exports.getMealPlans = async (req, res, next) => {
