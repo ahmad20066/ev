@@ -330,7 +330,11 @@ exports.getMealById = async (req, res, next) => {
         next(e)
     }
 }
+const { Op } = require("sequelize");
+const { sequelize } = require("../models"); // Make sure to import your Sequelize instance
+
 exports.changeSelection = async (req, res, next) => {
+    const transaction = await sequelize.transaction(); // Start transaction
     try {
         const userId = req.userId;
         const { selection_id, meal_id } = req.body;
@@ -342,7 +346,8 @@ exports.changeSelection = async (req, res, next) => {
         }
 
         const selection = await UserMealSelection.findOne({
-            where: { id: selection_id, user_id: userId }
+            where: { id: selection_id, user_id: userId },
+            transaction
         });
 
         if (!selection) {
@@ -362,7 +367,7 @@ exports.changeSelection = async (req, res, next) => {
         }
 
         selection.meal_id = meal_id;
-        await selection.save();
+        await selection.save({ transaction });
 
         const subscriptionId = selection.meal_subscription_id;
 
@@ -371,67 +376,64 @@ exports.changeSelection = async (req, res, next) => {
                 user_id: userId,
                 meal_subscription_id: subscriptionId,
                 order_date: targetDate
-            }
+            },
+            transaction
         });
 
         if (existingOrder) {
             let existingOrderMeal = await OrderMeal.findOne({
-                where: { order_id: existingOrder.id }
+                where: { order_id: existingOrder.id },
+                transaction
             });
 
             if (existingOrderMeal) {
                 console.log("Before update:", existingOrderMeal.meal_id);
 
-                // **Check for existing conflicting meal**
+                // **Check if the new meal_id already exists for this order**
                 const conflictMeal = await OrderMeal.findOne({
-                    where: { order_id: existingOrder.id, meal_id }
+                    where: {
+                        order_id: existingOrder.id,
+                        meal_id: meal_id, // The new meal_id we are trying to set
+                    },
+                    transaction
                 });
 
                 if (conflictMeal) {
-                    console.log("Deleting conflicting order meal:", conflictMeal);
-                    await conflictMeal.destroy();
+                    console.log(`Meal ID ${meal_id} already exists for order ${existingOrder.id}. Deleting conflict...`);
+                    await conflictMeal.destroy({ transaction }); // Ensure deletion happens within the transaction
                 }
 
-                // **Explicitly mark as changed before saving**
-                existingOrderMeal.set({ meal_id });  // Ensure Sequelize detects change
-                await existingOrderMeal.save();  // Persist the change
-
-                // **Alternative: Direct Update (Force Execution)**
-                const [rowsUpdated] = await OrderMeal.update(
-                    { meal_id },
-                    { where: { order_id: existingOrder.id } }
-                );
-
-                if (rowsUpdated > 0) {
-                    console.log(`Successfully updated OrderMeal for order_id ${existingOrder.id}`);
-                } else {
-                    console.log(`No update performed for order_id ${existingOrder.id}`);
-                }
+                // **Ensure Sequelize detects the change before saving**
+                existingOrderMeal.set({ meal_id });
+                await existingOrderMeal.save({ transaction });
 
                 // **Re-fetch to confirm**
                 existingOrderMeal = await OrderMeal.findOne({
-                    where: { order_id: existingOrder.id }
+                    where: { order_id: existingOrder.id },
+                    transaction
                 });
 
                 console.log("After update:", existingOrderMeal.meal_id);
             } else {
+                // If no OrderMeal exists, create a new one
                 await OrderMeal.create({
                     order_id: existingOrder.id,
                     meal_id,
                     quantity: 1
-                });
+                }, { transaction });
             }
         }
 
+        // ✅ Commit transaction only if all operations were successful
+        await transaction.commit();
+
         res.status(200).json({ message: "Meal selection updated successfully." });
     } catch (error) {
+        await transaction.rollback(); // Rollback on failure
+        if (!error.statusCode) error.statusCode = 500;
         next(error);
     }
 };
-
-
-
-
 
 exports.getAllDeliveryTimes = async (req, res, next) => {
     try {
