@@ -232,6 +232,7 @@ exports.updateMeal = async (req, res, next) => {
 };
 
 
+
 exports.assignMealsToDays = async (req, res, next) => {
     try {
         const { assignments } = req.body;
@@ -242,7 +243,7 @@ exports.assignMealsToDays = async (req, res, next) => {
             return daysOfWeek[date.getUTCDay()];
         };
 
-        // Generate new meal records from assignments
+        // Create a list of new records based on the assignments from the front end
         const newRecords = assignments.flatMap(assignment =>
             assignment.meal_ids.map(meal_id => ({
                 date: assignment.date,
@@ -251,17 +252,17 @@ exports.assignMealsToDays = async (req, res, next) => {
             }))
         );
 
-        // Extract unique dates from the new assignments
+        // Get unique dates from the incoming assignments
         const uniqueDates = [...new Set(assignments.map(a => a.date))];
 
-        // Fetch existing records for those dates
+        // Retrieve existing records for those dates
         const existingRecords = await MealDay.findAll({
             where: { date: uniqueDates },
             attributes: ["meal_id", "day", "date"],
             raw: true,
         });
 
-        // Find records to delete (those that exist but are not in the new set)
+        // Determine records that need to be deleted (in DB but not in newRecords)
         const recordsToDelete = existingRecords.filter(
             existingRecord =>
                 !newRecords.some(
@@ -272,7 +273,7 @@ exports.assignMealsToDays = async (req, res, next) => {
                 )
         );
 
-        // Find records to add (those in newRecords that are not in existingRecords)
+        // Determine records that need to be added (in newRecords but not in DB)
         const recordsToAdd = newRecords.filter(
             newRecord =>
                 !existingRecords.some(
@@ -283,7 +284,7 @@ exports.assignMealsToDays = async (req, res, next) => {
                 )
         );
 
-        // Delete outdated records
+        // Delete records that are no longer present
         if (recordsToDelete.length > 0) {
             await MealDay.destroy({
                 where: {
@@ -295,12 +296,12 @@ exports.assignMealsToDays = async (req, res, next) => {
             });
         }
 
-        // Insert new records
+        // Add new records that did not previously exist
         if (recordsToAdd.length > 0) {
             await MealDay.bulkCreate(recordsToAdd);
         }
 
-        // Fetch the latest records after synchronization
+        // Retrieve and return the updated records
         const updatedRecords = await MealDay.findAll({
             attributes: ["meal_id", "day", "date"],
         });
@@ -313,6 +314,7 @@ exports.assignMealsToDays = async (req, res, next) => {
         next(error);
     }
 };
+
 
 
 
