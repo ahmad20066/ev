@@ -82,7 +82,6 @@ exports.getFAQs = async (req, res, next) => {
     try {
         const faqs = await FAQ.findAll();
         res.status(200).json(
-
             faqs
         );
     } catch (error) {

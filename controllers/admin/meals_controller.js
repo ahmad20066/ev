@@ -242,6 +242,7 @@ exports.assignMealsToDays = async (req, res, next) => {
             return daysOfWeek[date.getUTCDay()];
         };
 
+        // Generate new meal records from assignments
         const newRecords = assignments.flatMap(assignment =>
             assignment.meal_ids.map(meal_id => ({
                 date: assignment.date,
@@ -250,25 +251,56 @@ exports.assignMealsToDays = async (req, res, next) => {
             }))
         );
 
+        // Extract unique dates from the new assignments
+        const uniqueDates = [...new Set(assignments.map(a => a.date))];
+
+        // Fetch existing records for those dates
         const existingRecords = await MealDay.findAll({
+            where: { date: uniqueDates },
             attributes: ["meal_id", "day", "date"],
             raw: true,
         });
 
+        // Find records to delete (those that exist but are not in the new set)
+        const recordsToDelete = existingRecords.filter(
+            existingRecord =>
+                !newRecords.some(
+                    newRecord =>
+                        newRecord.meal_id === existingRecord.meal_id &&
+                        newRecord.date === existingRecord.date &&
+                        newRecord.day === existingRecord.day
+                )
+        );
+
+        // Find records to add (those in newRecords that are not in existingRecords)
         const recordsToAdd = newRecords.filter(
             newRecord =>
                 !existingRecords.some(
                     existingRecord =>
                         existingRecord.meal_id === newRecord.meal_id &&
-                        existingRecord.day === newRecord.day &&
-                        existingRecord.date === newRecord.date
+                        existingRecord.date === newRecord.date &&
+                        existingRecord.day === newRecord.day
                 )
         );
 
+        // Delete outdated records
+        if (recordsToDelete.length > 0) {
+            await MealDay.destroy({
+                where: {
+                    [Op.or]: recordsToDelete.map(record => ({
+                        meal_id: record.meal_id,
+                        date: record.date,
+                    }))
+                }
+            });
+        }
+
+        // Insert new records
         if (recordsToAdd.length > 0) {
             await MealDay.bulkCreate(recordsToAdd);
         }
 
+        // Fetch the latest records after synchronization
         const updatedRecords = await MealDay.findAll({
             attributes: ["meal_id", "day", "date"],
         });
@@ -281,6 +313,7 @@ exports.assignMealsToDays = async (req, res, next) => {
         next(error);
     }
 };
+
 
 
 exports.getUpcomingWeek = async (req, res, next) => {
