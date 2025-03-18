@@ -186,15 +186,13 @@ exports.getOrderById = async (req, res, next) => {
             return res.status(404).json({ message: "Order not found" });
         }
 
-        // Extract meal quantities from OrderMeal join table
         order.meals.forEach(meal => {
-            meal.dataValues.quantity = meal.OrderMeal.quantity;
-            delete meal.dataValues.OrderMeal; // Clean up response
+            // meal.dataValues.quantity = meal.OrderMeal.quantity;
+            // delete meal.dataValues.OrderMeal; // Clean up response
 
-            // Attach quantity to each ingredient
             meal.ingredients.forEach(ingredient => {
-                ingredient.dataValues.quantity = ingredient.MealIngredient.quantity; // Move quantity inside ingredient object
-                delete ingredient.dataValues.MealIngredient; // Remove join table reference
+                ingredient.dataValues.quantity = ingredient.MealIngredient.quantity;
+                delete ingredient.dataValues.MealIngredient;
             });
         });
 
