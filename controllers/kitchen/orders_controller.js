@@ -157,7 +157,17 @@ exports.getOrderById = async (req, res, next) => {
                     as: "meals",
                     through: {
                         attributes: ['quantity'] // Get meal quantity
-                    }
+                    },
+                    include: [
+                        {
+                            model: Ingredient,
+                            as: "ingredients",
+                            attributes: ["id", "title", "stock"], // Exclude unnecessary fields
+                            through: {
+                                attributes: ["quantity"] // Include ingredient quantity from MealIngredient
+                            }
+                        }
+                    ]
                 },
                 {
                     model: MealSubscription,
@@ -180,63 +190,29 @@ exports.getOrderById = async (req, res, next) => {
         order.meals.forEach(meal => {
             meal.dataValues.quantity = meal.OrderMeal.quantity;
             delete meal.dataValues.OrderMeal; // Clean up response
+
+            // Attach quantity to each ingredient
+            meal.ingredients.forEach(ingredient => {
+                ingredient.dataValues.quantity = ingredient.MealIngredient.quantity; // Move quantity inside ingredient object
+                delete ingredient.dataValues.MealIngredient; // Remove join table reference
+            });
         });
 
-        // Fetch all order meals in one query
-        const orderMeals = await OrderMeal.findAll({
-            where: { order_id: orderId },
-            attributes: ['meal_id', 'quantity'], // Only fetch necessary fields
-            transaction: t
-        });
-
-        // Fetch all required ingredients for the meals in a single query
-        const mealIds = orderMeals.map(om => om.meal_id);
-        const mealIngredients = await MealIngredient.findAll({
-            where: { meal_id: mealIds },
-            attributes: ['meal_id', 'ingredient_id', 'quantity'],
-            transaction: t
-        });
-
-        // Calculate total required ingredients
-        let totalRequiredIngredients = new Map();
-        for (const om of orderMeals) {
-            const relatedIngredients = mealIngredients.filter(mi => mi.meal_id === om.meal_id);
-            for (const mi of relatedIngredients) {
-                const totalUsage = Number(mi.quantity) * om.quantity;
-                const ingId = mi.ingredient_id;
-
-                if (!totalRequiredIngredients.has(ingId)) {
-                    totalRequiredIngredients.set(ingId, 0);
-                }
-                totalRequiredIngredients.set(
-                    ingId,
-                    totalRequiredIngredients.get(ingId) + totalUsage
-                );
-            }
-        }
-
-        // Fetch ingredient stock in one query
-        const ingredientIds = Array.from(totalRequiredIngredients.keys());
-        const ingredients = await Ingredient.findAll({
-            where: { id: ingredientIds },
-            attributes: ['id', 'title', 'stock'],
-            transaction: t
-        });
-
-        // Check stock sufficiency
+        // Stock sufficiency check
         let isStockSufficient = true;
         let insufficientIngredients = [];
 
-        for (const [ingredientId, requiredQty] of totalRequiredIngredients.entries()) {
-            const ingredient = ingredients.find(i => i.id === ingredientId);
-            if (!ingredient || Number(ingredient.stock) < requiredQty) {
-                isStockSufficient = false;
-                insufficientIngredients.push({
-                    ingredientId,
-                    ingredientName: ingredient ? ingredient.title : "Unknown",
-                    required: requiredQty,
-                    available: ingredient ? ingredient.stock : 0
-                });
+        for (const meal of order.meals) {
+            for (const ingredient of meal.ingredients) {
+                if (ingredient.stock < ingredient.quantity * meal.quantity) {
+                    isStockSufficient = false;
+                    insufficientIngredients.push({
+                        ingredientId: ingredient.id,
+                        ingredientName: ingredient.title,
+                        required: ingredient.quantity * meal.quantity,
+                        available: ingredient.stock
+                    });
+                }
             }
         }
 
@@ -252,6 +228,7 @@ exports.getOrderById = async (req, res, next) => {
         next(e);
     }
 };
+
 exports.changeOrderStatus = async (req, res, next) => {
     const t = await sequelize.transaction();
     try {
