@@ -206,7 +206,7 @@ exports.getOrderById = async (req, res, next) => {
                     insufficientIngredients.push({
                         ingredientId: ingredient.id,
                         ingredientName: ingredient.title,
-                        required: ingredient.quantity * meal.quantity,
+                        required: ingredient.dataValues.quantity * meal.dataValues.quantity,
                         available: ingredient.stock
                     });
                 }
