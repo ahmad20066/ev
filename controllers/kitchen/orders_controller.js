@@ -162,7 +162,7 @@ exports.getOrderById = async (req, res, next) => {
                         {
                             model: Ingredient,
                             as: "ingredients",
-                            attributes: ["id", "title", "stock"], // Exclude unnecessary fields
+                            attributes: ["id", "title", "stock", "unit"], // Exclude unnecessary fields
                             through: {
                                 attributes: ["quantity"] // Include ingredient quantity from MealIngredient
                             }
