@@ -49,8 +49,8 @@ exports.getWorkoutsByDate = async (req, res, next) => {
 
         const type = subscription.package.type;
         const where = {
-            date: date,
-            type: type,
+            date,
+            type,
             ...(type === "personalized" ? { user_id: req.userId } : {}),
             package_id: subscription.package_id,
             is_active: true,
@@ -71,7 +71,7 @@ exports.getWorkoutsByDate = async (req, res, next) => {
             throw error;
         }
 
-
+        // 1) Check exercise completions
         for (const exercise of workout.exercises) {
             const completion = await ExerciseCompletion.findOne({
                 where: {
@@ -79,15 +79,24 @@ exports.getWorkoutsByDate = async (req, res, next) => {
                     exercise_id: exercise.id,
                 },
             });
-
             exercise.dataValues.status = completion ? "completed" : "pending";
         }
 
-        res.status(200).json(workout);
+        // 2) Check workout attendance
+        const attendance = await WorkoutAttendance.findOne({
+            where: {
+                user_id: req.userId,
+                workout_id: workout.id,
+            },
+        });
+        workout.dataValues.session_joined = attendance ? true : false;
+
+        return res.status(200).json(workout);
     } catch (err) {
         next(err);
     }
 };
+
 
 
 
