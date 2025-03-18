@@ -108,7 +108,7 @@ exports.getOrders = async (req, res, next) => {
                     model: Meal,
                     as: "meals",
                     through: {
-                        attributes: ['quantity'] // Include the quantity from the join table
+                        attributes: ['quantity']
                     },
                     required: false,
                 },
@@ -143,6 +143,8 @@ exports.getOrderById = async (req, res, next) => {
     const t = await sequelize.transaction();
     try {
         const orderId = req.params.id;
+
+        // Fetch the order with meals, user, and subscription details
         const order = await Order.findOne({
             where: { id: orderId },
             include: [
@@ -153,7 +155,9 @@ exports.getOrderById = async (req, res, next) => {
                 {
                     model: Meal,
                     as: "meals",
-                    through: { attributes: [] }
+                    through: {
+                        attributes: ['quantity'] // Get meal quantity
+                    }
                 },
                 {
                     model: MealSubscription,
@@ -172,19 +176,32 @@ exports.getOrderById = async (req, res, next) => {
             return res.status(404).json({ message: "Order not found" });
         }
 
+        // Extract meal quantities from OrderMeal join table
+        order.meals.forEach(meal => {
+            meal.dataValues.quantity = meal.OrderMeal.quantity;
+            delete meal.dataValues.OrderMeal; // Clean up response
+        });
+
+        // Fetch all order meals in one query
         const orderMeals = await OrderMeal.findAll({
             where: { order_id: orderId },
+            attributes: ['meal_id', 'quantity'], // Only fetch necessary fields
             transaction: t
         });
 
+        // Fetch all required ingredients for the meals in a single query
+        const mealIds = orderMeals.map(om => om.meal_id);
+        const mealIngredients = await MealIngredient.findAll({
+            where: { meal_id: mealIds },
+            attributes: ['meal_id', 'ingredient_id', 'quantity'],
+            transaction: t
+        });
+
+        // Calculate total required ingredients
         let totalRequiredIngredients = new Map();
         for (const om of orderMeals) {
-            const mealIngredients = await MealIngredient.findAll({
-                where: { meal_id: om.meal_id },
-                transaction: t
-            });
-
-            for (const mi of mealIngredients) {
+            const relatedIngredients = mealIngredients.filter(mi => mi.meal_id === om.meal_id);
+            for (const mi of relatedIngredients) {
                 const totalUsage = Number(mi.quantity) * om.quantity;
                 const ingId = mi.ingredient_id;
 
@@ -198,11 +215,20 @@ exports.getOrderById = async (req, res, next) => {
             }
         }
 
+        // Fetch ingredient stock in one query
+        const ingredientIds = Array.from(totalRequiredIngredients.keys());
+        const ingredients = await Ingredient.findAll({
+            where: { id: ingredientIds },
+            attributes: ['id', 'title', 'stock'],
+            transaction: t
+        });
+
+        // Check stock sufficiency
         let isStockSufficient = true;
         let insufficientIngredients = [];
 
         for (const [ingredientId, requiredQty] of totalRequiredIngredients.entries()) {
-            const ingredient = await Ingredient.findByPk(ingredientId, { transaction: t });
+            const ingredient = ingredients.find(i => i.id === ingredientId);
             if (!ingredient || Number(ingredient.stock) < requiredQty) {
                 isStockSufficient = false;
                 insufficientIngredients.push({
@@ -215,15 +241,17 @@ exports.getOrderById = async (req, res, next) => {
         }
 
         await t.commit();
-        res.status(200).json({ ...order.toJSON(), isStockSufficient, insufficientIngredients });
+        res.status(200).json({
+            ...order.toJSON(),
+            isStockSufficient,
+            insufficientIngredients
+        });
+
     } catch (e) {
         await t.rollback();
         next(e);
     }
 };
-
-
-
 exports.changeOrderStatus = async (req, res, next) => {
     const t = await sequelize.transaction();
     try {
