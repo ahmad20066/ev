@@ -144,7 +144,6 @@ exports.getOrderById = async (req, res, next) => {
     try {
         const orderId = req.params.id;
 
-        // Fetch the order with meals, user, and subscription details
         const order = await Order.findOne({
             where: { id: orderId },
             include: [
@@ -187,8 +186,8 @@ exports.getOrderById = async (req, res, next) => {
         }
 
         order.meals.forEach(meal => {
-            // meal.dataValues.quantity = meal.OrderMeal.quantity;
-            // delete meal.dataValues.OrderMeal; // Clean up response
+            meal.dataValues.quantity = meal.OrderMeal.quantity;
+            delete meal.dataValues.OrderMeal;
 
             meal.ingredients.forEach(ingredient => {
                 ingredient.dataValues.quantity = ingredient.MealIngredient.quantity;
