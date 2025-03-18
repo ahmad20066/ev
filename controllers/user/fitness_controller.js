@@ -22,7 +22,7 @@ const sequelize = require('../../models');
 const WeightRecord = require('../../models/weight_record');
 exports.getWorkoutsByDate = async (req, res, next) => {
     try {
-        let date = req.query.date;
+        const date = req.query.date;
 
         if (!date) {
             const error = new Error("Date is required.");
@@ -33,7 +33,7 @@ exports.getWorkoutsByDate = async (req, res, next) => {
         const subscription = await Subscription.findOne({
             where: {
                 user_id: req.userId,
-                is_active: true
+                is_active: true,
             },
             include: {
                 model: Package,
@@ -53,16 +53,16 @@ exports.getWorkoutsByDate = async (req, res, next) => {
             type: type,
             ...(type === "personalized" ? { user_id: req.userId } : {}),
             package_id: subscription.package_id,
-            is_active: true
+            is_active: true,
         };
 
         const workout = await Workout.findOne({
-            where: where,
-            order: [['createdAt', 'DESC']],
+            where,
+            order: [["createdAt", "DESC"]],
             include: {
                 model: Exercise,
                 as: "exercises",
-            }
+            },
         });
 
         if (!workout) {
@@ -71,11 +71,24 @@ exports.getWorkoutsByDate = async (req, res, next) => {
             throw error;
         }
 
+
+        for (const exercise of workout.exercises) {
+            const completion = await ExerciseCompletion.findOne({
+                where: {
+                    user_id: req.userId,
+                    exercise_id: exercise.id,
+                },
+            });
+
+            exercise.dataValues.status = completion ? "completed" : "pending";
+        }
+
         res.status(200).json(workout);
-    } catch (e) {
-        next(e);
+    } catch (err) {
+        next(err);
     }
 };
+
 
 
 exports.showWorkout = async (req, res, next) => {
