@@ -201,7 +201,7 @@ exports.getOrderById = async (req, res, next) => {
 
         for (const meal of order.meals) {
             for (const ingredient of meal.ingredients) {
-                if (ingredient.stock < ingredient.quantity * meal.quantity) {
+                if (ingredient.dataValues.stock < ingredient.dataValues.quantity * meal.dataValues.quantity) {
                     isStockSufficient = false;
                     insufficientIngredients.push({
                         ingredientId: ingredient.id,
