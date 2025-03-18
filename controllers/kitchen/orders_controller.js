@@ -90,10 +90,12 @@ exports.getOrders = async (req, res, next) => {
         if (!day) {
             return res.status(400).json({ message: "Please provide a valid day." });
         }
+
         const targetDate = new Date(day);
         if (isNaN(targetDate)) {
             return res.status(400).json({ message: "Invalid date format. Use YYYY-MM-DD." });
         }
+
         const orders = await Order.findAll({
             where: { order_date: targetDate },
             include: [
@@ -105,8 +107,10 @@ exports.getOrders = async (req, res, next) => {
                 {
                     model: Meal,
                     as: "meals",
-                    through: { attributes: [] },
-                    required: false
+                    through: {
+                        attributes: ['quantity'] // Include the quantity from the join table
+                    },
+                    required: false,
                 },
                 {
                     model: MealSubscription,
@@ -119,11 +123,21 @@ exports.getOrders = async (req, res, next) => {
                 }
             ]
         });
+
+        // Modify the response to add quantity directly in meals
+        orders.forEach(order => {
+            order.meals.forEach(meal => {
+                meal.dataValues.quantity = meal.OrderMeal.quantity; // Assuming your join table is `OrderMeal`
+                delete meal.dataValues.OrderMeal; // Remove the join table object
+            });
+        });
+
         res.status(200).json(orders);
     } catch (e) {
         next(e);
     }
 };
+
 
 exports.getOrderById = async (req, res, next) => {
     const t = await sequelize.transaction();
