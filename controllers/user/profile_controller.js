@@ -174,7 +174,7 @@ exports.getProfile = async (req, res, next) => {
             include: {
                 model: WeightRecord,
                 as: "weight-record",
-                order: [["createdAt", "DESC"]],
+                order: [["createdAt", "ASC"]],
             },
         });
 
@@ -182,8 +182,8 @@ exports.getProfile = async (req, res, next) => {
             return res.status(404).json({ message: "User not found" });
         }
 
-        const weightRecord = user["weight-record"]?.[0];
-        console.log(weightRecord)
+        const weightRecord = user["weight-record"]?.[user["weight-record"].length - 1];
+        console.log(user["weight-record"])
         const lastWeight = weightRecord ? weightRecord.weight : null;
 
         user.dataValues.weight = lastWeight;

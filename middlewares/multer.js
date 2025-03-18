@@ -11,7 +11,7 @@ const storage = multer.diskStorage({
 });
 
 const fileFilter = (req, file, cb) => {
-    const allowedFileTypes = /jpeg|jpg|png|mp4|gif/;
+    const allowedFileTypes = /jpeg|jpg|png|mp4|gif|wav/;
     const extname = allowedFileTypes.test(path.extname(file.originalname).toLowerCase());
     const mimetype = allowedFileTypes.test(file.mimetype);
     if (mimetype && extname) {
@@ -41,7 +41,6 @@ exports.uploadSingleImage = (field) => {
             }
             console.log(BASE_URL)
             if (req.file) {
-                // Prepend the base URL to the file path
                 req.file.path = `${BASE_URL}/${req.file.path}`;
             }
 
