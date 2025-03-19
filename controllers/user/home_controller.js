@@ -73,16 +73,16 @@ exports.getHomeWorkouts = async (req, res, next) => {
             });
         }
 
+        // Transform workouts to include day of the week (Sunday, Monday, etc.)
         const workoutsWithDay = workouts.map((workout) => {
             const workoutJson = workout.toJSON();
 
             const dateObj = new Date(workoutJson.date);
-            const dayOfMonth = dateObj.getDate();
-
+            const dayOfWeek = dateObj.toLocaleString('en-US', { weekday: 'long' });
 
             return {
                 ...workoutJson,
-                day: dayOfMonth,
+                day: dayOfWeek,
             };
         });
 
@@ -91,6 +91,7 @@ exports.getHomeWorkouts = async (req, res, next) => {
         next(e);
     }
 };
+
 
 exports.getWorkoutById = async (req, res, next) => {
     try {
