@@ -664,6 +664,7 @@ exports.getExercise = async (req, res, next) => {
             : 'pending';
         res.status(200).json({
             ...workoutExercise.exercise.toJSON(),
+            status: workoutExercise.dataValues.status,
             stats,
         });
     } catch (error) {
