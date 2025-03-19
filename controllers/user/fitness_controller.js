@@ -71,7 +71,6 @@ exports.getWorkoutsByDate = async (req, res, next) => {
             throw error;
         }
 
-        // 1) Check exercise completions
         for (const exercise of workout.exercises) {
             const completion = await ExerciseCompletion.findOne({
                 where: {
@@ -82,7 +81,6 @@ exports.getWorkoutsByDate = async (req, res, next) => {
             exercise.dataValues.status = completion ? "completed" : "pending";
         }
 
-        // 2) Check workout attendance
         const attendance = await WorkoutAttendance.findOne({
             where: {
                 user_id: req.userId,
