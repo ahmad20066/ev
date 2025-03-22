@@ -1,9 +1,13 @@
+const { Op } = require("sequelize");
 const Banner = require("../../models/banner");
 const Exercise = require("../../models/fitness/exercise");
 const Workout = require("../../models/fitness/workout");
 const MealPlan = require("../../models/meals/meal_plan");
 const Package = require("../../models/package");
 const Subscription = require("../../models/subscription");
+const Meal = require("../../models/meals/meal");
+const MealDay = require("../../models/meals/meal_day");
+const UserMealSelection = require("../../models/meals/user_meal_selection");
 
 exports.getBanner = async (req, res, next) => {
     try {
@@ -91,8 +95,6 @@ exports.getHomeWorkouts = async (req, res, next) => {
         next(e);
     }
 };
-
-
 exports.getWorkoutById = async (req, res, next) => {
     try {
         const { id } = req.params
@@ -146,3 +148,25 @@ exports.getWorkoutById = async (req, res, next) => {
         next(e)
     }
 }
+
+
+exports.getHomeMeals = async (req, res, next) => {
+    try {
+        const userId = req.userId;
+
+        const today = new Date().toISOString().split('T')[0];
+
+        const selections = await UserMealSelection.findAll({
+            where: {
+                user_id: userId,
+                date: today
+            },
+            order: [['date', 'ASC']]
+        });
+
+        res.status(200).json({ meals: selections });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Something went wrong' });
+    }
+};
