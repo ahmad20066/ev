@@ -309,38 +309,10 @@ exports.getOrders = async (req, res, next) => {
                 },
                 user_id
             },
-            include: [
-                {
-                    model: User,
-                    as: "user",
-                    required: false
-                },
-                {
-                    model: Meal,
-                    as: "meals",
-                    through: {
-                        attributes: ['quantity']
-                    },
-                    required: false,
-                },
-                {
-                    model: MealSubscription,
-                    as: "subscription",
-                    include: {
-                        model: Address,
-                        as: "address"
-                    },
-                    required: false
-                }
-            ]
+
         });
 
-        orders.forEach(order => {
-            order.meals.forEach(meal => {
-                meal.dataValues.quantity = meal.OrderMeal.quantity;
-                delete meal.dataValues.OrderMeal;
-            });
-        });
+
 
         res.status(200).json(orders);
     } catch (e) {
