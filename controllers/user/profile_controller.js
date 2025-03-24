@@ -320,12 +320,12 @@ exports.getOrders = async (req, res, next) => {
     }
 };
 exports.getOrderById = async (req, res, next) => {
-    const t = await sequelize.transaction();
+
     try {
         const orderId = req.params.id;
 
         const order = await Order.findOne({
-            where: { id: orderId },
+            where: { id: orderId, user_id: req.userId },
             include: [
                 {
                     model: User,
@@ -357,7 +357,7 @@ exports.getOrderById = async (req, res, next) => {
                     }
                 }
             ],
-            transaction: t
+
         });
 
         if (!order) {
@@ -378,10 +378,7 @@ exports.getOrderById = async (req, res, next) => {
 
 
         await t.commit();
-        res.status(200).json({
-            ...order.toJSON(),
-
-        });
+        res.status(200).json(order);
 
     } catch (e) {
         await t.rollback();
