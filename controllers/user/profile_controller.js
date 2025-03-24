@@ -361,7 +361,6 @@ exports.getOrderById = async (req, res, next) => {
         });
 
         if (!order) {
-            await t.rollback();
             return res.status(404).json({ message: "Order not found" });
         }
 
@@ -377,7 +376,6 @@ exports.getOrderById = async (req, res, next) => {
 
 
 
-        await t.commit();
         res.status(200).json(order);
 
     } catch (e) {
