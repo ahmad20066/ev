@@ -51,20 +51,34 @@ exports.getHomeWorkouts = async (req, res, next) => {
                 user_id: req.userId,
             },
         });
+
         if (!subscription) {
-            const error = new Error('no subscription for this user');
+            const error = new Error('No subscription for this user');
             error.statusCode = 403;
             throw error;
         }
 
         const packageData = await Package.findByPk(subscription.package_id);
 
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        const endOfWeek = new Date();
+        const dayOfWeek = endOfWeek.getDay();
+        const daysUntilSunday = 7 - dayOfWeek;
+        endOfWeek.setDate(endOfWeek.getDate() + daysUntilSunday);
+        endOfWeek.setHours(23, 59, 59, 999);
+
         let workouts;
+
         if (packageData.type === 'group') {
             workouts = await Workout.findAll({
                 where: {
                     package_id: subscription.package_id,
                     is_active: true,
+                    date: {
+                        [Op.between]: [today, endOfWeek]
+                    }
                 },
             });
         } else {
@@ -73,14 +87,15 @@ exports.getHomeWorkouts = async (req, res, next) => {
                     is_active: true,
                     package_id: subscription.package_id,
                     user_id: req.userId,
+                    date: {
+                        [Op.between]: [today, endOfWeek]
+                    }
                 },
             });
         }
 
-        // Transform workouts to include day of the week (Sunday, Monday, etc.)
         const workoutsWithDay = workouts.map((workout) => {
             const workoutJson = workout.toJSON();
-
             const dateObj = new Date(workoutJson.date);
             const dayOfWeek = dateObj.toLocaleString('en-US', { weekday: 'long' });
 
