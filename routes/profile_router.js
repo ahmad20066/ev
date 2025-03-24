@@ -8,4 +8,6 @@ router.get("/me", controller.getProfile)
 router.put("/update", controller.updateProfile)
 router.get("/check-subscription", controller.isSubscribed)
 router.get("/notifications", controller.getNotifications)
+router.get("/orders", controller.getOrders)
+router.get("/orders/:id", controller.getOrderById)
 module.exports = router

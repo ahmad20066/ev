@@ -1,3 +1,7 @@
+const { Op } = require("sequelize");
+const Address = require("../../models/meals/address");
+const Ingredient = require("../../models/meals/ingredient");
+const Meal = require("../../models/meals/meal");
 const MealSubscription = require("../../models/meals/meal_subscription");
 const Order = require("../../models/meals/order");
 const UserMealSelection = require("../../models/meals/user_meal_selection");
@@ -285,6 +289,132 @@ exports.getNotifications = async (req, res, next) => {
         next(error);
     }
 };
+exports.getOrders = async (req, res, next) => {
+    try {
+        const user_id = req.userId;
 
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        const endOfWeek = new Date();
+        const dayOfWeek = endOfWeek.getDay();
+        const daysUntilSunday = 7 - dayOfWeek;
+        endOfWeek.setDate(endOfWeek.getDate() + daysUntilSunday);
+        endOfWeek.setHours(23, 59, 59, 999);
+
+        const orders = await Order.findAll({
+            where: {
+                order_date: {
+                    [Op.lte]: endOfWeek
+                },
+                user_id
+            },
+            include: [
+                {
+                    model: User,
+                    as: "user",
+                    required: false
+                },
+                {
+                    model: Meal,
+                    as: "meals",
+                    through: {
+                        attributes: ['quantity']
+                    },
+                    required: false,
+                },
+                {
+                    model: MealSubscription,
+                    as: "subscription",
+                    include: {
+                        model: Address,
+                        as: "address"
+                    },
+                    required: false
+                }
+            ]
+        });
+
+        orders.forEach(order => {
+            order.meals.forEach(meal => {
+                meal.dataValues.quantity = meal.OrderMeal.quantity;
+                delete meal.dataValues.OrderMeal;
+            });
+        });
+
+        res.status(200).json(orders);
+    } catch (e) {
+        next(e);
+    }
+};
+exports.getOrderById = async (req, res, next) => {
+    const t = await sequelize.transaction();
+    try {
+        const orderId = req.params.id;
+
+        const order = await Order.findOne({
+            where: { id: orderId },
+            include: [
+                {
+                    model: User,
+                    as: "user"
+                },
+                {
+                    model: Meal,
+                    as: "meals",
+                    through: {
+                        attributes: ['quantity']
+                    },
+                    include: [
+                        {
+                            model: Ingredient,
+                            as: "ingredients",
+                            attributes: ["id", "title", "stock", "unit"],
+                            through: {
+                                attributes: ["quantity"]
+                            }
+                        }
+                    ]
+                },
+                {
+                    model: MealSubscription,
+                    as: "subscription",
+                    include: {
+                        model: Address,
+                        as: "address"
+                    }
+                }
+            ],
+            transaction: t
+        });
+
+        if (!order) {
+            await t.rollback();
+            return res.status(404).json({ message: "Order not found" });
+        }
+
+        order.meals.forEach(meal => {
+            meal.dataValues.quantity = meal.OrderMeal.quantity;
+            delete meal.dataValues.OrderMeal;
+
+            meal.ingredients.forEach(ingredient => {
+                ingredient.dataValues.quantity = ingredient.MealIngredient.quantity;
+                delete ingredient.dataValues.MealIngredient;
+            });
+        });
+
+
+
+        await t.commit();
+        res.status(200).json({
+            ...order.toJSON(),
+
+        });
+
+    } catch (e) {
+        await t.rollback();
+        next(e);
+    }
+};
 
 

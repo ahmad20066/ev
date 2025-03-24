@@ -124,11 +124,10 @@ exports.getOrders = async (req, res, next) => {
             ]
         });
 
-        // Modify the response to add quantity directly in meals
         orders.forEach(order => {
             order.meals.forEach(meal => {
-                meal.dataValues.quantity = meal.OrderMeal.quantity; // Assuming your join table is `OrderMeal`
-                delete meal.dataValues.OrderMeal; // Remove the join table object
+                meal.dataValues.quantity = meal.OrderMeal.quantity;
+                delete meal.dataValues.OrderMeal;
             });
         });
 
