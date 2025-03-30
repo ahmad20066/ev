@@ -326,12 +326,12 @@ exports.getOrders = async (req, res, next) => {
             },
 
         });
-        const ordersWithTime = orders.map(e => {
-            e.dataValues.deliveryTime = subscription.delivery_time
-        })
+        orders.forEach(e => {
+            e.dataValues.deliveryTime = subscription.delivery_time;
+        });
 
 
-        res.status(200).json(ordersWithTime);
+        res.status(200).json(orders);
     } catch (e) {
         next(e);
     }
