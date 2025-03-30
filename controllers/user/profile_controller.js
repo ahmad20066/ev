@@ -14,6 +14,7 @@ const Question = require("../../models/survey/question");
 const Survey = require("../../models/survey/survey");
 const User = require("../../models/user");
 const WeightRecord = require("../../models/weight_record");
+const DeliveryTime = require("../../models/meals/delivery_time");
 exports.cancelSubscription = async (req, res, next) => {
     try {
         const { id, type } = req.body;
@@ -292,7 +293,21 @@ exports.getNotifications = async (req, res, next) => {
 exports.getOrders = async (req, res, next) => {
     try {
         const user_id = req.userId;
-
+        const subscription = await MealSubscription.findOne({
+            where: {
+                user_id,
+                is_active: true
+            },
+            include: {
+                model: DeliveryTime,
+                as: "delivery_time"
+            }
+        })
+        if (!subscription) {
+            const error = new Error("No Subscription")
+            error.statusCode = 400;
+            throw error;
+        }
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
@@ -311,10 +326,12 @@ exports.getOrders = async (req, res, next) => {
             },
 
         });
+        const ordersWithTime = orders.map(e => {
+            e.dataValues.deliveryTime = subscription.delivery_time
+        })
 
 
-
-        res.status(200).json(orders);
+        res.status(200).json(ordersWithTime);
     } catch (e) {
         next(e);
     }

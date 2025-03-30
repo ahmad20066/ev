@@ -76,6 +76,7 @@ exports.getWorkoutsByDate = async (req, res, next) => {
                 where: {
                     user_id: req.userId,
                     exercise_id: exercise.id,
+                    workout_id: workout.id
                 },
             });
             exercise.dataValues.status = completion ? "completed" : "pending";
@@ -653,9 +654,8 @@ exports.getExercise = async (req, res, next) => {
             where: {
                 user_id: req.userId,
                 exercise_id: id,
-                createdAt: {
-                    [Sequelize.Op.between]: [startOfDay, endOfDay]
-                }
+                workout_id,
+
             }
         });
 

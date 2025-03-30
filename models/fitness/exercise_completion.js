@@ -1,6 +1,7 @@
 const Sequelize = require("sequelize");
 const sequelize = require("../index");
 const Exercise = require("./exercise");
+const Workout = require("./workout");
 
 
 const ExerciseCompletion = sequelize.define("ExerciseCompletion", {
@@ -8,6 +9,13 @@ const ExerciseCompletion = sequelize.define("ExerciseCompletion", {
         type: Sequelize.INTEGER,
         references: {
             model: "users",
+            key: "id",
+        },
+    },
+    workout_id: {
+        type: Sequelize.INTEGER,
+        references: {
+            model: Workout,
             key: "id",
         },
     },
