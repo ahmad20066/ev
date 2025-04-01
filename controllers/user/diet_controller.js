@@ -31,6 +31,7 @@ exports.getMealPlans = async (req, res, next) => {
         next(error);
     }
 };
+
 exports.subscribeToMealPlan = async (req, res, next) => {
     try {
         const {
@@ -45,7 +46,6 @@ exports.subscribeToMealPlan = async (req, res, next) => {
             delivery_notes
         } = req.body;
 
-        // Check if user already has an active subscription
         const oldSub = await MealSubscription.findOne({
             where: { user_id: req.userId, is_active: true }
         });
@@ -55,9 +55,9 @@ exports.subscribeToMealPlan = async (req, res, next) => {
             throw e;
         }
 
-        // Validate Meal Plan
+
         const mealPlan = await MealPlan.findByPk(meal_plan_id, {
-            include: { model: Type, as: "types" }
+            include: [{ model: Type, as: "types" }]
         });
         if (!mealPlan) {
             const e = new Error("Meal Plan not found");
@@ -65,7 +65,6 @@ exports.subscribeToMealPlan = async (req, res, next) => {
             throw e;
         }
 
-        // Validate Delivery Time
         const deliveryTime = await DeliveryTime.findByPk(delivery_time_id);
         if (!deliveryTime) {
             const e = new Error("Delivery time not found");
@@ -73,7 +72,6 @@ exports.subscribeToMealPlan = async (req, res, next) => {
             throw e;
         }
 
-        // Create Address
         const address = await Address.create({
             address_label,
             city,
@@ -84,12 +82,10 @@ exports.subscribeToMealPlan = async (req, res, next) => {
             delivery_notes
         });
 
-        // Subscription Date Range
         const startDate = new Date();
         const endDate = new Date();
         endDate.setDate(startDate.getDate() + 30);
 
-        // Create Subscription
         const subscription = await MealSubscription.create({
             user_id: req.userId,
             meal_plan_id,
@@ -101,44 +97,62 @@ exports.subscribeToMealPlan = async (req, res, next) => {
             is_active: true
         });
 
-        // Generate User Meal Selections using `MealDay` table
+        const planTypeIds = mealPlan.types.map((t) => t.id);
+
         const selections = [];
         let current = new Date(startDate);
 
         while (current <= endDate) {
-            const dayName = current.toLocaleString("en-US", { weekday: "long" }).toLowerCase(); // Get day name
+            const currentDateStr = current.toISOString().split("T")[0];
+            const dayName = current
+                .toLocaleString("en-US", { weekday: "long" })
+                .toLowerCase();
 
-            // **Find meals assigned to this day from `MealDay`**
+
             const mealDays = await MealDay.findAll({
-                where: { date: current.toISOString().split("T")[0] } // Match specific date
+                where: { date: currentDateStr },
+                include: [
+                    {
+                        model: Meal,
+                        as: "meal",
+                        required: true,
+                        include: [
+                            {
+                                model: Type,
+                                as: "types",
+                                where: { id: { [Op.in]: planTypeIds } },
+                                through: { attributes: [] },
+                                required: true
+                            }
+                        ]
+                    }
+                ]
             });
 
-            if (mealDays.length > 0) {
-                for (const mealDay of mealDays) {
-                    selections.push({
-                        user_id: req.userId,
-                        meal_subscription_id: subscription.id,
-                        meal_id: mealDay.meal_id,
-                        date: current.toISOString().split("T")[0],
-                        day: dayName
-                    });
-                }
-            } else {
-                console.log(`No meals assigned for ${dayName} (${current.toISOString().split("T")[0]})`);
+            for (const mealDay of mealDays) {
+                selections.push({
+                    user_id: req.userId,
+                    meal_subscription_id: subscription.id,
+                    meal_id: mealDay.meal_id,
+                    date: currentDateStr,
+                    day: dayName
+                });
             }
 
             current.setDate(current.getDate() + 1);
         }
 
-        // **Bulk insert selections if there are meals**
         if (selections.length > 0) {
             await UserMealSelection.bulkCreate(selections);
         }
 
-        res.status(201).json({ message: "Subscription Successful", subscription });
-    } catch (e) {
-        if (!e.statusCode) e.statusCode = 500;
-        next(e);
+        res.status(201).json({
+            message: "Subscription Successful",
+            subscription
+        });
+    } catch (error) {
+        if (!error.statusCode) error.statusCode = 500;
+        next(error);
     }
 };
 

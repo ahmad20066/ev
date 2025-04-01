@@ -7,6 +7,9 @@ const MealType = require("../../models/meals/meal_type");
 const Type = require("../../models/meals/type");
 
 const qs = require("qs");
+const UserMealSelection = require("../../models/meals/user_meal_selection");
+const MealSubscription = require("../../models/meals/meal_subscription");
+const MealPlan = require("../../models/meals/meal_plan");
 
 exports.createMeal = async (req, res, next) => {
     try {
@@ -231,79 +234,131 @@ exports.updateMeal = async (req, res, next) => {
     }
 };
 
-
+const getDayFromDate = (dateString) => {
+    const daysOfWeek = [
+        "sunday",
+        "monday",
+        "tuesday",
+        "wednesday",
+        "thursday",
+        "friday",
+        "saturday",
+    ];
+    // Split the date string and create a Date object in local time.
+    const [year, month, day] = dateString.split("-").map(Number);
+    const date = new Date(year, month - 1, day);
+    return daysOfWeek[date.getDay()];
+};
 
 exports.assignMealsToDays = async (req, res, next) => {
     try {
         const { assignments } = req.body;
-
-        // Compute the day (using local time) from the date string.
-        const getDayFromDate = (dateString) => {
-            const daysOfWeek = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
-            // Split the date string and create a Date object in local time.
-            const [year, month, day] = dateString.split("-").map(Number);
-            const date = new Date(year, month - 1, day);
-            return daysOfWeek[date.getDay()];
-        };
-
-        // Build the new records from the assignments (ignoring any 'day' property from the front end)
-        const newRecords = assignments.flatMap(assignment =>
-            assignment.meal_ids.map(meal_id => ({
+        const newRecords = assignments.flatMap((assignment) =>
+            assignment.meal_ids.map((meal_id) => ({
                 date: assignment.date,
                 day: getDayFromDate(assignment.date),
                 meal_id,
             }))
         );
-
-        // Extract unique dates from the assignments
-        const uniqueDates = [...new Set(assignments.map(a => a.date))];
-
-        // Fetch all existing records for the given dates
+        const uniqueDates = [...new Set(assignments.map((a) => a.date))];
         const existingRecords = await MealDay.findAll({
             where: { date: uniqueDates },
             attributes: ["meal_id", "day", "date"],
             raw: true,
         });
-        console.log(existingRecords)
-        console.log(newRecords)
-        // Determine which records should be deleted (present in DB but missing from new assignments)
-        const recordsToDelete = existingRecords.filter(existingRecord =>
-            !newRecords.some(newRecord =>
-                newRecord.meal_id === existingRecord.meal_id &&
-                newRecord.date === existingRecord.date
-            )
+        const recordsToDelete = existingRecords.filter(
+            (ex) => !newRecords.some((nr) => nr.meal_id === ex.meal_id && nr.date === ex.date)
         );
-        console.log(recordsToDelete)
-        // Determine which records should be added (present in new assignments but not in DB)
-        const recordsToAdd = newRecords.filter(newRecord =>
-            !existingRecords.some(existingRecord =>
-                existingRecord.meal_id === newRecord.meal_id &&
-                existingRecord.date === newRecord.date
-            )
+        const recordsToAdd = newRecords.filter(
+            (nr) => !existingRecords.some((ex) => ex.meal_id === nr.meal_id && ex.date === nr.date)
         );
-
-        // Delete records that are not in the new assignments
         if (recordsToDelete.length > 0) {
             await MealDay.destroy({
-                where: {
-                    [Op.or]: recordsToDelete.map(record => ({
-                        meal_id: record.meal_id,
-                        date: record.date,
-                    })),
-                },
+                where: { [Op.or]: recordsToDelete.map((r) => ({ meal_id: r.meal_id, date: r.date })) },
             });
         }
-
-        // Add the new records that are missing
         if (recordsToAdd.length > 0) {
             await MealDay.bulkCreate(recordsToAdd);
+            const addedDates = [...new Set(recordsToAdd.map((r) => r.date))];
+            const minDateStr = addedDates.reduce((a, b) => (b < a ? b : a));
+            const maxDateStr = addedDates.reduce((a, b) => (b > a ? b : a));
+            const minDateStart = new Date(minDateStr + "T00:00:00Z");
+            const maxDateEnd = new Date(maxDateStr + "T23:59:59Z");
+            const activeSubscriptions = await MealSubscription.findAll({
+                where: {
+                    is_active: true,
+                    start_date: { [Op.lte]: maxDateEnd },
+                    end_date: { [Op.gte]: minDateStart },
+                },
+                include: [
+                    {
+                        model: MealPlan,
+                        as: "meal_plan",
+                        include: [{ model: Type, as: "types" }],
+                    },
+                ],
+            });
+            const uniqueMealIds = [...new Set(recordsToAdd.map((r) => r.meal_id))];
+            const mealsWithType = await Meal.findAll({
+                where: { id: uniqueMealIds },
+                include: [{ model: Type, as: "types", through: { attributes: [] } }],
+            });
+            const mealTypeMap = {};
+            for (const meal of mealsWithType) {
+                mealTypeMap[meal.id] = meal.types.map((t) => t.id);
+            }
+            const userMealSelectionsToCreate = [];
+            for (const record of recordsToAdd) {
+                const recordDateUTC = new Date(record.date + "T00:00:00Z");
+                const subsForThatDay = activeSubscriptions.filter((sub) => {
+                    const start = new Date(sub.start_date);
+                    const end = new Date(sub.end_date);
+                    return recordDateUTC >= start && recordDateUTC <= end;
+                });
+                for (const sub of subsForThatDay) {
+                    const planTypeIds = sub.meal_plan.types.map((t) => t.id);
+                    const existingSelections = await UserMealSelection.findAll({
+                        where: {
+                            user_id: sub.user_id,
+                            meal_subscription_id: sub.id,
+                            date: record.date,
+                        },
+                        include: [
+                            {
+                                model: Meal,
+                                as: "meal",
+                                include: [{ model: Type, as: "types", through: { attributes: [] } }],
+                            },
+                        ],
+                    });
+                    const existingTypeIds = new Set();
+                    for (const sel of existingSelections) {
+                        for (const t of sel.meal.types) {
+                            existingTypeIds.add(t.id);
+                        }
+                    }
+                    const planAllCovered = planTypeIds.every((ptId) => existingTypeIds.has(ptId));
+                    if (planAllCovered) {
+                        continue;
+                    }
+                    userMealSelectionsToCreate.push({
+                        user_id: sub.user_id,
+                        meal_subscription_id: sub.id,
+                        meal_id: record.meal_id,
+                        date: record.date,
+                        day: record.day,
+                    });
+                }
+            }
+            if (userMealSelectionsToCreate.length > 0) {
+                await UserMealSelection.bulkCreate(userMealSelectionsToCreate, {
+                    ignoreDuplicates: true,
+                });
+            }
         }
-
-        // Fetch the updated records and return them
         const updatedRecords = await MealDay.findAll({
             attributes: ["meal_id", "day", "date"],
         });
-
         res.status(201).json({
             message: "Meal days synced successfully.",
             updatedRecords,
@@ -312,9 +367,6 @@ exports.assignMealsToDays = async (req, res, next) => {
         next(error);
     }
 };
-
-
-
 
 exports.getUpcomingWeek = async (req, res, next) => {
     try {

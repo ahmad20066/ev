@@ -90,7 +90,7 @@ app.use((error, req, res, next) => {
 sequelize
     .sync({
         // force: true
-        alter: true
+        // alter: true
     })
     .then(() => {
         server.listen(process.env.PORT, () => {
