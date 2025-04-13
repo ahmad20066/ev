@@ -21,7 +21,20 @@ exports.sendMessageUser = async (req, res, next) => {
         });
 
         req.io.to(`chat_${chat.id}`).emit("new_message", message);
-
+        if (!chat.coach_id) {
+            req.io.to("coaches").emit("new_chat_needs_coach", {
+                chatId: chat.id,
+                userId: user_id,
+                messageId: message.id,
+                content: message.content,
+            });
+        } else {
+            req.io.to(`coach_${chat.coach_id}`).emit("new_message_alert", {
+                chatId: chat.id,
+                messageId: message.id,
+                content: message.content,
+            });
+        }
         res.status(201).json({ message });
     } catch (error) {
         next(error);
@@ -157,7 +170,7 @@ exports.getChatsUser = async (req, res, next) => {
                 {
                     model: User,
                     as: 'coach',
-                    attributes: ['id', 'name', 'email'], // Include coach details
+                    attributes: ['id', 'name', 'email'],
                 },
             ],
         });

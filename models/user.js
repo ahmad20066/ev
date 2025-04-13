@@ -16,6 +16,11 @@ const User = sequelize.define("User", {
             isEmail: true,
         },
     },
+    googleId: {
+        type: Sequelize.STRING,
+        allowNull: true,
+        unique: true,
+    },
     phone: {
         type: Sequelize.STRING,
         allowNull: false,

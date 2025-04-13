@@ -101,9 +101,14 @@ sequelize
             console.log("A user connected");
 
             socket.on("joinChat", (chat_id) => {
-                socket.join('chat_${chat_id}');
+                socket.join(`chat_${chat_id}`);
             });
-
+            socket.on("joinCoach", (coachId) => {
+                socket.join(`coach_${coachId}`);
+            });
+            socket.on("joinCoachesRoom", () => {
+                socket.join("coaches");
+            });
             socket.on("disconnect", () => {
                 console.log("User disconnected");
             });

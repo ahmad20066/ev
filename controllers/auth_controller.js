@@ -456,4 +456,95 @@ exports.resetPassword = async (req, res, next) => {
         next(error);
     }
 };
+exports.googleLogin = (req, res) => {
 
+    const redirectUri = encodeURIComponent("http://localhost:8080/auth/google/callback");
+
+    const googleAuthURL =
+        "https://accounts.google.com/o/oauth2/v2/auth" +
+        "?response_type=code" +
+        `&client_id=${GOOGLE_CLIENT_ID}` +
+        `&redirect_uri=${redirectUri}` +
+        "&scope=profile%20email" +
+        "&access_type=offline";
+
+    return res.redirect(googleAuthURL);
+};
+
+exports.googleCallback = async (req, res, next) => {
+
+    try {
+        const code = req.query.code;
+        if (!code) {
+            return res.status(400).json({ error: "No code provided by Google" });
+        }
+
+        const tokenRes = await axios.post(
+            "https://oauth2.googleapis.com/token",
+            {
+                code,
+                client_id: GOOGLE_CLIENT_ID,
+                client_secret: GOOGLE_CLIENT_SECRET,
+                redirect_uri: "http://localhost:8080/auth/google/callback",
+                grant_type: "authorization_code",
+            },
+            { headers: { "Content-Type": "application/json" } }
+        );
+
+        const { access_token } = tokenRes.data;
+
+
+        const userinfoRes = await axios.get("https://www.googleapis.com/oauth2/v2/userinfo", {
+            headers: {
+                Authorization: `Bearer ${access_token}`,
+            },
+        });
+
+        const { id, email, name } = userinfoRes.data;
+
+        let user = await User.findOne({ where: { googleId: id } });
+
+        if (!user) {
+
+            user = await User.findOne({ where: { email } });
+
+            if (user) {
+                user.googleId = id;
+                await user.save();
+            } else {
+                user = await User.create({
+                    googleId: id,
+                    email,
+                    name,
+                    is_active: true,
+                    is_verified: true,
+                });
+            }
+        }
+
+        if (!user.is_active) {
+            return res.status(403).json({ error: "Your account is inactive." });
+        }
+        if (user.is_blocked) {
+            return res.status(403).json({ error: "Your account is blocked." });
+        }
+
+        const token = jwt.sign(
+            { userId: user.id, role: user.role, is_set_up: user.is_set_up },
+            JWT_SECRET,
+            { expiresIn: "7d" }
+        );
+
+
+
+        return res.status(200).json({
+            message: "Google login successful",
+            token,
+            user
+        });
+
+    } catch (error) {
+        console.error("Google Callback Error:", error.message);
+        return res.status(500).json({ error: "Server error during Google login." });
+    }
+};
