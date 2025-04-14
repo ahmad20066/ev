@@ -7,12 +7,14 @@ exports.sendMessageUser = async (req, res, next) => {
         const file = req.file?.path;
         const user_id = req.userId;
 
+        // Find or create chat for the user
         let chat = await Chat.findOne({ where: { user_id } });
 
         if (!chat) {
             chat = await Chat.create({ user_id });
         }
 
+        // Create the message
         const message = await Message.create({
             chat_id: chat.id,
             sender_id: user_id,
@@ -20,21 +22,39 @@ exports.sendMessageUser = async (req, res, next) => {
             file,
         });
 
+        // Emit the message in real-time to the user-coach chat room
         req.io.to(`chat_${chat.id}`).emit("new_message", message);
+
+        // Fetch full updated chat with the latest message
+        const fullChat = await Chat.findOne({
+            where: { id: chat.id },
+            include: [
+                {
+                    model: User,
+                    as: 'user',
+                    attributes: ['id', 'name', 'email']
+                },
+                {
+                    model: Message,
+                    as: 'messages',
+                    attributes: ['id', 'content', 'file', 'createdAt'],
+                    separate: true,
+                    limit: 1,
+                    order: [['createdAt', 'DESC']],
+                },
+            ],
+        });
+
+        const lastMessage = fullChat.dataValues.messages[0];
+        fullChat.dataValues.lastMessage = lastMessage;
+        delete fullChat.dataValues.messages;
+
         if (!chat.coach_id) {
-            req.io.to("coaches").emit("new_chat_needs_coach", {
-                chatId: chat.id,
-                userId: user_id,
-                messageId: message.id,
-                content: message.content,
-            });
+            req.io.to("coaches").emit("new_chat_needs_coach", fullChat.dataValues);
         } else {
-            req.io.to(`coach_${chat.coach_id}`).emit("new_message_alert", {
-                chatId: chat.id,
-                messageId: message.id,
-                content: message.content,
-            });
+            req.io.to(`coach_${chat.coach_id}`).emit("new_message_alert", fullChat.dataValues);
         }
+
         res.status(201).json({ message });
     } catch (error) {
         next(error);
@@ -137,22 +157,57 @@ exports.getChatsCoach = async (req, res, next) => {
             ],
         });
 
-        const formattedChats = chats.map(chat => {
-            console.log(chat)
+        const formattedChats = await Promise.all(chats.map(async (chat) => {
             const lastMessage = chat.dataValues.messages[0] || null;
 
-            chat.dataValues.lastMessage = lastMessage.dataValues;
+            const unreadCount = await Message.count({
+                where: {
+                    chat_id: chat.id,
+                    sender_id: chat.user_id,
+                    read: false
+                }
+            });
 
-            delete chat.dataValues.messages;
-            return chat.dataValues;
-        });
-        // console.log(formattedChats)
+            return {
+                ...chat.dataValues,
+                lastMessage: lastMessage?.dataValues || null,
+                hasUnreadMessages: unreadCount > 0,
+                unreadCount
+            };
+        }));
+
         res.status(200).json({ chats: formattedChats });
     } catch (error) {
         next(error);
     }
 };
+exports.markMessagesAsRead = async (req, res, next) => {
+    try {
+        const { chat_id } = req.body;
+        const coach_id = req.userId;
 
+        const chat = await Chat.findOne({ where: { id: chat_id, coach_id } });
+
+        if (!chat) {
+            return res.status(404).json({ message: "Chat not found or not assigned to this coach." });
+        }
+
+        await Message.update(
+            { read: true },
+            {
+                where: {
+                    chat_id,
+                    sender_id: chat.user_id,
+                    read: false
+                }
+            }
+        );
+
+        res.status(200).json({ message: "Messages marked as read." });
+    } catch (error) {
+        next(error);
+    }
+};
 
 exports.getChatsUser = async (req, res, next) => {
     try {

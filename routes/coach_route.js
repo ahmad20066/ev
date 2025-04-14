@@ -123,6 +123,7 @@ router.get("/workout-requests", controller.getWorkoutRequests);
 router.post("/message", imageMiddleWare.uploadSingleImage("file"), chatController.sendMessageCoach)
 router.get("/chats", chatController.getChatsCoach)
 router.get("/messages", chatController.getMessages)
+router.post("/read-messages", chatController.markMessagesAsRead)
 
 
 

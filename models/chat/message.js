@@ -25,5 +25,10 @@ const Message = sequelize.define('Message', {
             key: 'id',
         },
     },
+    is_read: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false,
+    },
+
 });
 module.exports = Message
