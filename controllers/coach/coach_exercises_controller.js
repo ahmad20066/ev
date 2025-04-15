@@ -26,7 +26,7 @@ exports.createExercise = async (req, res, next) => {
             target_muscles_image,
             video_url,
             notes: JSON.parse(notes),
-            notes_ar: JSON.parse(notes_ar),
+            // notes_ar: JSON.parse(notes_ar),
         });
 
         res.status(201).json({
