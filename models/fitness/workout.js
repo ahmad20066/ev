@@ -18,7 +18,7 @@ const Workout = sequelize.define("Workout", {
     },
     title_ar: {
         type: Sequelize.STRING,
-        allowNull: false, // Set to `true` if optional
+        allowNull: false,
     },
     type: {
         type: Sequelize.ENUM("personalized", "group"),
@@ -65,7 +65,7 @@ const Workout = sequelize.define("Workout", {
             model: Package,
             key: "id"
         },
-        allowNull: false
+        allowNull: true
     },
     motivational_message: {
         type: Sequelize.STRING,
@@ -74,6 +74,16 @@ const Workout = sequelize.define("Workout", {
     motivational_message_ar: {
         type: Sequelize.STRING,
         allowNull: true,
+    },
+    is_template: {
+        type: Sequelize.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
+    },
+    template_id: {
+        type: Sequelize.INTEGER,
+        allowNull: true,
+        references: { model: "workouts", key: "id" },
     },
     is_Active: {
         type: Sequelize.BOOLEAN,

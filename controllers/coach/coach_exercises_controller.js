@@ -32,7 +32,7 @@ exports.createExercise = async (req, res, next) => {
         res.status(201).json({
             message: 'Exercise created successfully',
             message_ar: 'تم إنشاء التمرين بنجاح',
-            exercise
+            // exercise
         });
     } catch (error) {
         next(error);

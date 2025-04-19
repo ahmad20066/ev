@@ -1,86 +1,104 @@
 {
     "info": {
-        "name": "Full Body Strength Training",
+        "name": "Coach Workouts",
+        "_postman_id": "abc12345-0000-0000-0000-coach-workouts",
+        "description": "Workout template and creation endpoints for coaches",
         "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
     },
     "item": [
         {
-            "name": "Create Training Program",
+            "name": "Create Workout From Template",
             "request": {
                 "method": "POST",
                 "header": [
                     {
                         "key": "Content-Type",
-                        "value": "multipart/form-data",
-                        "type": "text"
+                        "value": "application/json"
                     }
                 ],
+                "url": {
+                    "raw": "{{url}}/coach/workouts/from-template",
+                    "host": [
+                        "{{url}}"
+                    ],
+                    "path": [
+                        "coach",
+                        "workouts",
+                        "from-template"
+                    ]
+                },
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"template_id\": 1,\n  \"date\": \"2025-04-20\",\n  \"package_id\": 3,\n  \"user_id\": 17,\n  \"difficulty_level\": \"medium\",\n  \"calories_burned\": 300\n}"
+                }
+            }
+        },
+        {
+            "name": "Create Workout Template",
+            "request": {
+                "method": "POST",
+                "header": [],
                 "body": {
                     "mode": "formdata",
                     "formdata": [
                         {
                             "key": "title",
-                            "value": "Full Body Strength Training",
+                            "value": "Push Day",
                             "type": "text"
                         },
                         {
-                            "key": "type",
-                            "value": "personalized",
+                            "key": "title_ar",
+                            "value": "يوم الدفع",
                             "type": "text"
                         },
                         {
                             "key": "description",
-                            "value": "22222",
+                            "value": "Chest & triceps focused",
+                            "type": "text"
+                        },
+                        {
+                            "key": "description_ar",
+                            "value": "تمرين للصدر والترايسبس",
                             "type": "text"
                         },
                         {
                             "key": "duration",
-                            "value": "60",
+                            "value": "45",
                             "type": "text"
                         },
                         {
                             "key": "difficulty_level",
-                            "value": "Intermediate",
+                            "value": "medium",
                             "type": "text"
                         },
                         {
                             "key": "calories_burned",
-                            "value": "500",
+                            "value": "350",
                             "type": "text"
                         },
                         {
-                            "key": "day",
-                            "value": "monday",
-                            "type": "text"
-                        },
-                        {
-                            "key": "user_id",
-                            "value": "5",
-                            "type": "text"
-                        },
-                        {
-                            "key": "exercises[0][exercise_id]",
-                            "value": "6",
-                            "type": "text"
-                        },
-                        {
-                            "key": "exercises[0][sets]",
-                            "value": "4",
-                            "type": "text"
-                        },
-                        {
-                            "key": "exercises[0][reps]",
-                            "value": "12",
-                            "type": "text"
-                        },
-                        {
-                            "key": "exercises[1][exercise_id]",
+                            "key": "package_id",
                             "value": "3",
                             "type": "text"
                         },
                         {
-                            "key": "exercises[1][duration]",
-                            "value": "30",
+                            "key": "user_id",
+                            "value": "17",
+                            "type": "text"
+                        },
+                        {
+                            "key": "motivational_message",
+                            "value": "Keep pushing!",
+                            "type": "text"
+                        },
+                        {
+                            "key": "motivational_message_ar",
+                            "value": "استمر في الدفع!",
+                            "type": "text"
+                        },
+                        {
+                            "key": "exercises",
+                            "value": "[{\"exercise_id\":1},{\"exercise_id\":2}]",
                             "type": "text"
                         },
                         {
@@ -91,13 +109,88 @@
                     ]
                 },
                 "url": {
-                    "raw": "https://<your_endpoint_url>",
-                    "protocol": "https",
+                    "raw": "{{url}}/coach/workouts/templates",
                     "host": [
-                        "<your_endpoint_url>"
+                        "{{url}}"
+                    ],
+                    "path": [
+                        "coach",
+                        "workouts",
+                        "templates"
                     ]
                 }
             }
+        },
+        {
+            "name": "Update Workout Template",
+            "request": {
+                "method": "PUT",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "url": {
+                    "raw": "{{url}}/coach/workouts/templates/1",
+                    "host": [
+                        "{{url}}"
+                    ],
+                    "path": [
+                        "coach",
+                        "workouts",
+                        "templates",
+                        "1"
+                    ]
+                },
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"title\": \"Updated Push Day\",\n  \"duration\": 50,\n  \"difficulty_level\": \"hard\",\n  \"exercises\": [\n    { \"exercise_id\": 1 },\n    { \"exercise_id\": 3 }\n  ]\n}"
+                }
+            }
+        },
+        {
+            "name": "Delete Workout Template",
+            "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                    "raw": "{{url}}/coach/workouts/templates/1",
+                    "host": [
+                        "{{url}}"
+                    ],
+                    "path": [
+                        "coach",
+                        "workouts",
+                        "templates",
+                        "1"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "Get All Workout Templates",
+            "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "{{url}}/coach/workouts/templates",
+                    "host": [
+                        "{{url}}"
+                    ],
+                    "path": [
+                        "coach",
+                        "workouts",
+                        "templates"
+                    ]
+                }
+            }
+        }
+    ],
+    "variable": [
+        {
+            "key": "url",
+            "value": "http://localhost:3000"
         }
     ]
 }

@@ -134,4 +134,10 @@ router.get("/user/:id", controller.getUserDetails)
 router.get("/daysOfMonth", controller.getDatesForMonth)
 
 router.get("/leaderboards", controller.exerciseLeaderBoard)
+
+router.post('/workouts/from-template', controller.createWorkoutFromTemplate);
+router.post('/workouts/templates', imageMiddleWare.uploadSingleImage('image'), controller.createWorkoutTemplate);
+router.put('/workouts/templates/:id', imageMiddleWare.uploadSingleImage('image'), controller.updateWorkoutTemplate);
+router.delete('/workouts/templates/:id', controller.deleteWorkoutTemplate);
+router.get('/workouts/templates', controller.getAllWorkoutTemplates);
 module.exports = router;

@@ -12,7 +12,7 @@ const WeightRecord = require('../../models/weight_record');
 const Package = require('../../models/package');
 const WorkoutRequest = require('../../models/fitness/user_workout_request');
 const Answer = require('../../models/survey/answer');
-
+const sequelize = require("../../models/index")
 const Question = require('../../models/survey/question');
 const UserMealSelection = require('../../models/meals/user_meal_selection');
 const WorkoutRating = require('../../models/fitness/workout_rating');
@@ -23,6 +23,7 @@ const Meal = require('../../models/meals/meal');
 const { sendNotification } = require('../../helpers/noitifcations_helper');
 const ExerciseStat = require('../../models/fitness/exercise_stat');
 exports.createWorkout = async (req, res, next) => {
+    const t = await sequelize.transaction();
     try {
         let { title, title_ar, user_id, description, description_ar, duration, exercises, difficulty_level, calories_burned, date, package_id, motivational_message, motivational_message_ar } = req.body;
         const coach = req.userId;
@@ -41,12 +42,12 @@ exports.createWorkout = async (req, res, next) => {
             package_id = subscription.package_id;
         }
 
-        const package = await Package.findByPk(package_id);
-        if (!package) {
+        const pkg = await Package.findByPk(package_id);
+        if (!pkg) {
             return res.status(404).json({ message: "Package not found", message_ar: "لم يتم العثور على الحزمة" });
         }
 
-        const type = package.type;
+        const type = pkg.type;
         if (type === "personalized" && !user_id) {
             return res.status(422).json({ message: "Personalized workouts require a user id", message_ar: "التمارين الشخصية تتطلب معرف المستخدم" });
         }
@@ -75,12 +76,38 @@ exports.createWorkout = async (req, res, next) => {
             package_id,
             motivational_message,
             motivational_message_ar,
-            image
-        });
+            image,
+            is_template: false,
+        }, { transaction: t });
 
         await Promise.all(exercises.map(async (exercise) => {
-            await WorkoutExercise.create({ workout_id: workout.id, exercise_id: exercise.exercise_id });
+            await WorkoutExercise.create({ workout_id: workout.id, exercise_id: exercise.exercise_id }, { transaction: t });
         }));
+
+        const template = await Workout.create({
+            title,
+            title_ar,
+            description,
+            description_ar,
+            type,
+            duration,
+            difficulty_level,
+            calories_burned,
+            coach,
+            date: null,
+            user_id: null,
+            package_id,
+            motivational_message,
+            motivational_message_ar,
+            image,
+            is_template: true,
+        }, { transaction: t });
+
+        await Promise.all(exercises.map(async (exercise) => {
+            await WorkoutExercise.create({ workout_id: template.id, exercise_id: exercise.exercise_id }, { transaction: t });
+        }));
+
+        await t.commit();
 
         const workoutWithExercises = await Workout.findByPk(workout.id, { include: [{ model: Exercise, as: 'exercises' }] });
 
@@ -88,9 +115,207 @@ exports.createWorkout = async (req, res, next) => {
             sendNotification(user.id, user.fcm_token, "Coach created your workout", "Coach created your workout you can now view it", { workout_id: workout.id, type: "workout_created" });
         }
 
-        res.status(201).json({ message: "Workout created successfully", message_ar: "تم إنشاء التمرين بنجاح", workout: workoutWithExercises });
+        res.status(201).json({
+            message: "Workout created and saved to library",
+            message_ar: "تم إنشاء التمرين وتم حفظه في المكتبة",
+            workout: workoutWithExercises
+        });
     } catch (error) {
+        await t.rollback();
         next(error);
+    }
+};
+
+
+const copyWorkoutExercises = async (fromId, toId, t) => {
+    const list = await WorkoutExercise.findAll({ where: { workout_id: fromId }, transaction: t });
+    await Promise.all(
+        list.map((e) =>
+            WorkoutExercise.create(
+                { workout_id: toId, exercise_id: e.exercise_id },
+                { transaction: t },
+            ),
+        ),
+    );
+};
+exports.createWorkoutTemplate = async (req, res, next) => {
+    const t = await sequelize.transaction();
+    try {
+        const {
+            title, title_ar, description, description_ar,
+            duration, exercises, difficulty_level, calories_burned,
+            motivational_message, motivational_message_ar
+        } = req.body;
+
+        const coach = req.userId;
+        const image = req.file ? req.file.path : null;
+
+        const workout = await Workout.create({
+            title,
+            title_ar,
+            description,
+            description_ar,
+            duration,
+            difficulty_level,
+            calories_burned,
+            coach,
+            motivational_message,
+            motivational_message_ar,
+            image,
+            type: "group",   // placeholder; real type chosen at instantiation
+            date: null,
+            user_id: null,
+            package_id: null,
+            is_template: true
+        }, { transaction: t });
+
+        await Promise.all(
+            exercises.map(e =>
+                WorkoutExercise.create(
+                    { workout_id: workout.id, exercise_id: e.exercise_id },
+                    { transaction: t }
+                )
+            )
+        );
+
+        await t.commit();
+        res.status(201).json({
+            message: "Template saved to library",
+            message_ar: "تم حفظ التمرين في المكتبة",
+            workout
+        });
+    } catch (err) {
+        await t.rollback();
+        next(err);
+    }
+};
+
+exports.createWorkoutFromTemplate = async (req, res, next) => {
+    const t = await sequelize.transaction();
+    try {
+        const { template_id, date, package_id, user_id, difficulty_level, calories_burned } = req.body;
+
+        const template = await Workout.findByPk(template_id, { transaction: t });
+        if (!template || !template.is_template) {
+            await t.rollback();
+            return res.status(404).json({ message: "Template not found", message_ar: "لم يتم العثور على التمرين في المكتبة" });
+        }
+
+        const pkg = await Package.findByPk(package_id, { transaction: t });
+        if (!pkg) {
+            await t.rollback();
+            return res.status(404).json({ message: "Package not found", message_ar: "لم يتم العثور على الحزمة" });
+        }
+
+        const type = pkg.type;
+        if (type === "personalized" && !user_id) {
+            await t.rollback();
+            return res.status(422).json({ message: "Personalized workout needs user_id", message_ar: "التمارين الشخصية تتطلب معرف المستخدم" });
+        }
+
+        const existing = await Workout.findOne({ where: { date, package_id, is_Active: true }, transaction: t });
+        if (existing) {
+            existing.is_Active = false;
+            await existing.save({ transaction: t });
+        }
+
+        const workout = await Workout.create({
+            ...template.get({ plain: true }),
+            id: undefined,
+            type,
+            date,
+            user_id: type === "group" ? null : user_id,
+            package_id,
+            difficulty_level: difficulty_level ?? template.difficulty_level,
+            calories_burned: calories_burned ?? template.calories_burned,
+            is_template: false,
+            template_id: template.id,
+            createdAt: undefined,
+            updatedAt: undefined
+        }, { transaction: t });
+
+        await copyWorkoutExercises(template.id, workout.id, t);
+        await t.commit();
+        res.status(201).json({ message: "Workout created from template", message_ar: "تم إنشاء التمرين من المكتبة", workout });
+    } catch (err) {
+        await t.rollback();
+        next(err);
+    }
+};
+
+exports.updateWorkoutTemplate = async (req, res, next) => {
+    const t = await sequelize.transaction();
+    try {
+        const { id } = req.params;
+        const {
+            title, title_ar, description, description_ar,
+            duration, exercises, difficulty_level, calories_burned,
+            motivational_message, motivational_message_ar
+        } = req.body;
+
+        const workout = await Workout.findByPk(id, { transaction: t });
+        if (!workout || !workout.is_template) {
+            await t.rollback();
+            return res.status(404).json({ message: "Template not found", message_ar: "لم يتم العثور على القالب" });
+        }
+
+        const image = req.file ? req.file.path : workout.image;
+
+        Object.assign(workout, {
+            title: title ?? workout.title,
+            title_ar: title_ar ?? workout.title_ar,
+            description: description ?? workout.description,
+            description_ar: description_ar ?? workout.description_ar,
+            duration: duration ?? workout.duration,
+            difficulty_level: difficulty_level ?? workout.difficulty_level,
+            calories_burned: calories_burned ?? workout.calories_burned,
+            motivational_message: motivational_message ?? workout.motivational_message,
+            motivational_message_ar: motivational_message_ar ?? workout.motivational_message_ar,
+            image
+        });
+
+        await workout.save({ transaction: t });
+
+        if (exercises) {
+            await WorkoutExercise.destroy({ where: { workout_id: id }, transaction: t });
+            await Promise.all(exercises.map(e =>
+                WorkoutExercise.create({ workout_id: id, exercise_id: e.exercise_id }, { transaction: t })
+            ));
+        }
+
+        await t.commit();
+        res.status(200).json({ message: "Template updated", message_ar: "تم تحديث القالب", workout });
+    } catch (err) {
+        await t.rollback();
+        next(err);
+    }
+};
+
+exports.deleteWorkoutTemplate = async (req, res, next) => {
+    try {
+        const { id } = req.params;
+        const template = await Workout.findByPk(id);
+        if (!template || !template.is_template) {
+            return res.status(404).json({ message: "Template not found", message_ar: "لم يتم العثور على القالب" });
+        }
+        await WorkoutExercise.destroy({ where: { workout_id: id } });
+        await template.destroy();
+        res.status(200).json({ message: "Template deleted", message_ar: "تم حذف القالب" });
+    } catch (err) {
+        next(err);
+    }
+};
+
+exports.getAllWorkoutTemplates = async (req, res, next) => {
+    try {
+        const templates = await Workout.findAll({
+            where: { is_template: true },
+            include: [{ model: Exercise, as: 'exercises', through: { attributes: [] } }],
+            order: [['createdAt', 'DESC']]
+        });
+        res.status(200).json(templates);
+    } catch (err) {
+        next(err);
     }
 };
 
