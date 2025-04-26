@@ -109,8 +109,18 @@ exports.sendMessageCoach = async (req, res, next) => {
             content,
             file,
         });
+        const fullMessage = await Message.findOne({
+            where: { id: message.id },
+            include: [
+                {
+                    model: User,
+                    as: 'sender',
+                    attributes: ['id', 'name', 'role'],
+                },
+            ],
+        });
         console.log(message)
-        req.io.to(`chat_${chat.id}`).emit("new_message", message.dataValues);
+        req.io.to(`chat_${chat.id}`).emit("new_message", fullMessage);
 
         res.status(201).json({ message });
     } catch (error) {
