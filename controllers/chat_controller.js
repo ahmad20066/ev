@@ -22,10 +22,21 @@ exports.sendMessageUser = async (req, res, next) => {
             file,
         });
 
-        // Emit the message in real-time to the user-coach chat room
-        req.io.to(`chat_${chat.id}`).emit("new_message", message);
 
-        // Fetch full updated chat with the latest message
+        const fullMessage = await Message.findOne({
+            where: { id: message.id },
+            include: [
+                {
+                    model: User,
+                    as: 'sender',
+                    attributes: ['id', 'name', 'role'],
+                },
+            ],
+        });
+
+        req.io.to(`chat_${chat.id}`).emit("new_message", fullMessage);
+
+
         const fullChat = await Chat.findOne({
             where: { id: chat.id },
             include: [
