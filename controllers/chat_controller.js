@@ -164,7 +164,7 @@ exports.getChatsCoach = async (req, res, next) => {
                 where: {
                     chat_id: chat.id,
                     sender_id: chat.user_id,
-                    read: false
+                    is_read: false
                 }
             });
 
@@ -193,12 +193,12 @@ exports.markMessagesAsRead = async (req, res, next) => {
         }
 
         await Message.update(
-            { read: true },
+            { is_read: true },
             {
                 where: {
                     chat_id,
                     sender_id: chat.user_id,
-                    read: false
+                    is_read: false
                 }
             }
         );
