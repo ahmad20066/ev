@@ -106,6 +106,17 @@ exports.createWorkout = async (req, res, next) => {
         await Promise.all(exercises.map(async (exercise) => {
             await WorkoutExercise.create({ workout_id: template.id, exercise_id: exercise.exercise_id }, { transaction: t });
         }));
+        if (type == "personalized") {
+            const requests = await WorkoutRequest.findAll({
+                where: {
+                    user_id,
+                    package_id
+                }
+            })
+            requests.forEach(async e => {
+                await e.destroy()
+            })
+        }
 
         await t.commit();
 
