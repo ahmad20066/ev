@@ -69,7 +69,7 @@ exports.createWorkout = async (req, res, next) => {
             type,
             duration,
             difficulty_level,
-            calories_burned,
+            // calories_burned,
             coach,
             date,
             user_id,
@@ -92,7 +92,7 @@ exports.createWorkout = async (req, res, next) => {
             type,
             duration,
             difficulty_level,
-            calories_burned,
+            // calories_burned,
             coach,
             date: null,
             user_id: null,
@@ -168,7 +168,7 @@ exports.createWorkoutTemplate = async (req, res, next) => {
             description_ar,
             duration,
             difficulty_level,
-            calories_burned,
+            // calories_burned,
             coach,
             motivational_message,
             motivational_message_ar,
@@ -238,7 +238,7 @@ exports.createWorkoutFromTemplate = async (req, res, next) => {
             user_id: type === "group" ? null : user_id,
             package_id,
             difficulty_level: difficulty_level ?? template.difficulty_level,
-            calories_burned: calories_burned ?? template.calories_burned,
+            // calories_burned: calories_burned ?? template.calories_burned,
             is_template: false,
             template_id: template.id,
             createdAt: undefined,
@@ -279,7 +279,7 @@ exports.updateWorkoutTemplate = async (req, res, next) => {
             description_ar: description_ar ?? workout.description_ar,
             duration: duration ?? workout.duration,
             difficulty_level: difficulty_level ?? workout.difficulty_level,
-            calories_burned: calories_burned ?? workout.calories_burned,
+            // calories_burned: calories_burned ?? workout.calories_burned,
             motivational_message: motivational_message ?? workout.motivational_message,
             motivational_message_ar: motivational_message_ar ?? workout.motivational_message_ar,
             image
@@ -378,7 +378,7 @@ exports.updateWorkout = async (req, res, next) => {
         workout.description = description || workout.description;
         workout.duration = duration || workout.duration;
         workout.difficulty_level = difficulty_level || workout.difficulty_level;
-        workout.calories_burned = calories_burned || workout.calories_burned;
+        // workout.calories_burned = calories_burned || workout.calories_burned;
         workout.package_id = package_id || workout.package_id;
         workout.date = date || workout.date;
 

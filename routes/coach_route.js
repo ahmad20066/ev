@@ -64,7 +64,7 @@ router.put("/workout/:id", imageMiddleWare.uploadAnyImages(), [
     body("description").optional().isString().withMessage("Description must be a string"),
     body("duration").optional().isInt({ min: 1 }).withMessage("Duration must be a positive integer"),
     body("difficulty_level").optional().notEmpty().withMessage("Difficulty level cannot be empty"),
-    body("calories_burned").optional().isInt({ min: 0 }).withMessage("Calories burned must be a non-negative integer"),
+
     body("date").optional().isISO8601().withMessage("Date must be a valid ISO 8601 date"),
 ], (req, res, next) => {
     const errors = validationResult(req);
