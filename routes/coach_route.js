@@ -124,6 +124,8 @@ router.post("/message", imageMiddleWare.uploadSingleImage("file"), chatControlle
 router.get("/chats", chatController.getChatsCoach)
 router.get("/messages", chatController.getMessages)
 router.post("/read-messages", chatController.markMessagesAsRead)
+router.get("/chat-requests", chatController.getOpenRequests)
+router.post("/accept-request", chatController.acceptRequest)
 
 
 

@@ -1,74 +1,64 @@
 const Chat = require("../models/chat/chat");
+const ChatRequest = require("../models/chat/chat_request");
 const Message = require("../models/chat/message");
 const User = require("../models/user");
 exports.sendMessageUser = async (req, res, next) => {
+    const t = await Chat.sequelize.transaction();
     try {
         const { content } = req.body;
         const file = req.file?.path;
         const user_id = req.userId;
 
-        // Find or create chat for the user
-        let chat = await Chat.findOne({ where: { user_id } });
-
-        if (!chat) {
-            chat = await Chat.create({ user_id });
+        if (!content && !file) {
+            const err = new Error("Message must contain text or a file.");
+            err.statusCode = 400;
+            throw err;
         }
 
-        // Create the message
-        const message = await Message.create({
-            chat_id: chat.id,
-            sender_id: user_id,
-            content,
-            file,
-        });
+
+        let chat = await Chat.findOne({ where: { user_id }, lock: t.LOCK.UPDATE, transaction: t });
+        if (!chat) {
+            chat = await Chat.create({ user_id }, { transaction: t });
+            await ChatRequest.create({ user_id, chat_id: chat.id }, { transaction: t });
+        }
 
 
-        const fullMessage = await Message.findOne({
-            where: { id: message.id },
-            include: [
-                {
-                    model: User,
-                    as: 'sender',
-                    attributes: ['id', 'name', 'role'],
-                },
-            ],
+        const message = await Message.create(
+            { chat_id: chat.id, sender_id: user_id, content, file },
+            { transaction: t }
+        );
+
+        await t.commit();
+
+
+        const fullMessage = await Message.findByPk(message.id, {
+            include: [{ model: User, as: "sender", attributes: ["id", "name", "role"] }],
         });
 
         req.io.to(`chat_${chat.id}`).emit("new_message", fullMessage);
 
 
-        const fullChat = await Chat.findOne({
-            where: { id: chat.id },
-            include: [
-                {
-                    model: User,
-                    as: 'user',
-                    attributes: ['id', 'name', 'email']
-                },
-                {
-                    model: Message,
-                    as: 'messages',
-                    attributes: ['id', 'content', 'file', 'createdAt'],
-                    separate: true,
-                    limit: 1,
-                    order: [['createdAt', 'DESC']],
-                },
-            ],
-        });
-
-        const lastMessage = fullChat.dataValues.messages[0];
-        fullChat.dataValues.lastMessage = lastMessage;
-        delete fullChat.dataValues.messages;
-
         if (!chat.coach_id) {
-            req.io.to("coaches").emit("new_chat_needs_coach", fullChat.dataValues);
+            const fullChat = await Chat.findByPk(chat.id, {
+                include: [
+                    { model: User, as: "user", attributes: ["id", "name", "email"] },
+                    { model: Message, as: "messages", separate: true, limit: 1, order: [["createdAt", "DESC"]] }
+                ],
+            });
+
+            const lastMessage = fullChat.messages[0] || null;
+            const payload = { ...fullChat.toJSON(), lastMessage };
+            delete payload.messages;
+
+            req.io.to("coaches").emit("new_chat_needs_coach", payload);
         } else {
-            req.io.to(`coach_${chat.coach_id}`).emit("new_message_alert", fullChat.dataValues);
+            req.io.to(`coach_${chat.coach_id}`).emit("new_message_alert", { chat_id: chat.id });
         }
 
-        res.status(201).json({ message });
-    } catch (error) {
-        next(error);
+        return res.status(201).json({ message: fullMessage });
+    } catch (err) {
+        await t.rollback();
+        next(err);
     }
 };
 
@@ -258,5 +248,68 @@ exports.getChatsUser = async (req, res, next) => {
         res.status(200).json(chat);
     } catch (error) {
         next(error);
+    }
+};
+
+exports.getOpenRequests = async (req, res, next) => {
+    try {
+        const requests = await ChatRequest.findAll({
+            include: [
+                { model: User, as: "user", attributes: ["id", "name", "email"] },
+                {
+                    model: Chat,
+                    include: [
+                        {
+                            model: Message,
+                            as: "messages",
+                            separate: true,
+                            limit: 1,
+                            order: [["createdAt", "DESC"]],
+                            attributes: ["id", "content", "file", "createdAt"],
+                        },
+                    ],
+                },
+            ],
+            order: [["createdAt", "ASC"]],
+        });
+
+        res.status(200).json(requests);
+    } catch (err) {
+        next(err);
+    }
+};
+exports.acceptRequest = async (req, res, next) => {
+    const coach_id = req.userId;
+    const request_id = req.query.request_id;
+
+    const t = await sequelize.transaction();
+    try {
+        const request = await ChatRequest.findByPk(request_id, { transaction: t, lock: t.LOCK.UPDATE });
+        if (!request) {
+            await t.rollback();
+            return res.status(404).json({ message: "Request not found" });
+        }
+
+        const chat = await Chat.findByPk(request.chat_id, { transaction: t, lock: t.LOCK.UPDATE });
+        if (chat.coach_id && chat.coach_id !== coach_id) {
+            await t.rollback();
+            return res.status(409).json({ message: "Another coach already claimed this chat." });
+        }
+
+        chat.coach_id = coach_id;
+        await chat.save({ transaction: t });
+        await request.destroy({ transaction: t });
+        await t.commit();
+
+        const fullChat = await Chat.findByPk(chat.id, {
+            include: [{ model: User, as: "user", attributes: ["id", "name", "email"] }],
+        });
+
+
+
+        res.status(200).json(fullChat);
+    } catch (err) {
+        await t.rollback();
+        next(err);
     }
 };
