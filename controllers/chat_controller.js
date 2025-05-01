@@ -258,6 +258,7 @@ exports.getOpenRequests = async (req, res, next) => {
                 { model: User, as: "user", attributes: ["id", "name", "email"] },
                 {
                     model: Chat,
+                    as: "chat",
                     include: [
                         {
                             model: Message,
