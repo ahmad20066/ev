@@ -178,3 +178,5 @@ WorkoutExercise.belongsTo(Exercise, { foreignKey: 'exercise_id', as: 'exercise' 
 User.hasMany(ChatRequest, { as: "chat_requests", foreignKey: "user_id" })
 ChatRequest.belongsTo(User, { as: "user", foreignKey: "user_id" })
 
+Chat.hasMany(ChatRequest, { as: "chat_requests", foreignKey: "chat_id" })
+ChatRequest.belongsTo(Chat, { as: "chat", foreignKey: "chat_id" })
