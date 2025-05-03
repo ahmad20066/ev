@@ -308,7 +308,9 @@ exports.acceptRequest = async (req, res, next) => {
 
 
 
-        res.status(200).json(fullChat);
+        res.status(200).json({
+            Message: "Chat Accepted"
+        });
     } catch (err) {
         await t.rollback();
         next(err);
