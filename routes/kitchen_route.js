@@ -21,4 +21,6 @@ router.post("/order-status", [
 })
 router.get("/daysOfMonth", controller.getDatesForMonth)
 router.get("/check-stock", controller.checkStock)
+router.post("/mark-done", controller.makeOrdersDone)
+router.get("/orders-summary", controller.getMealsSummaryForDay)
 module.exports = router

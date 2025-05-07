@@ -37,9 +37,12 @@ exports.createOrders = async (req, res, next) => {
             }
 
             const datesInRange = getDatesBetween(subStart, subEnd);
+            console.log("1")
+            for (let dateObj of datesInRange) {
+                console.log("2")
+                dateObj = dateObj.toISOString().slice(0, 10)
 
-            for (const dateObj of datesInRange) {
-
+                console.log(dateObj)
                 const [order] = await Order.findOrCreate({
                     where: {
                         user_id: sub.user_id,
@@ -52,6 +55,7 @@ exports.createOrders = async (req, res, next) => {
                         order_date: dateObj,
                     },
                 });
+                console.log(order)
 
 
                 const userSelections = await UserMealSelection.findAll({
@@ -61,7 +65,7 @@ exports.createOrders = async (req, res, next) => {
                     },
                     attributes: ["meal_id", "date"],
                 });
-
+                // console.log(userSelections)
                 if (userSelections.length > 0) {
                     const orderMeals = userSelections.map((selection) => ({
                         order_id: order.id,
@@ -383,5 +387,60 @@ exports.getDatesForMonth = async (req, res, next) => {
         res.status(200).json({ dates });
     } catch (error) {
         next(error);
+    }
+};
+exports.makeOrdersDone = async (req, res, next) => {
+    try {
+        const { date } = req.body;
+
+        if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+            return res.status(400).json({ error: 'Body must contain a valid ISO date (YYYY-MM-DD).' });
+        }
+
+        const [affectedRows] = await Order.update(
+            { status: 'done' },
+            {
+                where: { order_date: date, status: { [Op.ne]: 'done' } }
+            }
+        );
+
+        return res.json({ message: 'Orders updated.', });
+    } catch (err) {
+        next(err);
+    }
+}
+exports.getMealsSummaryForDay = async (req, res, next) => {
+    try {
+        const { date } = req.query;
+        if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date))
+            return res.status(400).json({ message: 'Query param ?date=YYYY-MM-DD is required.' });
+
+        const meals = await OrderMeal.findAll({
+            attributes: [
+                [sequelize.col('meal.id'), 'id'],
+                [sequelize.col('meal.name'), 'name'],
+                [sequelize.fn('SUM', sequelize.col('OrderMeal.quantity')), 'quantity']
+            ],
+            include: [
+                {
+                    model: Order,
+                    as: 'order',
+                    attributes: [],
+                    where: { order_date: date }
+                },
+                {
+                    model: Meal.unscoped(),
+                    as: 'meal',
+                    attributes: []
+                }
+            ],
+            group: ['meal.id', 'meal.name'],
+            order: [[sequelize.literal('quantity'), 'DESC']],
+            raw: true
+        });
+
+        res.json(meals);
+    } catch (err) {
+        next(err);
     }
 };
