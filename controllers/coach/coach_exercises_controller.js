@@ -63,26 +63,37 @@ exports.updateExercise = async (req, res, next) => {
             return res.status(404).json({ message: 'Exercise not found', message_ar: 'لم يتم العثور على التمرين' });
         }
 
-        const image_urls = req.files.images
-            ? req.files.images.map((file) => file.path)
-            : safeJsonParse(exercise.image_urls);
+        let existingImages = safeJsonParse(exercise.image_urls) || [];
+        let imagesFromRequest = [];
 
-        const target_muscles_image = req.files.target_muscles_image
-            ? req.files.target_muscles_image[0].path
-            : exercise.target_muscles_image;
+        if (req.files && req.files.images) {
+            imagesFromRequest = imagesFromRequest.concat(
+                req.files.images.map(file => file.path)
+            );
+        }
 
-        const video_url = req.files.video
-            ? req.files.video[0].path
-            : exercise.video_url;
+        if (req.body.images) {
+            if (Array.isArray(req.body.images)) {
+                imagesFromRequest = imagesFromRequest.concat(req.body.images.filter(url => typeof url === 'string'));
+            } else if (typeof req.body.images === 'string') {
+                imagesFromRequest.push(req.body.images);
+            }
+        }
+
+        imagesFromRequest = [...new Set(imagesFromRequest)];
 
         exercise.name = name || exercise.name;
         exercise.name_ar = name_ar || exercise.name_ar;
         exercise.description = description || exercise.description;
         exercise.cooling_time = cooling_time || exercise.cooling_time;
         exercise.description_ar = description_ar || exercise.description_ar;
-        exercise.image_urls = JSON.stringify(image_urls);
-        exercise.target_muscles_image = target_muscles_image;
-        exercise.video_url = video_url;
+        exercise.image_urls = JSON.stringify(imagesFromRequest);
+        exercise.target_muscles_image = req.files.target_muscles_image
+            ? req.files.target_muscles_image[0].path
+            : exercise.target_muscles_image;
+        exercise.video_url = req.files.video
+            ? req.files.video[0].path
+            : exercise.video_url;
         exercise.notes = safeJsonParse(notes) || exercise.notes;
 
         await exercise.save();
