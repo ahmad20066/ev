@@ -2,6 +2,104 @@ const express = require("express");
 const app = express();
 require('dotenv').config();
 const sequelize = require("./models/index");
+const cors = require("cors");
+const path = require("path");
+const http = require("http");
+const socketIo = require("socket.io");
+
+// Import security middleware
+const { xssProtection, sqlInjectionProtection, sequelizeSanitize, helmet, hpp } = require('./middlewares/security');
+
+// Import rate limiting middleware
+const rateLimit = require('express-rate-limit');
+
+// Security Headers
+app.use(helmet);
+
+// Rate Limiting
+const generalLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 100, // Limit each IP to 100 requests per windowMs
+    message: {
+        error: 'Too many requests from this IP, please try again later.',
+        retryAfter: '15 minutes'
+    },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
+const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 5, // Only 5 login attempts per window
+    message: {
+        error: 'Too many authentication attempts, please try again later.',
+        retryAfter: '15 minutes'
+    },
+    skipSuccessfulRequests: true,
+});
+
+// Apply rate limiting
+app.use(generalLimiter);
+
+// CORS configuration
+const corsOptions = {
+    origin: function (origin, callback) {
+        const allowedOrigins = [
+            "http://localhost:3000",
+            'http://dashboard.evolvevw.com',
+            'https://dashboard.evolvevw.com'
+        ];
+        if (!origin || allowedOrigins.includes(origin)) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true,
+};
+
+app.use(cors(corsOptions));
+
+// Body parsing with size limits
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Security middleware
+app.use(hpp); // Prevent HTTP Parameter Pollution
+app.use(sequelizeSanitize); // Sequelize input sanitization
+app.use(xssProtection); // XSS protection
+app.use(sqlInjectionProtection); // SQL injection protection
+
+// Static files
+app.use("/uploads", express.static(path.join(__dirname, "uploads"), {
+    fallthrough: false,
+}));
+
+// Socket.io setup
+const server = http.createServer(app);
+const io = socketIo(server, {
+    cors: {
+        origin: ["http://localhost:3000", 'http://dashboard.evolvevw.com', 'https://dashboard.evolvevw.com'],
+        credentials: true,
+    },
+});
+
+app.use((req, res, next) => {
+    req.io = io;
+    next();
+});
+
+// Import middleware
+const isAuth = require("./middlewares/isAuth");
+const isAdmin = require("./middlewares/isAdmin");
+const isCoach = require("./middlewares/isCoach");
+
+// Apply stricter rate limiting to auth routes
+app.use("/auth", authLimiter);
+
+// Import routes
 const authRouter = require("./routes/auth_route");
 const adminRouter = require("./routes/admin_route");
 const coachRouter = require("./routes/coach_route");
@@ -13,57 +111,6 @@ const profileRouter = require("./routes/profile_router");
 const homeRouter = require("./routes/home_route");
 const kitchenRouter = require("./routes/kitchen_route");
 const infoRouter = require("./routes/info_route");
-const isAuth = require("./middlewares/isAuth");
-const isAdmin = require("./middlewares/isAdmin");
-const isCoach = require("./middlewares/isCoach");
-const socketIo = require("socket.io");
-const path = require("path");
-const http = require("http");
-const cancelExpiredSubscriptions = require("./schedulers/subscriptions_scheduler");
-// cancelExpiredSubscriptions();
-
-
-const cors = require("cors");
-
-// // CORS configuration
-const corsOptions = {
-    // origin: ["http://localhost:3000", 'http://dashboard.evolvevw.com', 'https://dashboard.evolvevw.com'], // Replace with your frontend URL
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    origing: true,
-    allowedHeaders: ["Content-Type", "Authorization"], // Allow specific headers
-    credentials: true, // Allow cookies or authentication headers
-};
-
-app.use(cors(corsOptions));
-app.use(express.json());
-app.use("/uploads", express.static(path.join(__dirname, "uploads"), {
-    fallthrough: false,
-}));
-
-
-
-app.use((req, res, next) => {
-    res.setHeader("Access-Control-Allow-Origin", "*");
-    res.setHeader(
-        "Access-Control-Allow-Methods",
-        "OPTIONS, GET, POST, PUT, PATCH, DELETE"
-    );
-    res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
-    next();
-});
-
-const server = http.createServer(app);
-const io = socketIo(server, {
-    cors: {
-        origin: ["http://localhost:3000", 'http://dashboard.evolvevw.com', 'https://dashboard.evolvevw.com'], // Replace with your client's URL
-        credentials: true,
-    },
-});
-
-app.use((req, res, next) => {
-    req.io = io;
-    next();
-});
 
 // Define routes
 app.use("/auth", authRouter);
@@ -76,16 +123,39 @@ app.use("/chat", isAuth, chatRouter);
 app.use("/profile", isAuth, profileRouter);
 app.use("/home", isAuth, homeRouter);
 app.use("/kitchen", kitchenRouter);
-app.use("/info", infoRouter)
+app.use("/info", infoRouter);
+
 // Global error handling
 app.use((error, req, res, next) => {
-    console.error(error);
-    const message = error.message;
+    console.error('Error:', error);
+
+    // Handle rate limit errors
+    if (error.type === 'entity.too.large') {
+        return res.status(413).json({
+            error: 'Request entity too large',
+            maxSize: '10MB'
+        });
+    }
+
+    const message = error.message || 'Internal server error';
     const status = error.statusCode || 500;
+
     res.status(status).json({
         message: message,
+        ...(process.env.NODE_ENV === 'development' && { stack: error.stack })
     });
 });
+
+// 404 handler
+app.use('*', (req, res) => {
+    res.status(404).json({
+        error: 'Endpoint not found',
+        path: req.originalUrl
+    });
+});
+
+const cancelExpiredSubscriptions = require("./schedulers/subscriptions_scheduler");
+cancelExpiredSubscriptions();
 
 sequelize
     .sync({
@@ -93,8 +163,17 @@ sequelize
         // alter: true
     })
     .then(() => {
-        server.listen(process.env.PORT, () => {
-            console.log("Server listening on port 8080");
+        const PORT = process.env.PORT || 8080;
+        server.listen(PORT, () => {
+            console.log(`Server listening on port ${PORT}`);
+            console.log('Security features enabled:');
+            console.log('✓ Rate limiting');
+            console.log('✓ XSS protection');
+            console.log('✓ SQL injection protection');
+            console.log('✓ Helmet security headers');
+            console.log('✓ Input sanitization');
+            console.log('✓ HPP protection');
+            console.log('✓ CORS configuration');
         });
 
         io.on("connection", (socket) => {

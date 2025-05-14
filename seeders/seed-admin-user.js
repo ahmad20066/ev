@@ -19,7 +19,7 @@ module.exports = {
         health_goal_id: null,
         dietary_preferences: null,
         fitness_level: null,
-        is_set_up: true,            // Set to true since admin doesn’t need profile setup
+        is_set_up: true,            // Set to true since admin doesn't need profile setup
         createdAt: new Date(),
         updatedAt: new Date(),
       }
