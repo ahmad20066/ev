@@ -23,11 +23,16 @@ const Exercise = sequelize.define('Exercise', {
         allowNull: true,
         get() {
             const rawValue = this.getDataValue('image_urls');
-            if (rawValue) {
-                return JSON.parse(rawValue)
-            } else {
-                return null
+            if (!rawValue) return null;
+            if (typeof rawValue === 'object') return rawValue;
+            if (typeof rawValue === 'string') {
+                try {
+                    return JSON.parse(rawValue);
+                } catch (e) {
+                    return rawValue;
+                }
             }
+            return rawValue;
         }
     },
     target_muscles_image: {
@@ -39,13 +44,16 @@ const Exercise = sequelize.define('Exercise', {
         allowNull: true,
         get() {
             const rawValue = this.getDataValue('notes');
-
-            if (rawValue) {
-                return JSON.parse(rawValue)
-            } else {
-                return null
+            if (!rawValue) return null;
+            if (typeof rawValue === 'object') return rawValue;
+            if (typeof rawValue === 'string') {
+                try {
+                    return JSON.parse(rawValue);
+                } catch (e) {
+                    return rawValue;
+                }
             }
-
+            return rawValue;
         },
     },
     notes_ar: {
@@ -53,11 +61,16 @@ const Exercise = sequelize.define('Exercise', {
         allowNull: true,
         get() {
             const rawValue = this.getDataValue('notes_ar');
-            if (rawValue) {
-                return JSON.parse(rawValue)
-            } else {
-                return null
+            if (!rawValue) return null;
+            if (typeof rawValue === 'object') return rawValue;
+            if (typeof rawValue === 'string') {
+                try {
+                    return JSON.parse(rawValue);
+                } catch (e) {
+                    return rawValue;
+                }
             }
+            return rawValue;
         },
     },
     cooling_time: {

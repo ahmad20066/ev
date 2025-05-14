@@ -89,6 +89,7 @@ exports.getExercises = async (req, res, next) => {
         const exercises = await Exercise.findAll({
             where: { is_active: true }
         });
+        console.log(exercises);
         res.status(200).json(exercises);
     } catch (error) {
         next(error);
