@@ -9,7 +9,7 @@ router.post("/add-stock", [
     body("stock").notEmpty().isNumeric().withMessage("Please Enter a valid stock")
 ], controller.addStock)
 router.post("/order-status", [
-    body("status").notEmpty().isIn(['pending', 'done', 'out_for_delivery', 'delivered']).withMessage("Please enter a valid status")
+    body("status").notEmpty().isIn(['listed', 'pending', 'done', 'out_for_delivery', 'delivered']).withMessage("Please enter a valid status")
 ], (req, res, next) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {

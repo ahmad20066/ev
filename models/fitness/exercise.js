@@ -37,28 +37,28 @@ const Exercise = sequelize.define('Exercise', {
     notes: {
         type: DataTypes.JSON,
         allowNull: true,
-        // get() {
-        //     const rawValue = this.getDataValue('notes');
+        get() {
+            const rawValue = this.getDataValue('notes');
 
-        //     if (rawValue) {
-        //         return JSON.parse(rawValue)
-        //     } else {
-        //         return null
-        //     }
+            if (rawValue) {
+                return JSON.parse(rawValue)
+            } else {
+                return null
+            }
 
-        // },
+        },
     },
     notes_ar: {
         type: DataTypes.JSON,
         allowNull: true,
-        // get() {
-        //     const rawValue = this.getDataValue('notes_ar');
-        //     if (rawValue) {
-        //         return JSON.parse(rawValue)
-        //     } else {
-        //         return null
-        //     }
-        // },
+        get() {
+            const rawValue = this.getDataValue('notes_ar');
+            if (rawValue) {
+                return JSON.parse(rawValue)
+            } else {
+                return null
+            }
+        },
     },
     cooling_time: {
         type: DataTypes.DOUBLE,
