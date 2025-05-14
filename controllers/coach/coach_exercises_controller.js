@@ -1,5 +1,18 @@
 const Exercise = require('../../models/fitness/exercise');
 
+function safeJsonParse(val) {
+    if (!val) return null;
+    if (typeof val === 'object') return val;
+    if (typeof val === 'string') {
+        try {
+            return JSON.parse(val);
+        } catch (e) {
+            return val;
+        }
+    }
+    return val;
+}
+
 exports.createExercise = async (req, res, next) => {
     try {
         const { name, name_ar, description_ar, description, duration, notes, notes_ar, cooling_time } = req.body;
@@ -25,8 +38,8 @@ exports.createExercise = async (req, res, next) => {
             image_urls: JSON.stringify(image_urls),
             target_muscles_image,
             video_url,
-            notes: JSON.parse(notes),
-            notes_ar: JSON.parse(notes_ar),
+            notes: safeJsonParse(notes),
+            notes_ar: safeJsonParse(notes_ar),
         });
 
         res.status(201).json({
@@ -52,7 +65,7 @@ exports.updateExercise = async (req, res, next) => {
 
         const image_urls = req.files.images
             ? req.files.images.map((file) => file.path)
-            : JSON.parse(exercise.image_urls);
+            : safeJsonParse(exercise.image_urls);
 
         const target_muscles_image = req.files.target_muscles_image
             ? req.files.target_muscles_image[0].path
@@ -70,7 +83,7 @@ exports.updateExercise = async (req, res, next) => {
         exercise.image_urls = JSON.stringify(image_urls);
         exercise.target_muscles_image = target_muscles_image;
         exercise.video_url = video_url;
-        exercise.notes = notes || exercise.notes;
+        exercise.notes = safeJsonParse(notes) || exercise.notes;
 
         await exercise.save();
 
