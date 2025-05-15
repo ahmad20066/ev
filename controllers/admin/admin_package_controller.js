@@ -26,10 +26,20 @@ exports.createPackage = async (req, res, next) => {
 
 exports.getAllPackages = async (req, res, next) => {
     try {
+        const type = req.query.type;
+        const where = {
+            is_active: true
+        };
+        if (type && !['group', 'personalized'].includes(type)) {
+            const err = new Error("Invalid package type.");
+            err.statusCode = 400;
+            throw err;
+        }
+        if (type) {
+            where.type = type;
+        }
         const packages = await Package.findAll({
-            where: {
-                is_active: true
-            },
+            where,
             include: [{
                 model: PricingModel,
                 as: "pricings",
