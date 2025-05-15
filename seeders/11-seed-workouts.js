@@ -5,7 +5,7 @@ module.exports = {
         // Create workout templates (is_template = true)
         await queryInterface.bulkInsert('workouts', [
             {
-                image: 'beginner-fullbody.jpg',
+                image: 'https://images.unsplash.com/photo-1517960413843-0aee8e2d471c?w=800&q=80',
                 title: 'Beginner Full Body',
                 title_ar: 'مبتدئ جسم كامل',
                 type: 'group',
@@ -23,7 +23,7 @@ module.exports = {
                 updatedAt: new Date()
             },
             {
-                image: 'hiit-cardio.jpg',
+                image: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=800&q=80',
                 title: 'HIIT Cardio Blast',
                 title_ar: 'انفجار كارديو عالي الكثافة',
                 type: 'group',
@@ -41,7 +41,7 @@ module.exports = {
                 updatedAt: new Date()
             },
             {
-                image: 'strength-upper.jpg',
+                image: 'https://images.unsplash.com/photo-1519864600265-abb23847ef2c?w=800&q=80',
                 title: 'Upper Body Strength',
                 title_ar: 'قوة الجزء العلوي',
                 type: 'personalized',
@@ -59,7 +59,7 @@ module.exports = {
                 updatedAt: new Date()
             },
             {
-                image: 'core-crusher.jpg',
+                image: 'https://images.unsplash.com/photo-1518611012118-696072aa579a?w=800&q=80',
                 title: 'Core Crusher',
                 title_ar: 'محطم الجذع',
                 type: 'group',
@@ -77,7 +77,7 @@ module.exports = {
                 updatedAt: new Date()
             },
             {
-                image: 'flexibility-flow.jpg',
+                image: 'https://images.unsplash.com/photo-1464983953574-0892a716854b?w=800&q=80',
                 title: 'Flexibility Flow',
                 title_ar: 'تدفق المرونة',
                 type: 'group',

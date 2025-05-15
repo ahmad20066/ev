@@ -166,14 +166,7 @@ sequelize
         const PORT = process.env.PORT || 8080;
         server.listen(PORT, () => {
             console.log(`Server listening on port ${PORT}`);
-            console.log('Security features enabled:');
-            console.log('✓ Rate limiting');
-            console.log('✓ XSS protection');
-            console.log('✓ SQL injection protection');
-            console.log('✓ Helmet security headers');
-            console.log('✓ Input sanitization');
-            console.log('✓ HPP protection');
-            console.log('✓ CORS configuration');
+
         });
 
         io.on("connection", (socket) => {
