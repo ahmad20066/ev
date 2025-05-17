@@ -13,6 +13,9 @@ const { xssProtection, sqlInjectionProtection, sequelizeSanitize, helmet, hpp } 
 // Import rate limiting middleware
 const rateLimit = require('express-rate-limit');
 
+// Import format_timestamps middleware
+const formatTimestamps = require('./middlewares/format_timestamps');
+
 // Security Headers
 app.use(helmet);
 
@@ -124,6 +127,9 @@ app.use("/profile", isAuth, profileRouter);
 app.use("/home", isAuth, homeRouter);
 app.use("/kitchen", kitchenRouter);
 app.use("/info", infoRouter);
+
+// Apply timestamp formatting middleware globally (after routes, before error handling)
+app.use(formatTimestamps);
 
 // Global error handling
 app.use((error, req, res, next) => {

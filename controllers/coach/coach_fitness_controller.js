@@ -22,6 +22,7 @@ const Sport = require('../../models/sport');
 const Meal = require('../../models/meals/meal');
 const { sendNotification } = require('../../helpers/noitifcations_helper');
 const ExerciseStat = require('../../models/fitness/exercise_stat');
+const PricingModel = require('../../models/pricing_model');
 exports.createWorkout = async (req, res, next) => {
     const t = await sequelize.transaction();
     try {
@@ -512,11 +513,17 @@ exports.getFitnessSubscriptions = async (req, res, next) => {
     try {
         const subscriptions = await Subscription.findAll({
             where: { user_id: id },
-            include: {
+            include: [{
                 model: Package,
                 as: "package",
                 // attributes: ['name', 'description', 'price'],
+            },
+            {
+                model: PricingModel,
+                as: "pricing",
+                // attributes: ['prici']
             }
+            ]
         });
         res.status(200).json(subscriptions);
     } catch (error) {
