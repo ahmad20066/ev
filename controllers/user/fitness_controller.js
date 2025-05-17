@@ -88,17 +88,20 @@ exports.getWorkoutsByDate = async (req, res, next) => {
                 workout_id: workout.id,
             },
         });
+        const completion = await WorkoutCompletion.findOne({
+            where: {
+                user_id: req.userId,
+                workout_id: workout.id,
+            },
+        });
         workout.dataValues.session_joined = attendance ? true : false;
+        workout.dataValues.session_completed = completion ? true : false;
 
         return res.status(200).json(workout);
     } catch (err) {
         next(err);
     }
 };
-
-
-
-
 exports.showWorkout = async (req, res, next) => {
     try {
         const { id } = req.params;
