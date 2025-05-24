@@ -1,7 +1,11 @@
 function formatDate(date) {
     if (!date) return null;
-    // ISO 8601 or customize as needed
-    return new Date(date).toISOString();
+    // Return as YYYY-MM-DD
+    const d = new Date(date);
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
 }
 
 function formatTimestamps(obj) {
@@ -9,15 +13,18 @@ function formatTimestamps(obj) {
         return obj.map(formatTimestamps);
     }
     if (obj && typeof obj === 'object') {
+        // Handle Sequelize instances
+        if (typeof obj.toJSON === 'function') {
+            obj = obj.toJSON();
+        }
         const newObj = { ...obj };
-        if (newObj.createdAt) newObj.createdAt = formatDate(newObj.createdAt);
-        if (newObj.updatedAt) newObj.updatedAt = formatDate(newObj.updatedAt);
-        // Recursively format nested objects
-        Object.keys(newObj).forEach(key => {
-            if (typeof newObj[key] === 'object') {
+        for (const key of Object.keys(newObj)) {
+            if (key === 'createdAt' || key === 'updatedAt') {
+                newObj[key] = formatDate(newObj[key]);
+            } else if (typeof newObj[key] === 'object' && newObj[key] !== null) {
                 newObj[key] = formatTimestamps(newObj[key]);
             }
-        });
+        }
         return newObj;
     }
     return obj;

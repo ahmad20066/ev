@@ -66,9 +66,7 @@ exports.getWorkoutsByDate = async (req, res, next) => {
         });
 
         if (!workout) {
-            const error = new Error("You do not have workouts for this date");
-            error.statusCode = 400;
-            throw error;
+            res.status(200).json({})
         }
 
         for (const exercise of workout.exercises) {
