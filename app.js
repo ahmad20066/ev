@@ -70,10 +70,10 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Security middleware
-app.use(hpp); // Prevent HTTP Parameter Pollution
-app.use(sequelizeSanitize); // Sequelize input sanitization
-app.use(xssProtection); // XSS protection
-app.use(sqlInjectionProtection); // SQL injection protection
+// app.use(hpp); // Prevent HTTP Parameter Pollution
+// app.use(sequelizeSanitize); // Sequelize input sanitization
+// app.use(xssProtection); // XSS protection
+// app.use(sqlInjectionProtection); // SQL injection protection
 
 // Static files
 app.use("/uploads", cors(corsOptions), express.static(path.join(__dirname, "uploads"), {
