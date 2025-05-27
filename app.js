@@ -17,7 +17,7 @@ const rateLimit = require('express-rate-limit');
 const formatTimestamps = require('./middlewares/format_timestamps');
 
 // Security Headers
-app.use(helmet());
+// app.use(helmet());
 
 // Rate Limiting
 const generalLimiter = rateLimit({
