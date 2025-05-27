@@ -285,13 +285,13 @@ exports.acceptRequest = async (req, res, next) => {
 
     const t = await sequelize.transaction();
     try {
-        const request = await ChatRequest.findByPk(request_id, { transaction: t, lock: t.LOCK.UPDATE });
+        const request = await ChatRequest.findByPk(request_id, { transaction: t });
         if (!request) {
             await t.rollback();
             return res.status(404).json({ message: "Request not found" });
         }
 
-        const chat = await Chat.findByPk(request.chat_id, { transaction: t, lock: t.LOCK.UPDATE });
+        const chat = await Chat.findByPk(request.chat_id, { transaction: t });
         if (chat.coach_id && chat.coach_id !== coach_id) {
             await t.rollback();
             return res.status(409).json({ message: "Another coach already claimed this chat." });
