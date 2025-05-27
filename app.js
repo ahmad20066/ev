@@ -65,11 +65,10 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // app.use(sqlInjectionProtection); // SQL injection protection
 
 // Static files
-app.use(
-    "/uploads",
-
-    express.static(path.join(__dirname, "uploads"), { fallthrough: false })
-);
+app.use('/uploads', (req, res, next) => {
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+    next();
+}, cors(), express.static(path.join(__dirname, 'uploads')));
 
 // Socket.io setup
 const server = http.createServer(app);
