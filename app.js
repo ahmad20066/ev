@@ -67,7 +67,7 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // Static files
 app.use(
     "/uploads",
-    cors(),
+
     express.static(path.join(__dirname, "uploads"), { fallthrough: false })
 );
 
