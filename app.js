@@ -63,7 +63,7 @@ const corsOptions = {
     credentials: true,
 };
 
-app.use(cors(corsOptions));
+// app.use(cors(corsOptions));
 
 // Body parsing with size limits
 app.use(express.json({ limit: '10mb' }));
