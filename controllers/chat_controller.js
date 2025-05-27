@@ -1,3 +1,4 @@
+const sequelize = require("../models");
 const Chat = require("../models/chat/chat");
 const ChatRequest = require("../models/chat/chat_request");
 const Message = require("../models/chat/message");
