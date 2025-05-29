@@ -216,7 +216,7 @@ exports.createWorkoutFromTemplate = async (req, res, next) => {
 
         // Get package from user's subscription
         const subscription = await Subscription.findOne({
-            where: { user_id: req.userId, status: 'active' },
+            where: { user_id: req.userId, is_active: true },
             transaction: t
         });
 
