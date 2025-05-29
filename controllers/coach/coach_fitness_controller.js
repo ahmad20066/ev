@@ -43,8 +43,9 @@ exports.createWorkout = async (req, res, next) => {
             package_id = subscription.package_id;
         }
 
-        const pkg = await Package.findByPk(package_id);
+        let pkg = await Package.findByPk(package_id);
         if (!pkg) {
+
             return res.status(404).json({ message: "Package not found", message_ar: "لم يتم العثور على الحزمة" });
         }
 
@@ -205,7 +206,7 @@ exports.createWorkoutTemplate = async (req, res, next) => {
 exports.createWorkoutFromTemplate = async (req, res, next) => {
     const t = await sequelize.transaction();
     try {
-        const { template_id, date, package_id, user_id, difficulty_level, calories_burned } = req.body;
+        const { template_id, date, user_id, difficulty_level, calories_burned } = req.body;
 
         const template = await Workout.findByPk(template_id, { transaction: t });
         if (!template || !template.is_template) {
@@ -213,6 +214,18 @@ exports.createWorkoutFromTemplate = async (req, res, next) => {
             return res.status(404).json({ message: "Template not found", message_ar: "لم يتم العثور على التمرين في المكتبة" });
         }
 
+        // Get package from user's subscription
+        const subscription = await Subscription.findOne({
+            where: { user_id: req.userId, status: 'active' },
+            transaction: t
+        });
+
+        if (!subscription) {
+            await t.rollback();
+            return res.status(404).json({ message: "No active subscription found", message_ar: "لم يتم العثور على اشتراك نشط" });
+        }
+
+        const package_id = subscription.package_id;
         const pkg = await Package.findByPk(package_id, { transaction: t });
         if (!pkg) {
             await t.rollback();
