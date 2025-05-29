@@ -214,9 +214,8 @@ exports.createWorkoutFromTemplate = async (req, res, next) => {
             return res.status(404).json({ message: "Template not found", message_ar: "لم يتم العثور على التمرين في المكتبة" });
         }
 
-        // Get package from user's subscription
         const subscription = await Subscription.findOne({
-            where: { user_id: req.userId, is_active: true },
+            where: { user_id: user_id, is_active: true },
             transaction: t
         });
 
