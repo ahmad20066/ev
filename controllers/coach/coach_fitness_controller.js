@@ -535,7 +535,8 @@ exports.getFitnessSubscriptions = async (req, res, next) => {
                 as: "pricing",
                 // attributes: ['prici']
             }
-            ]
+            ],
+            order: [['created_at', 'DESC']]
         });
         res.status(200).json(subscriptions);
     } catch (error) {
