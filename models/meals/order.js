@@ -31,18 +31,6 @@ const Order = sequelize.define('Order', {
     status: {
         type: DataTypes.ENUM("listed", "pending", "done", "out_for_delivery", "delivered"),
         defaultValue: "listed"
-    },
-    coupon_id: {
-        type: DataTypes.INTEGER,
-        allowNull: true,
-    },
-    coupon_code: {
-        type: DataTypes.STRING,
-        allowNull: true,
-    },
-    discount_amount: {
-        type: DataTypes.FLOAT,
-        allowNull: true,
     }
 }, {
     tableName: 'orders',
