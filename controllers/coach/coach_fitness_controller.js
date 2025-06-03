@@ -206,7 +206,7 @@ exports.createWorkoutTemplate = async (req, res, next) => {
 exports.createWorkoutFromTemplate = async (req, res, next) => {
     const t = await sequelize.transaction();
     try {
-        const { template_id, date, user_id, difficulty_level, calories_burned } = req.body;
+        const { template_id, date, user_id, difficulty_level, calories_burned, package_id: reqPackageId } = req.body;
 
         const template = await Workout.findByPk(template_id, { transaction: t });
         if (!template || !template.is_template) {
@@ -214,17 +214,26 @@ exports.createWorkoutFromTemplate = async (req, res, next) => {
             return res.status(404).json({ message: "Template not found", message_ar: "لم يتم العثور على التمرين في المكتبة" });
         }
 
-        const subscription = await Subscription.findOne({
-            where: { user_id: user_id, is_active: true },
-            transaction: t
-        });
+        let package_id;
+        if (user_id) {
+            const subscription = await Subscription.findOne({
+                where: { user_id: user_id, is_active: true },
+                transaction: t
+            });
 
-        if (!subscription) {
-            await t.rollback();
-            return res.status(404).json({ message: "No active subscription found", message_ar: "لم يتم العثور على اشتراك نشط" });
+            if (!subscription) {
+                await t.rollback();
+                return res.status(404).json({ message: "No active subscription found", message_ar: "لم يتم العثور على اشتراك نشط" });
+            }
+            package_id = subscription.package_id;
+        } else {
+            package_id = reqPackageId;
+            if (!package_id) {
+                await t.rollback();
+                return res.status(422).json({ message: "Package ID is required when user_id is not provided", message_ar: "معرف الحزمة مطلوب عندما لا يتم تقديم معرف المستخدم" });
+            }
         }
 
-        const package_id = subscription.package_id;
         const pkg = await Package.findByPk(package_id, { transaction: t });
         if (!pkg) {
             await t.rollback();
