@@ -8,6 +8,7 @@ const Order = require("../../models/meals/order");
 const OrderMeal = require("../../models/meals/order_meal");
 const UserMealSelection = require("../../models/meals/user_meal_selection");
 const User = require("../../models/user");
+const Coupon = require('../../models/fitness/coupon');
 
 const { Op } = require("sequelize");
 function getDatesBetween(start, end) {
@@ -442,5 +443,49 @@ exports.getMealsSummaryForDay = async (req, res, next) => {
         res.json(meals);
     } catch (err) {
         next(err);
+    }
+};
+
+exports.applyCoupon = async (req, res, next) => {
+    try {
+        const { orderId, couponCode } = req.body;
+        const order = await Order.findByPk(orderId);
+        if (!order) return res.status(404).json({ message: 'Order not found' });
+
+        const coupon = await Coupon.findOne({ where: { code: couponCode, is_active: true } });
+        if (!coupon) return res.status(404).json({ message: 'Coupon not found or inactive' });
+
+        if (coupon.expiry_date < new Date()) {
+            return res.status(400).json({ message: 'Coupon expired' });
+        }
+        if (coupon.usage_limit && coupon.used_count >= coupon.usage_limit) {
+            return res.status(400).json({ message: 'Coupon usage limit reached' });
+        }
+
+        // For demonstration, assume order has a total_price field (add if needed)
+        const totalPrice = order.total_price || 100; // Replace with actual order total
+        let discount = 0;
+        if (coupon.discount_type === 'percentage') {
+            discount = totalPrice * (coupon.discount_value / 100);
+        } else {
+            discount = coupon.discount_value;
+        }
+        const discountAmount = Math.min(discount, totalPrice);
+
+        order.coupon_id = coupon.id;
+        order.coupon_code = coupon.code;
+        order.discount_amount = discountAmount;
+        await order.save();
+
+        coupon.used_count += 1;
+        await coupon.save();
+
+        res.status(200).json({
+            message: 'Coupon applied',
+            discount: discountAmount,
+            new_total: totalPrice - discountAmount
+        });
+    } catch (error) {
+        next(error);
     }
 };

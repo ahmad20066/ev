@@ -1,0 +1,208 @@
+{
+    "info": {
+        "name": "Evolve Coupons API",
+        "_postman_id": "evolve-coupons-collection",
+        "description": "Coupon endpoints for admin and user (packages and meal plans)",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "item": [
+        {
+            "name": "Admin - Create Coupon (Global)",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"code\": \"GLOBAL10\",\n  \"discount_type\": \"percentage\",\n  \"discount_value\": 10,\n  \"expiry_date\": \"2025-12-31\",\n  \"usage_limit\": 100,\n  \"is_active\": true\n}"
+                },
+                "url": {
+                    "raw": "http://localhost:8080/admin/coupons",
+                    "host": [
+                        "http://localhost:8080"
+                    ],
+                    "path": [
+                        "admin",
+                        "coupons"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "Admin - Create Coupon (Package Specific)",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"code\": \"FIT20\",\n  \"discount_type\": \"fixed\",\n  \"discount_value\": 20,\n  \"expiry_date\": \"2025-12-31\",\n  \"usage_limit\": 50,\n  \"is_active\": true,\n  \"package_id\": 1\n}"
+                },
+                "url": {
+                    "raw": "http://localhost:8080/admin/coupons",
+                    "host": [
+                        "http://localhost:8080"
+                    ],
+                    "path": [
+                        "admin",
+                        "coupons"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "Admin - Create Coupon (Meal Plan Specific)",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"code\": \"DIET15\",\n  \"discount_type\": \"percentage\",\n  \"discount_value\": 15,\n  \"expiry_date\": \"2025-12-31\",\n  \"usage_limit\": 30,\n  \"is_active\": true,\n  \"meal_plan_id\": 2\n}"
+                },
+                "url": {
+                    "raw": "http://localhost:8080/admin/coupons",
+                    "host": [
+                        "http://localhost:8080"
+                    ],
+                    "path": [
+                        "admin",
+                        "coupons"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "Admin - Get All Coupons",
+            "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "http://localhost:8080/admin/coupons",
+                    "host": [
+                        "http://localhost:8080"
+                    ],
+                    "path": [
+                        "admin",
+                        "coupons"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "Admin - Update Coupon",
+            "request": {
+                "method": "PUT",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"discount_value\": 25\n}"
+                },
+                "url": {
+                    "raw": "http://localhost:8080/admin/coupons/1",
+                    "host": [
+                        "http://localhost:8080"
+                    ],
+                    "path": [
+                        "admin",
+                        "coupons",
+                        "1"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "Admin - Delete Coupon",
+            "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                    "raw": "http://localhost:8080/admin/coupons/1",
+                    "host": [
+                        "http://localhost:8080"
+                    ],
+                    "path": [
+                        "admin",
+                        "coupons",
+                        "1"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "User - Apply Coupon to Package Pricing",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"package_id\": 1,\n  \"pricing_id\": 2,\n  \"coupon_code\": \"FIT20\"\n}"
+                },
+                "url": {
+                    "raw": "http://localhost:8080/fitness/apply-coupon",
+                    "host": [
+                        "http://localhost:8080"
+                    ],
+                    "path": [
+                        "fitness",
+                        "apply-coupon"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "User - Apply Coupon to Meal Plan",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"meal_plan_id\": 2,\n  \"coupon_code\": \"DIET15\"\n}"
+                },
+                "url": {
+                    "raw": "http://localhost:8080/diet/apply-coupon",
+                    "host": [
+                        "http://localhost:8080"
+                    ],
+                    "path": [
+                        "diet",
+                        "apply-coupon"
+                    ]
+                }
+            }
+        }
+    ],
+    "variable": [
+        {
+            "key": "url",
+            "value": "http://localhost:8080"
+        }
+    ]
+}

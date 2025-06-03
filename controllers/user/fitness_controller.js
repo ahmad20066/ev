@@ -20,6 +20,7 @@ const Renewal = require('../../models/fitness/renewal');
 const { duration } = require('moment');
 const sequelize = require('../../models');
 const WeightRecord = require('../../models/weight_record');
+const Coupon = require('../../models/fitness/coupon');
 exports.getWorkoutsByDate = async (req, res, next) => {
     try {
         const date = req.query.date;
@@ -849,6 +850,52 @@ exports.getPerformanceStats = async (req, res, next) => {
         });
     } catch (error) {
         console.error("Error fetching performance stats:", error);
+        next(error);
+    }
+};
+exports.applyCouponToPackage = async (req, res, next) => {
+    try {
+        const { package_id, pricing_id, coupon_code } = req.body;
+        if (!package_id || !pricing_id || !coupon_code) {
+            return res.status(400).json({ message: 'package_id, pricing_id, and coupon_code are required.' });
+        }
+        const pricing = await PricingModel.findOne({ where: { id: pricing_id, package_id, is_active: true } });
+        if (!pricing) {
+            return res.status(404).json({ message: 'Pricing not found for this package.' });
+        }
+        const price = pricing.price;
+        const coupon = await Coupon.findOne({
+            where: {
+                code: coupon_code,
+                is_active: true,
+                [Coupon.sequelize.Op.or]: [
+                    { package_id: null },
+                    { package_id: package_id }
+                ]
+            }
+        });
+        if (!coupon) return res.status(404).json({ message: 'Coupon not found or not valid for this package.' });
+        if (coupon.expiry_date < new Date()) {
+            return res.status(400).json({ message: 'Coupon expired' });
+        }
+        if (coupon.usage_limit && coupon.used_count >= coupon.usage_limit) {
+            return res.status(400).json({ message: 'Coupon usage limit reached' });
+        }
+        let discount = 0;
+        if (coupon.discount_type === 'percentage') {
+            discount = price * (coupon.discount_value / 100);
+        } else {
+            discount = coupon.discount_value;
+        }
+        const discountAmount = Math.min(discount, price);
+        res.status(200).json({
+            message: 'Coupon applied',
+            discount: discountAmount,
+            new_total: price - discountAmount,
+            coupon_id: coupon.id,
+            pricing_id: pricing.id
+        });
+    } catch (error) {
         next(error);
     }
 };

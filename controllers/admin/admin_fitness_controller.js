@@ -2,6 +2,7 @@ const Workout = require('../../models/fitness/workout')
 // const WorkoutSession = require('../../models/fitness/workout_session')
 const Exercise = require('../../models/fitness/exercise');
 const User = require('../../models/user');
+const MealPlan = require('../../models/meals/meal_plan');
 // exports.createGroupWorkout = (req, res, next) => {
 //     const { title, description, duration } = req.body;
 
@@ -52,3 +53,4 @@ exports.showWorkout = async (req, res, next) => {
         next(e);
     }
 }
+

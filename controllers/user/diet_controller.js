@@ -14,6 +14,7 @@ const MealRenewal = require("../../models/meals/meal_renewal");
 const OrderMeal = require("../../models/meals/order_meal");
 const Order = require("../../models/meals/order");
 const sequelize = require("../../models");
+const Coupon = require("../../models/fitness/coupon");
 const dayNames = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
 
 exports.getMealPlans = async (req, res, next) => {
@@ -546,6 +547,51 @@ exports.getAllTypes = async (req, res, next) => {
         next(error);
     }
 };
-
+exports.applyCouponToMealPlan = async (req, res, next) => {
+    try {
+        const { meal_plan_id, coupon_code } = req.body;
+        if (!meal_plan_id || !coupon_code) {
+            return res.status(400).json({ message: 'meal_plan_id and coupon_code are required.' });
+        }
+        const mealPlan = await MealPlan.findByPk(meal_plan_id);
+        if (!mealPlan) {
+            return res.status(404).json({ message: 'Meal plan not found.' });
+        }
+        const price = mealPlan.price_monthly;
+        const coupon = await Coupon.findOne({
+            where: {
+                code: coupon_code,
+                is_active: true,
+                [Coupon.sequelize.Op.or]: [
+                    { meal_plan_id: null },
+                    { meal_plan_id: meal_plan_id }
+                ]
+            }
+        });
+        if (!coupon) return res.status(404).json({ message: 'Coupon not found or not valid for this meal plan.' });
+        if (coupon.expiry_date < new Date()) {
+            return res.status(400).json({ message: 'Coupon expired' });
+        }
+        if (coupon.usage_limit && coupon.used_count >= coupon.usage_limit) {
+            return res.status(400).json({ message: 'Coupon usage limit reached' });
+        }
+        let discount = 0;
+        if (coupon.discount_type === 'percentage') {
+            discount = price * (coupon.discount_value / 100);
+        } else {
+            discount = coupon.discount_value;
+        }
+        const discountAmount = Math.min(discount, price);
+        res.status(200).json({
+            message: 'Coupon applied',
+            discount: discountAmount,
+            new_total: price - discountAmount,
+            coupon_id: coupon.id,
+            meal_plan_id: mealPlan.id
+        });
+    } catch (error) {
+        next(error);
+    }
+};
 
 

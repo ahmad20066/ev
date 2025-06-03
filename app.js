@@ -104,6 +104,10 @@ const profileRouter = require("./routes/profile_router");
 const homeRouter = require("./routes/home_route");
 const kitchenRouter = require("./routes/kitchen_route");
 const infoRouter = require("./routes/info_route");
+const adminCouponRoutes = require('./routes/admin/coupon');
+const kitchenOrdersRoutes = require('./routes/kitchen/orders');
+const userPackageRoutes = require('./routes/user/package');
+const userMealPlanRoutes = require('./routes/user/meal_plan');
 
 // Define routes
 app.use("/auth", authRouter);
@@ -117,6 +121,10 @@ app.use("/profile", isAuth, profileRouter);
 app.use("/home", isAuth, homeRouter);
 app.use("/kitchen", kitchenRouter);
 app.use("/info", infoRouter);
+app.use('/admin/coupons', adminCouponRoutes);
+app.use('/kitchen/orders', kitchenOrdersRoutes);
+app.use('/user/packages', userPackageRoutes);
+app.use('/user/meal-plans', userMealPlanRoutes);
 
 // Apply timestamp formatting middleware globally (after routes, before error handling)
 app.use(formatTimestamps);

@@ -1,5 +1,6 @@
 const Package = require("../../models/package");
 const PricingModel = require("../../models/pricing_model");
+const Coupon = require('../../models/fitness/coupon');
 
 exports.createPackage = async (req, res, next) => {
     try {
@@ -227,4 +228,6 @@ exports.deletePricing = async (req, res, next) => {
         res.status(500).json({ message: "Failed to delete pricing.", error: error.message });
     }
 };
+
+
 

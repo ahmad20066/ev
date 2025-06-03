@@ -17,7 +17,7 @@ const notificationsController = require("../controllers/admin/admin_notification
 const userController = require("../controllers/admin/admin_user_controller")
 const { body, param, validationResult, query } = require("express-validator");
 const { createOrders } = require('../controllers/kitchen/orders_controller');
-
+const couponController = require('../controllers/admin/coupon_controller');
 // // CRUD Routes for ActivityLevel
 // router.post('/activity-level', activityLevelController.createActivityLevel);
 // router.get('/activity-levels', activityLevelController.getActivityLevels);
@@ -152,4 +152,11 @@ router.post("/push-notification", notificationsController.sendPushNotification)
 //users
 router.post("/users/deactivate/:id", userController.deactivateUser)
 router.post("/users/create", userController.createUser)
+
+
+router.post('/coupons', couponController.createCoupon);
+router.get('/coupons', couponController.getCoupons);
+router.get('/coupons/:id', couponController.getCoupon);
+router.put('/coupons/:id', couponController.updateCoupon);
+router.delete('/coupons/:id', couponController.deleteCoupon);
 module.exports = router;
