@@ -868,7 +868,7 @@ exports.applyCouponToPackage = async (req, res, next) => {
             where: {
                 code: coupon_code,
                 is_active: true,
-                [Coupon.sequelize.Op.or]: [
+                [Op.or]: [
                     { package_id: null },
                     { package_id: package_id }
                 ]
