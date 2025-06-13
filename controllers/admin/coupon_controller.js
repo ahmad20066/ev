@@ -21,7 +21,18 @@ exports.createCoupon = async (req, res, next) => {
 
 exports.getCoupons = async (req, res, next) => {
     try {
-        const coupons = await Coupon.findAll();
+        const { package_id, meal_plan_id } = req.query;
+        let whereClause = {};
+
+        if (package_id) {
+            whereClause.package_id = package_id;
+        } else if (meal_plan_id) {
+            whereClause.meal_plan_id = meal_plan_id;
+        }
+
+        const coupons = await Coupon.findAll({
+            where: whereClause
+        });
         res.status(200).json(coupons);
     } catch (error) {
         next(error);
