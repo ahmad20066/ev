@@ -21,7 +21,7 @@ const Coupon = sequelize.define('Coupon', {
         allowNull: false
     },
     expiry_date: {
-        type: DataTypes.DATE,
+        type: DataTypes.DATEONLY,
         allowNull: false
     },
     usage_limit: {
