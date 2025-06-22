@@ -1,13 +1,53 @@
 const Coupon = require('../../models/fitness/coupon');
 
+// Helper function to parse and validate date
+function parseDate(dateString) {
+    if (!dateString) return null;
+
+    // Try different date formats
+    const formats = [
+        /^\d{4}-\d{2}-\d{2}$/, // YYYY-MM-DD (ISO)
+        /^\d{2}-\d{2}-\d{4}$/, // DD-MM-YYYY
+        /^\d{2}\/\d{2}\/\d{4}$/, // DD/MM/YYYY
+    ];
+
+    let date;
+
+    if (formats[0].test(dateString)) {
+        // Already in ISO format
+        date = new Date(dateString);
+    } else if (formats[1].test(dateString)) {
+        // DD-MM-YYYY format
+        const [day, month, year] = dateString.split('-');
+        date = new Date(`${year}-${month}-${day}`);
+    } else if (formats[2].test(dateString)) {
+        // DD/MM/YYYY format
+        const [day, month, year] = dateString.split('/');
+        date = new Date(`${year}-${month}-${day}`);
+    } else {
+        // Try direct parsing as fallback
+        date = new Date(dateString);
+    }
+
+    if (isNaN(date.getTime())) {
+        throw new Error('Invalid date format. Use YYYY-MM-DD, DD-MM-YYYY, or DD/MM/YYYY');
+    }
+
+    return date.toISOString().split('T')[0]; // Return YYYY-MM-DD format
+}
+
 exports.createCoupon = async (req, res, next) => {
     try {
         const { code, discount_type, discount_value, expiry_date, usage_limit, is_active, package_id, meal_plan_id } = req.body;
+
+        // Parse and validate expiry_date
+        const parsedExpiryDate = parseDate(expiry_date);
+
         const coupon = await Coupon.create({
             code,
             discount_type,
             discount_value,
-            expiry_date,
+            expiry_date: parsedExpiryDate,
             usage_limit,
             is_active,
             package_id,
@@ -53,6 +93,12 @@ exports.updateCoupon = async (req, res, next) => {
     try {
         const coupon = await Coupon.findByPk(req.params.id);
         if (!coupon) return res.status(404).json({ message: 'Coupon not found' });
+
+        // Parse expiry_date if it's being updated
+        if (req.body.expiry_date) {
+            req.body.expiry_date = parseDate(req.body.expiry_date);
+        }
+
         await coupon.update(req.body);
         res.status(200).json({ message: 'Coupon updated', coupon });
     } catch (error) {
