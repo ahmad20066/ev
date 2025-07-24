@@ -104,7 +104,8 @@ const profileRouter = require("./routes/profile_router");
 const homeRouter = require("./routes/home_route");
 const kitchenRouter = require("./routes/kitchen_route");
 const infoRouter = require("./routes/info_route");
-
+const loginextRoutes = require('./routes/delivery/loginext');
+const paymentsRoutes = require('./routes/payments');
 
 // Define routes
 app.use("/auth", authRouter);
@@ -119,16 +120,13 @@ app.use("/home", isAuth, homeRouter);
 app.use("/kitchen", kitchenRouter);
 app.use("/info", infoRouter);
 
+app.use('/payments', paymentsRoutes);
 
-
-// Apply timestamp formatting middleware globally (after routes, before error handling)
 app.use(formatTimestamps);
 
-// Global error handling
 app.use((error, req, res, next) => {
     console.error('Error:', error);
 
-    // Handle rate limit errors
     if (error.type === 'entity.too.large') {
         return res.status(413).json({
             error: 'Request entity too large',
@@ -145,7 +143,6 @@ app.use((error, req, res, next) => {
     });
 });
 
-// 404 handler
 app.use('*', (req, res) => {
     res.status(404).json({
         error: 'Endpoint not found',

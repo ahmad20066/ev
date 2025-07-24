@@ -8,8 +8,85 @@ const Order = require("../../models/meals/order");
 const OrderMeal = require("../../models/meals/order_meal");
 const UserMealSelection = require("../../models/meals/user_meal_selection");
 const User = require("../../models/user");
+const axios = require('axios');
 
 const { Op } = require("sequelize");
+
+// LoginExt API Configuration
+const LOGINEXT_API_BASE = process.env.LOGINEXT_API_BASE || 'https://api.loginextsolutions.com';
+const LOGINEXT_API_KEY = process.env.LOGINEXT_API_KEY;
+
+// Helper function to generate order number
+function generateOrderNumber(userId, orderId) {
+    const timestamp = Date.now().toString();
+    const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+    return `${userId}_ORD-${orderId}-${random}`;
+}
+
+// Helper function to create LoginExt delivery order
+async function createLoginExtDeliveryOrder(order, user, address, meals) {
+    try {
+        // Calculate package value from meals
+        const packageValue = meals.reduce((sum, meal) => sum + (meal.price || 50) * meal.quantity, 0);
+
+        // Create crate mappings from meals
+        const shipmentCrateMappings = meals.map((meal, index) => ({
+            crateCd: (index + 1).toString(),
+            crateName: meal.name || `Meal ${index + 1}`,
+            crateAmount: (meal.price || 50) * meal.quantity,
+            crateType: meal.name || `Meal ${index + 1}`,
+            noOfUnits: meal.quantity
+        }));
+
+        // Generate order number
+        const orderNo = generateOrderNumber(user.id, order.id);
+
+        const loginextPayload = {
+            orderNo,
+            shipmentOrderTypeCd: 'DELIVER',
+            orderState: 'FORWARD',
+            shipmentOrderDt: new Date().toISOString(),
+            deliverStartTimeWindow: new Date().toISOString(),
+            deliverEndTimeWindow: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+            distributionCenter: 'Evolve The App - Cloud Kitchen',
+            packageValue,
+            paymentType: 'COD',
+            partialDeliveryAllowedFl: 'Y',
+            deliverBranch: 'Evolve The App - Cloud Kitchen',
+            deliverAccountCode: `${user.name}-#${orderNo}`,
+            deliverAccountName: `${user.name}-#${orderNo}`,
+            deliverState: address.state || '',
+            deliverCountry: address.country || 'IND',
+            deliverCity: address.city || '',
+            deliverPinCode: address.postal_code || '',
+            deliverStreetName: address.street || '',
+            deliverApartment: address.apartment || '',
+            returnBranch: 'Evolve The App - Cloud Kitchen',
+            cancellationALowwed: '',
+            shipmentCrateMappings,
+            deliverPhoneNumber: user.phone || ''
+        };
+
+        const response = await axios.post(
+            `${LOGINEXT_API_BASE}/ShipmentApp/mile/v2/create`,
+            loginextPayload,
+            {
+                headers: {
+                    'Authorization': `Bearer ${LOGINEXT_API_KEY}`,
+                    'Content-Type': 'application/json'
+                }
+            }
+        );
+
+        console.log('LoginExt delivery order created successfully:', response.data);
+        return response.data;
+
+    } catch (error) {
+        console.error('Failed to create LoginExt delivery order:', error.response?.data || error.message);
+        throw error;
+    }
+}
+
 function getDatesBetween(start, end) {
     const dateArr = [];
     let current = new Date(start);
@@ -234,7 +311,31 @@ exports.changeOrderStatus = async (req, res, next) => {
     try {
         const order_id = req.query.order_id;
         const { status } = req.body;
-        const order = await Order.findByPk(order_id, { transaction: t });
+        const order = await Order.findByPk(order_id, {
+            include: [
+                {
+                    model: User,
+                    as: "user"
+                },
+                {
+                    model: MealSubscription,
+                    as: "subscription",
+                    include: {
+                        model: Address,
+                        as: "address"
+                    }
+                },
+                {
+                    model: Meal,
+                    as: "meals",
+                    through: {
+                        attributes: ['quantity']
+                    }
+                }
+            ],
+            transaction: t
+        });
+
         if (!order) {
             const error = new Error("Order not found");
             error.statusCode = 404;
@@ -267,9 +368,27 @@ exports.changeOrderStatus = async (req, res, next) => {
                     await ingredient.save({ transaction: t });
                 }
             }
+
+            await t.commit();
+
+            try {
+                const mealsData = order.meals.map(meal => ({
+                    ...meal.toJSON(),
+                    quantity: meal.OrderMeal.quantity
+                }));
+
+                await createLoginExtDeliveryOrder(order, order.user, order.subscription.address, mealsData);
+                console.log(`LoginExt delivery order created for order ${order_id}`);
+            } catch (loginextError) {
+                console.error('LoginExt delivery order creation failed:', loginextError.message);
+            }
+
+            res.status(201).json({ message: "Order status changed and delivery order created" });
+        } else {
+            await t.commit();
+            res.status(201).json({ message: "Order status changed" });
         }
-        await t.commit();
-        res.status(201).json({ message: "Order status changed" });
+
     } catch (e) {
         await t.rollback();
         next(e);

@@ -47,6 +47,19 @@ const Subscription = sequelize.define("Subscription", {
         type: Sequelize.BOOLEAN,
         defaultValue: true,
     },
+    payment_charge_id: {
+        type: Sequelize.STRING,
+        allowNull: true,
+    },
+    coupon_id: {
+        type: Sequelize.INTEGER,
+        allowNull: true,
+    },
+    discount_applied: {
+        type: Sequelize.DECIMAL(10, 2),
+        allowNull: true,
+        defaultValue: 0
+    },
     days_left: {
         type: Sequelize.VIRTUAL,
         get() {

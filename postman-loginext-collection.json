@@ -1,0 +1,116 @@
+{
+    "info": {
+        "name": "LoginExt Delivery API",
+        "_postman_id": "loginext-delivery-collection",
+        "description": "LoginExt delivery integration endpoints for creating and tracking delivery orders",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "item": [
+        {
+            "name": "Create Delivery Order (Exact Format)",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"orderNo\": \"4076565_PUN-25-03358\",\n  \"shipmentOrderDt\": \"2025-06-22T13:08:14.000Z\",\n  \"deliverStartTimeWindow\": \"2025-06-22T13:08:14.000Z\",\n  \"deliverEndTimeWindow\": \"2025-06-23T00:08:14.000Z\",\n  \"distributionCenter\": \"Evolve The App - Cloud Kitchen\",\n  \"packageValue\": 2315.0,\n  \"paymentType\": \"COD\",\n  \"partialDeliveryAllowedFl\": \"Y\",\n  \"deliverBranch\": \"Evolve The App - Cloud Kitchen\",\n  \"deliverAccountCode\": \"Pawan Kumar-#4076565_PUN-25-03358\",\n  \"deliverAccountName\": \"Pawan Kumar-#4076565_PUN-25-03358\",\n  \"deliverState\": \"MH\",\n  \"deliverCountry\": \"IND\",\n  \"deliverCity\": \"Pune\",\n  \"deliverPinCode\": \"411039\",\n  \"deliverStreetName\": \"Flat 02 Raj residency near sairam colony near hateli hotel bhosaribhosari\",\n  \"deliverApartment\": \"Flat 02 Raj residency near sairam colony near hateli hotel bhosaribhosari\",\n  \"returnBranch\": \"Evolve The App - Cloud Kitchen\",\n  \"cancellationALowwed\": \"\",\n  \"shipmentCrateMappings\": [\n    {\n      \"crateCd\": \"1\",\n      \"crateName\": \"8908016247537\",\n      \"crateAmount\": 520.0,\n      \"crateType\": \"Hair Vitamin With Biotin\",\n      \"noOfUnits\": 1\n    },\n    {\n      \"crateCd\": \"2\",\n      \"crateName\": \"8908016247087\",\n      \"crateAmount\": 650.0,\n      \"crateType\": \"Minoxidil 5%\",\n      \"noOfUnits\": 1\n    }\n  ],\n  \"deliverPhoneNumber\": \"8975260384\"\n}"
+                },
+                "url": {
+                    "raw": "http://localhost:8080/delivery/loginext/create",
+                    "host": [
+                        "http://localhost:8080"
+                    ],
+                    "path": [
+                        "delivery",
+                        "loginext",
+                        "create"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "Create Simple Delivery Order",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"customerDetails\": {\n    \"customerId\": \"CUST001\",\n    \"name\": \"John Doe\",\n    \"phone\": \"+1234567890\"\n  },\n  \"deliveryAddress\": {\n    \"apartment\": \"Apt 101\",\n    \"street\": \"Main Street\",\n    \"city\": \"New York\",\n    \"state\": \"NY\",\n    \"country\": \"USA\",\n    \"pincode\": \"10001\"\n  },\n  \"items\": [{\n    \"code\": \"PKG001\",\n    \"name\": \"Fitness Package - Basic\",\n    \"price\": 100.00,\n    \"quantity\": 1\n  }, {\n    \"code\": \"MEAL001\",\n    \"name\": \"Meal Plan - Premium\",\n    \"price\": 50.00,\n    \"quantity\": 1\n  }],\n  \"distributionCenter\": \"Evolve The App - Cloud Kitchen\",\n  \"deliverBranch\": \"Evolve The App - Cloud Kitchen\",\n  \"paymentType\": \"COD\",\n  \"returnBranch\": \"Evolve The App - Cloud Kitchen\"\n}"
+                },
+                "url": {
+                    "raw": "http://localhost:8080/delivery/loginext/create-simple",
+                    "host": [
+                        "http://localhost:8080"
+                    ],
+                    "path": [
+                        "delivery",
+                        "loginext",
+                        "create-simple"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "Get Order Status",
+            "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "http://localhost:8080/delivery/loginext/status/4076565_PUN-25-03358",
+                    "host": [
+                        "http://localhost:8080"
+                    ],
+                    "path": [
+                        "delivery",
+                        "loginext",
+                        "status",
+                        "4076565_PUN-25-03358"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "Create Order - Mumbai Example",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"customerDetails\": {\n    \"customerId\": \"CUST002\",\n    \"name\": \"Priya Sharma\",\n    \"phone\": \"9876543210\"\n  },\n  \"deliveryAddress\": {\n    \"apartment\": \"B-201 Sunshine Apartments\",\n    \"street\": \"Linking Road Bandra West\",\n    \"city\": \"Mumbai\",\n    \"state\": \"MH\",\n    \"country\": \"IND\",\n    \"pincode\": \"400050\"\n  },\n  \"items\": [{\n    \"code\": \"8908016247537\",\n    \"name\": \"Hair Vitamin With Biotin\",\n    \"price\": 520.0,\n    \"quantity\": 1\n  }, {\n    \"code\": \"8908016247087\",\n    \"name\": \"Minoxidil 5%\",\n    \"price\": 650.0,\n    \"quantity\": 1\n  }],\n  \"paymentType\": \"COD\"\n}"
+                },
+                "url": {
+                    "raw": "http://localhost:8080/delivery/loginext/create-simple",
+                    "host": [
+                        "http://localhost:8080"
+                    ],
+                    "path": [
+                        "delivery",
+                        "loginext",
+                        "create-simple"
+                    ]
+                }
+            }
+        }
+    ],
+    "variable": [
+        {
+            "key": "url",
+            "value": "http://localhost:8080"
+        }
+    ]
+}

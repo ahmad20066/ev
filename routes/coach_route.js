@@ -142,4 +142,6 @@ router.post('/workouts/templates', imageMiddleWare.uploadSingleImage('image'), c
 router.put('/workouts/templates/:id', imageMiddleWare.uploadSingleImage('image'), controller.updateWorkoutTemplate);
 router.delete('/workouts/templates/:id', controller.deleteWorkoutTemplate);
 router.get('/workouts/templates', controller.getAllWorkoutTemplates);
+
+router.get("/workout-attendance/:workoutId/:userId/:date", controller.getAttendanceDetails)
 module.exports = router;

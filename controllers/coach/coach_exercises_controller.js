@@ -1,4 +1,5 @@
 const Exercise = require('../../models/fitness/exercise');
+const { Op } = require('sequelize');
 
 function safeJsonParse(val) {
     if (!val) return null;
@@ -110,8 +111,18 @@ exports.updateExercise = async (req, res, next) => {
 
 exports.getExercises = async (req, res, next) => {
     try {
+        const { search } = req.query;
+        const whereClause = { is_active: true };
+
+        if (search) {
+            whereClause[Op.or] = [
+                { name: { [Op.iLike]: `%${search}%` } },
+                { name_ar: { [Op.iLike]: `%${search}%` } },
+
+            ];
+        }
         const exercises = await Exercise.findAll({
-            where: { is_active: true }
+            where: whereClause
         });
         console.log(exercises);
         res.status(200).json(exercises);
@@ -119,6 +130,7 @@ exports.getExercises = async (req, res, next) => {
         next(error);
     }
 };
+
 
 exports.getExercise = async (req, res, next) => {
     try {

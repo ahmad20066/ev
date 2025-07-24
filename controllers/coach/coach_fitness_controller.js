@@ -870,6 +870,74 @@ exports.getUserWorkoutLogs = async (req, res, next) => {
         next(error);
     }
 };
+exports.getAttendanceDetails = async (req, res, next) => {
+    try {
+        const { workoutId, userId, date } = req.params;
+
+        // First verify the workout attendance
+        const attendance = await WorkoutAttendance.findOne({
+            where: {
+                workout_id: workoutId,
+                user_id: userId,
+                createdAt: {
+                    [Op.gte]: date,
+                    [Op.lte]: new Date(date.setDate(date.getDate() + 1))
+                }
+            }
+        });
+
+        if (!attendance) {
+            const error = new Error("No attendance record found for this workout");
+            error.statusCode = 404;
+            throw error;
+        }
+
+        // Get exercise completions with their stats and exercise details
+        const exerciseCompletions = await ExerciseCompletion.findAll({
+            where: {
+                workout_id: workoutId,
+                user_id: userId
+            },
+            include: [
+                {
+                    model: Exercise,
+                    as: 'exercise',
+                    attributes: ['id', 'name', 'description']
+                },
+                {
+                    model: ExerciseStat,
+                    attributes: ['set', 'reps', 'weight']
+                }
+            ]
+        });
+
+        // Format the response
+        const formattedResponse = {
+            workout_id: workoutId,
+            user_id: userId,
+            attendance_date: attendance.createdAt,
+            exercises: exerciseCompletions.map(completion => ({
+                exercise_id: completion.exercise.id,
+                exercise_name: completion.exercise.name,
+                exercise_description: completion.exercise.description,
+                completion_id: completion.id,
+                stats: completion.ExerciseStats.map(stat => ({
+                    set: stat.set,
+                    reps: stat.reps,
+                    weight: stat.weight
+                }))
+            }))
+        };
+
+        res.status(200).json(formattedResponse);
+
+    } catch (error) {
+        if (!error.statusCode) {
+            error.statusCode = 500;
+        }
+        next(error);
+    }
+};
 exports.getWorkoutRequests = async (req, res, next) => {
     try {
 

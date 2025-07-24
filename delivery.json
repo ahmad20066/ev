@@ -1,0 +1,63 @@
+[
+    {
+       "orderNo":"4076565_PUN-25-03358",
+       "shipmentOrderTypeCd":"DELIVER",
+       "orderState":"FORWARD",
+       "shipmentOrderDt":"2025-06-22T13:08:14.000Z",
+       "deliverStartTimeWindow":"2025-06-22T13:08:14.000Z",
+       "deliverEndTimeWindow":"2025-06-23T00:08:14.000Z",
+       "distributionCenter":"Evolve The App - Cloud Kitchen",
+       "packageValue":2315.0,
+       "paymentType":"COD",
+       "partialDeliveryAllowedFl":"Y",
+       "deliverBranch":"Evolve The App - Cloud Kitchen",
+       "deliverAccountCode":"Pawan Kumar-#4076565_PUN-25-03358",
+       "deliverAccountName":"Pawan Kumar-#4076565_PUN-25-03358",
+       "deliverState":"MH",
+       "deliverCountry":"IND",
+       "deliverCity":"Pune",
+       "deliverPinCode":"411039",
+       "deliverStreetName":"Flat 02 Raj residency near sairam colony near hateli hotel bhosaribhosari",
+       "deliverApartment":"Flat 02 Raj residency near sairam colony near hateli hotel bhosaribhosari",
+       "returnBranch":"Evolve The App - Cloud Kitchen",
+       "cancellationALowwed" : "",
+       "shipmentCrateMappings":[
+          {
+             "crateCd":"1",
+             "crateName":"8908016247537",
+             "crateAmount":520.0,
+             "crateType":"Hair Vitamin With Biotin",
+             "noOfUnits":1
+          },
+          {
+             "crateCd":"2",
+             "crateName":"8908016247087",
+             "crateAmount":650.0,
+             "crateType":"Minoxidil 5%",
+             "noOfUnits":1
+          },
+          {
+             "crateCd":"3",
+             "crateName":"8908016247001",
+             "crateAmount":520.0,
+             "crateType":"Hair Ras",
+             "noOfUnits":1
+          },
+          {
+             "crateCd":"4",
+             "crateName":"8908016247100",
+             "crateAmount":300.0,
+             "crateType":"Anti-Dandruff Shampoo with Ketoconazole",
+             "noOfUnits":1
+          },
+          {
+             "crateCd":"5",
+             "crateName":"8908016247478",
+             "crateAmount":325.0,
+             "crateType":"Scalp Oil 50ml with Growth Oil Shot",
+             "noOfUnits":1
+          }
+       ],
+       "deliverPhoneNumber":"8975260384"
+    }
+ ]

@@ -144,17 +144,22 @@ exports.showWorkout = async (req, res, next) => {
 
 exports.subscribeToPackage = async (req, res, next) => {
     try {
-        const { package_id, pricing_id } = req.body
+        const { package_id, pricing_id, token, coupon_code } = req.body
+
+        if (!token) {
+            const error = new Error("Payment token is required")
+            error.statusCode = 400;
+            throw error;
+        }
+
         const package = await Package.findByPk(package_id);
         const oldSubscription = await Subscription.findOne({
             where: {
                 user_id: req.userId,
                 is_active: true
             }
-
         })
-        console.log(req.userId)
-        console.log(oldSubscription)
+
         if (oldSubscription) {
             const error = new Error("You already have a subscription")
             error.statusCode = 403;
@@ -165,32 +170,129 @@ exports.subscribeToPackage = async (req, res, next) => {
             error.statusCode = 404;
             throw error;
         }
+
         const pricing = await PricingModel.findOne({ where: { package_id: package_id, id: pricing_id } })
         if (!pricing) {
             const error = new Error("Pricing not found")
             error.statusCode = 404;
             throw error;
         }
+
+        const user = await User.findByPk(req.userId);
+        if (!user) {
+            const error = new Error("User not found")
+            error.statusCode = 404;
+            throw error;
+        }
+
+        let finalAmount = pricing.price;
+        let discountAmount = 0;
+        let appliedCoupon = null;
+
+        if (coupon_code) {
+            const coupon = await Coupon.findOne({
+                where: {
+                    code: coupon_code,
+                    is_active: true,
+                    [Op.or]: [
+                        { package_id: null },
+                        { package_id: package_id }
+                    ]
+                }
+            });
+
+            if (!coupon) {
+                const error = new Error("Coupon not found or not valid for this package")
+                error.statusCode = 400;
+                throw error;
+            }
+
+            if (coupon.expiry_date < new Date()) {
+                const error = new Error("Coupon expired")
+                error.statusCode = 400;
+                throw error;
+            }
+
+            if (coupon.usage_limit && coupon.used_count >= coupon.usage_limit) {
+                const error = new Error("Coupon usage limit reached")
+                error.statusCode = 400;
+                throw error;
+            }
+
+            if (coupon.discount_type === 'percentage') {
+                discountAmount = pricing.price * (coupon.discount_value / 100);
+            } else {
+                discountAmount = coupon.discount_value;
+            }
+
+            discountAmount = Math.min(discountAmount, pricing.price);
+            finalAmount = pricing.price - discountAmount;
+            appliedCoupon = coupon;
+        }
+
+        const { processPaymentWithToken } = require('../payments/tap_controller');
+
+        const paymentResult = await processPaymentWithToken({
+            token: token,
+            amount: finalAmount,
+            currency: 'SAR',
+            customer: {
+                email: user.email,
+                first_name: user.first_name,
+                last_name: user.last_name
+            },
+            description: `Fitness Package Subscription - ${package.name}${appliedCoupon ? ` (Coupon: ${coupon_code})` : ''}`,
+            metadata: {
+                user_id: req.userId,
+                package_id: package_id,
+                pricing_id: pricing_id,
+                subscription_type: 'fitness',
+                original_amount: pricing.price,
+                discount_amount: discountAmount,
+                coupon_code: coupon_code || null,
+                coupon_id: appliedCoupon?.id || null
+            }
+        });
+
+        if (!paymentResult.success) {
+            return res.status(400).json({
+                success: false,
+                message: 'Payment failed',
+                error: paymentResult.error
+            });
+        }
+
+        if (appliedCoupon) {
+            await appliedCoupon.update({
+                used_count: appliedCoupon.used_count + 1
+            });
+        }
+
         const startDate = new Date();
         let endDate = new Date(startDate);
         endDate.setDate(startDate.getDate() + pricing.number_of_days + 1);
+
         const subscription = new Subscription({
             user_id: req.userId,
             package_id,
             start_date: startDate,
             end_date: endDate,
-            pricing_id: pricing.id
+            pricing_id: pricing.id,
+            payment_charge_id: paymentResult.charge_id,
+            coupon_id: appliedCoupon?.id || null,
+            discount_applied: discountAmount
         })
 
         await subscription.save();
+
         const previousSubscription = await Subscription.findOne({
             where: {
                 user_id: req.userId,
                 is_active: false,
                 package_id
             }
-
         })
+
         let message
         if (package.type === "personalized" && !previousSubscription) {
             const request = new WorkoutRequest({
@@ -198,12 +300,26 @@ exports.subscribeToPackage = async (req, res, next) => {
                 package_id
             })
             await request.save()
-            message = "Subscription Successful, please wait for the coach to create your workouts"
+            message = "Subscription and payment successful, please wait for the coach to create your workouts"
         }
 
         res.status(201).json({
-            message: message || "Subscription Successful",
-            // subscription
+            success: true,
+            message: message || "Subscription and payment successful",
+            payment: {
+                charge_id: paymentResult.charge_id,
+                original_amount: pricing.price,
+                discount_amount: discountAmount,
+                final_amount: finalAmount,
+                currency: paymentResult.currency,
+                status: paymentResult.status
+            },
+            coupon_applied: appliedCoupon ? {
+                code: coupon_code,
+                discount_type: appliedCoupon.discount_type,
+                discount_value: appliedCoupon.discount_value,
+                discount_amount: discountAmount
+            } : null
         })
     } catch (e) {
         if (!e.statusCode) {
@@ -745,7 +861,6 @@ exports.getPerformanceStats = async (req, res, next) => {
     try {
         const userId = req.userId;
 
-        // 1. Weight Change over time
         const weightRecords = await WeightRecord.findAll({
             where: { user_id: userId },
             order: [["createdAt", "ASC"]],
