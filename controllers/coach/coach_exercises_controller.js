@@ -116,12 +116,9 @@ exports.getExercises = async (req, res, next) => {
 
         if (search) {
             whereClause[Op.or] = [
-                where(fn('LOWER', col('name')), {
-                    [Op.like]: loweredSearch,
-                }),
-                where(fn('LOWER', col('name_ar')), {
-                    [Op.like]: loweredSearch,
-                })
+                { name: { [Op.like]: `%${search}%` } },
+                { name_ar: { [Op.like]: `%${search}%` } },
+
             ];
         }
         const exercises = await Exercise.findAll({
