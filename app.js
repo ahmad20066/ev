@@ -51,7 +51,7 @@ const corsOptions = {
     allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true,
 };
-
+app.use(express.static('public'));
 app.use(cors(corsOptions));
 
 // Body parsing with size limits
