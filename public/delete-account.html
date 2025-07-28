@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Delete Your Account – EvolveVW</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f4f4;
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h1 {
+            color: #c0392b;
+        }
+
+        form {
+            background: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 400px;
+        }
+
+        input[type="email"],
+        input[type="password"] {
+            width: 100%;
+            padding: 10px;
+            margin: 8px 0 16px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        button {
+            width: 100%;
+            padding: 10px;
+            background: #e74c3c;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #c0392b;
+        }
+
+        .status {
+            margin-top: 15px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>Delete Your Account</h1>
+    <p>Please log in to proceed with deleting your account. This action is irreversible.</p>
+
+    <form id="deleteForm">
+        <input type="email" id="email" placeholder="Your Email" required />
+        <input type="password" id="password" placeholder="Your Password" required />
+        <button type="submit">Delete My Account</button>
+        <p class="status" id="status"></p>
+    </form>
+
+    <script>
+        document.getElementById('deleteForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value.trim();
+            const statusEl = document.getElementById('status');
+
+            statusEl.textContent = "Logging in...";
+
+            try {
+                // Step 1: Login to get token
+                const loginResponse = await fetch('https://api.evolvevw.com/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const loginData = await loginResponse.json();
+
+                if (!loginResponse.ok || !loginData.token) {
+                    throw new Error(loginData.message || 'Login failed. Check your credentials.');
+                }
+
+                const token = loginData.token;
+                statusEl.textContent = "Deleting account...";
+
+                // Step 2: Call delete endpoint
+                const deleteResponse = await fetch('https://api.evolvevw.com/auth/delete-account', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Bearer ' + token
+                    }
+                });
+
+                if (!deleteResponse.ok) {
+                    const error = await deleteResponse.json();
+                    throw new Error(error.message || 'Failed to delete account.');
+                }
+
+                statusEl.textContent = "✅ Your account has been deleted successfully.";
+
+            } catch (err) {
+                statusEl.textContent = "❌ " + err.message;
+            }
+        });
+    </script>
+
+</body>
+
+</html>
