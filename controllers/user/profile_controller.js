@@ -400,5 +400,14 @@ exports.getOrderById = async (req, res, next) => {
         next(e);
     }
 };
-
+exports.deactivateAccount = async (req, res, next) => {
+    try {
+        const userId = req.userId;
+        const user = await User.findByPk(userId);
+        await user.destroy();
+        res.status(200).json({ message: "Account deactivated successfully" });
+    } catch (e) {
+        next(e);
+    }
+}
 
