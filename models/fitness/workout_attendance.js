@@ -14,7 +14,9 @@ const WorkoutAttendance = sequelize.define("WorkoutAttendance", {
         references: {
             model: "workouts",
             key: "id"
-        }
+        },
+        onDelete: 'RESTRICT',  // Prevent deletion of workouts that have attendance records
+        onDelete: 'CASCADE'
     },
 }, {
     defaultScope: {
