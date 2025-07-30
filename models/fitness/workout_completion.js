@@ -17,6 +17,7 @@ const WorkoutCompletion = sequelize.define("WorkoutCompletion", {
             model: Workout,
             key: "id",
         },
+        onDelete: "CASCADE"
     },
 
 },);

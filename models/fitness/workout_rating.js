@@ -1,6 +1,7 @@
 const Sequelize = require("sequelize")
 const sequelize = require("../index")
 const Workout = require("./workout")
+
 const WorkoutRating = sequelize.define("WorkoutRating", {
     workout_id: {
         type: Sequelize.INTEGER,
@@ -8,7 +9,8 @@ const WorkoutRating = sequelize.define("WorkoutRating", {
             model: Workout,
             key: "id"
         },
-        allowNull: false
+        allowNull: false,
+        onDelete: "CASCADE"
     },
     rating: {
         type: Sequelize.DOUBLE,
