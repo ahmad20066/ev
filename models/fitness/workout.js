@@ -84,6 +84,7 @@ const Workout = sequelize.define("Workout", {
         type: Sequelize.INTEGER,
         allowNull: true,
         references: { model: "workouts", key: "id" },
+        onDelete: "CASCADE"
     },
     is_Active: {
         type: Sequelize.BOOLEAN,
