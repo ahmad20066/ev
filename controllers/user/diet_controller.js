@@ -20,10 +20,11 @@ const dayNames = ["sunday", "monday", "tuesday", "wednesday", "thursday", "frida
 exports.getMealPlans = async (req, res, next) => {
     try {
         const mealPlans = await MealPlan.findAll({
+            where: { is_active: true },
             include: {
                 model: Type,
                 as: "types",
-                where: { is_active: true },
+
                 through: { attributes: [] }
             }
         });

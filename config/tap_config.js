@@ -17,7 +17,7 @@ const tapConfig = {
     applicationName: "Evolve App",
 
     // Currency settings (adjust based on your region)
-    defaultCurrency: process.env.TAP_DEFAULT_CURRENCY || 'KWD',
+    defaultCurrency: process.env.TAP_DEFAULT_CURRENCY || 'SAR',
 
     // Return URLs
     returnURL: process.env.TAP_RETURN_URL || `${process.env.BASE_URL}/payments/callback`,
