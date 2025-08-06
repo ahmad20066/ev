@@ -20,6 +20,7 @@ exports.getBanner = async (req, res, next) => {
 exports.getHomePlans = async (req, res, next) => {
     try {
         const plans = await MealPlan.findAll({
+            where: { is_active: true },
             limit: 5,
             order: [
                 ['createdAt', 'DESC']
