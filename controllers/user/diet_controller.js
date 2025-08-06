@@ -23,6 +23,7 @@ exports.getMealPlans = async (req, res, next) => {
             include: {
                 model: Type,
                 as: "types",
+                where: { is_active: true },
                 through: { attributes: [] }
             }
         });
@@ -85,7 +86,7 @@ exports.subscribeToMealPlan = async (req, res, next) => {
 
         const startDate = new Date();
         const endDate = new Date();
-        endDate.setDate(startDate.getDate() + 30);
+        endDate.setDate(startDate.getDate() + mealPlan.number_of_days);
 
         const subscription = await MealSubscription.create({
             user_id: req.userId,
