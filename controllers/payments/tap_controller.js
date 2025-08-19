@@ -10,37 +10,8 @@ const tapAPI = axios.create({
     }
 });
 
-/**
- * Verify webhook signature from Tap
- * @param {string} payload - Webhook payload
- * @param {string} signature - Webhook signature from headers
- * @returns {boolean} Whether signature is valid
- */
-function verifyWebhookSignature(payload, signature) {
-    try {
-        if (!tapConfig.webhookSecret || !signature) {
-            console.warn('Webhook secret or signature missing');
-            return false;
-        }
 
-        const expectedSignature = crypto
-            .createHmac('sha256', tapConfig.webhookSecret)
-            .update(payload, 'utf8')
-            .digest('hex');
 
-        return crypto.timingSafeEqual(
-            Buffer.from(signature, 'hex'),
-            Buffer.from(expectedSignature, 'hex')
-        );
-    } catch (error) {
-        console.error('Webhook signature verification error:', error);
-        return false;
-    }
-}
-
-/**
- * Process payment with token from frontend
- */
 async function processPaymentWithToken(paymentData) {
     try {
         const {

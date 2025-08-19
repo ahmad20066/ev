@@ -105,7 +105,7 @@ const homeRouter = require("./routes/home_route");
 const kitchenRouter = require("./routes/kitchen_route");
 const infoRouter = require("./routes/info_route");
 const loginextRoutes = require('./routes/delivery/loginext');
-const paymentsRoutes = require('./routes/payments');
+const paymentsRoutes = require('./routes/payment_route');
 
 // Define routes
 app.use("/auth", authRouter);
@@ -120,7 +120,7 @@ app.use("/home", isAuth, homeRouter);
 app.use("/kitchen", kitchenRouter);
 app.use("/info", infoRouter);
 
-app.use('/payments', paymentsRoutes);
+app.use('/payments', isAuth, paymentsRoutes);
 
 app.use(formatTimestamps);
 
@@ -156,7 +156,7 @@ cancelExpiredSubscriptions();
 sequelize
     .sync({
         // force: true,
-        alter: true
+        // alter: true
     })
     .then(() => {
         const PORT = process.env.PORT || 8080;

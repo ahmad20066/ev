@@ -7,7 +7,7 @@ const tapConfig = {
         : 'https://api.tap.company/v2',
 
     // API Keys
-    secretKey: process.env.TAP_SECRET_KEY,
+    secretKey: process.env.TAP_PAYMENTS_SECRET_TEST,
     publishableKey: process.env.TAP_PUBLISHABLE_KEY,
 
     // Webhook settings

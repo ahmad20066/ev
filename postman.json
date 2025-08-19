@@ -1,196 +1,118 @@
 {
     "info": {
-        "name": "Coach Workouts",
-        "_postman_id": "abc12345-0000-0000-0000-coach-workouts",
-        "description": "Workout template and creation endpoints for coaches",
+        "name": "Meal & Package Subscriptions",
+        "_postman_id": "9f1d5e9b-1234-4b56-9cde-000000000001",
+        "description": "Frontend routes for subscribing to packages and meal plans with Tap Payments",
         "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
     },
     "item": [
         {
-            "name": "Create Workout From Template",
+            "name": "Subscribe to Package",
             "request": {
                 "method": "POST",
                 "header": [
                     {
                         "key": "Content-Type",
                         "value": "application/json"
+                    },
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer {{auth_token}}"
                     }
                 ],
-                "url": {
-                    "raw": "{{url}}/coach/workouts/from-template",
-                    "host": [
-                        "{{url}}"
-                    ],
-                    "path": [
-                        "coach",
-                        "workouts",
-                        "from-template"
-                    ]
-                },
                 "body": {
                     "mode": "raw",
-                    "raw": "{\n  \"template_id\": 1,\n  \"date\": \"2025-04-20\",\n  \"package_id\": 3,\n  \"user_id\": 17,\n  \"difficulty_level\": \"medium\",\n  \"calories_burned\": 300\n}"
-                }
-            }
-        },
-        {
-            "name": "Create Workout Template",
-            "request": {
-                "method": "POST",
-                "header": [],
-                "body": {
-                    "mode": "formdata",
-                    "formdata": [
-                        {
-                            "key": "title",
-                            "value": "Push Day",
-                            "type": "text"
-                        },
-                        {
-                            "key": "title_ar",
-                            "value": "يوم الدفع",
-                            "type": "text"
-                        },
-                        {
-                            "key": "description",
-                            "value": "Chest & triceps focused",
-                            "type": "text"
-                        },
-                        {
-                            "key": "description_ar",
-                            "value": "تمرين للصدر والترايسبس",
-                            "type": "text"
-                        },
-                        {
-                            "key": "duration",
-                            "value": "45",
-                            "type": "text"
-                        },
-                        {
-                            "key": "difficulty_level",
-                            "value": "medium",
-                            "type": "text"
-                        },
-                        {
-                            "key": "calories_burned",
-                            "value": "350",
-                            "type": "text"
-                        },
-                        {
-                            "key": "package_id",
-                            "value": "3",
-                            "type": "text"
-                        },
-                        {
-                            "key": "user_id",
-                            "value": "17",
-                            "type": "text"
-                        },
-                        {
-                            "key": "motivational_message",
-                            "value": "Keep pushing!",
-                            "type": "text"
-                        },
-                        {
-                            "key": "motivational_message_ar",
-                            "value": "استمر في الدفع!",
-                            "type": "text"
-                        },
-                        {
-                            "key": "exercises",
-                            "value": "[{\"exercise_id\":1},{\"exercise_id\":2}]",
-                            "type": "text"
-                        },
-                        {
-                            "key": "image",
-                            "type": "file",
-                            "src": ""
-                        }
-                    ]
+                    "raw": "{\n  \"package_id\": 123,\n  \"pricing_id\": 456,\n  \"coupon_code\": \"WELCOME10\"\n}"
                 },
                 "url": {
-                    "raw": "{{url}}/coach/workouts/templates",
+                    "raw": "{{base_url}}/api/payments/subscribe-package",
                     "host": [
-                        "{{url}}"
+                        "{{base_url}}"
                     ],
                     "path": [
-                        "coach",
-                        "workouts",
-                        "templates"
+                        "api",
+                        "payments",
+                        "subscribe-package"
                     ]
                 }
-            }
+            },
+            "response": []
         },
         {
-            "name": "Update Workout Template",
+            "name": "Subscribe to Meal Plan",
             "request": {
-                "method": "PUT",
+                "method": "POST",
                 "header": [
                     {
                         "key": "Content-Type",
                         "value": "application/json"
+                    },
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer {{auth_token}}"
                     }
                 ],
-                "url": {
-                    "raw": "{{url}}/coach/workouts/templates/1",
-                    "host": [
-                        "{{url}}"
-                    ],
-                    "path": [
-                        "coach",
-                        "workouts",
-                        "templates",
-                        "1"
-                    ]
-                },
                 "body": {
                     "mode": "raw",
-                    "raw": "{\n  \"title\": \"Updated Push Day\",\n  \"duration\": 50,\n  \"difficulty_level\": \"hard\",\n  \"exercises\": [\n    { \"exercise_id\": 1 },\n    { \"exercise_id\": 3 }\n  ]\n}"
-                }
-            }
-        },
-        {
-            "name": "Delete Workout Template",
-            "request": {
-                "method": "DELETE",
-                "header": [],
+                    "raw": "{\n  \"meal_plan_id\": 10,\n  \"delivery_time_id\": 3,\n  \"address_label\": \"Home\",\n  \"street\": \"Olaya St\",\n  \"city\": \"Riyadh\",\n  \"building\": \"12A\",\n  \"state\": \"Riyadh\",\n  \"postal_code\": \"12345\",\n  \"delivery_notes\": \"Call on arrival\",\n  \"coupon_code\": \"MEAL15\"\n}"
+                },
                 "url": {
-                    "raw": "{{url}}/coach/workouts/templates/1",
+                    "raw": "{{base_url}}/api/payments/subscribe-meal",
                     "host": [
-                        "{{url}}"
+                        "{{base_url}}"
                     ],
                     "path": [
-                        "coach",
-                        "workouts",
-                        "templates",
-                        "1"
+                        "api",
+                        "payments",
+                        "subscribe-meal"
                     ]
                 }
-            }
+            },
+            "response": []
         },
         {
-            "name": "Get All Workout Templates",
+            "name": "Payment Close (WebView)",
             "request": {
                 "method": "GET",
                 "header": [],
                 "url": {
-                    "raw": "{{url}}/coach/workouts/templates",
+                    "raw": "{{base_url}}/payment-close",
                     "host": [
-                        "{{url}}"
+                        "{{base_url}}"
                     ],
                     "path": [
-                        "coach",
-                        "workouts",
-                        "templates"
+                        "payment-close"
                     ]
                 }
-            }
+            },
+            "response": []
+        },
+        {
+            "name": "Payment Success (Optional)",
+            "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "{{base_url}}/payment-success",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "payment-success"
+                    ]
+                }
+            },
+            "response": []
         }
     ],
     "variable": [
         {
-            "key": "url",
+            "key": "base_url",
             "value": "http://localhost:3000"
+        },
+        {
+            "key": "auth_token",
+            "value": "your_jwt_token_here"
         }
     ]
 }
