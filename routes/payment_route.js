@@ -11,7 +11,7 @@ const payments = require('../controllers/payments/payment_controller');
 // ---------- FRONTEND-CALLED ROUTES (JSON) ----------
 // Create a Tap payment link for a fitness package
 router.post(
-    '/payments/subscribe-package',
+    '/subscribe-package',
     /* requireAuth, */            // uncomment if you use auth
     express.json(),               // normal JSON body
     payments.subscribeToPackage
@@ -19,7 +19,7 @@ router.post(
 
 // Create a Tap payment link for a meal plan
 router.post(
-    '/payments/subscribe-meal',
+    '/subscribe-meal',
     /* requireAuth, */
     express.json(),
     payments.subscribeToMealPlan
@@ -31,13 +31,13 @@ router.post(
 // ---------- TAP WEBHOOK (SERVER-TO-SERVER) ----------
 // IMPORTANT: These must use RAW body so you can verify the signature and parse manually.
 router.post(
-    '/payments/complete-subscription',
+    '/complete-subscription',
     express.raw({ type: 'application/json' }),
     payments.completeSubscription
 );
 
 router.post(
-    '/payments/complete-meal-subscription',
+    '/complete-meal-subscription',
     express.raw({ type: 'application/json' }),
     payments.completeMealSubscription
 );
@@ -88,5 +88,3 @@ router.get('/payment-success', (req, res) => {
 
 module.exports = router;
 
-
-module.exports = router;
