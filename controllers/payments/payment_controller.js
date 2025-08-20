@@ -260,7 +260,7 @@ exports.subscribeToMealPlan = async (req, res, next) => {
 
         // --- Compute amount (with optional coupon) ---
         // Assumes your MealPlan has a `price` field. Adjust if your schema uses another field.
-        let finalAmount = Number(mealPlan.price);
+        let finalAmount = Number(mealPlan.price_monthly);
         if (Number.isNaN(finalAmount)) throw { statusCode: 400, message: "Meal plan price is invalid" };
 
         let discountAmount = 0;
