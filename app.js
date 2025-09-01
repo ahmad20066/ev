@@ -156,7 +156,7 @@ cancelExpiredSubscriptions();
 sequelize
     .sync({
         // force: true,
-        // alter: true
+        alter: true
     })
     .then(() => {
         const PORT = process.env.PORT || 8080;

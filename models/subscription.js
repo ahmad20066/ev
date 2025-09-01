@@ -60,6 +60,15 @@ const Subscription = sequelize.define("Subscription", {
         allowNull: true,
         defaultValue: 0
     },
+    payment_method: {
+        type: Sequelize.ENUM('tap', 'iap'),
+        allowNull: true,
+        defaultValue: 'tap'
+    },
+    apple_transaction_id: {
+        type: Sequelize.STRING,
+        allowNull: true
+    },
     days_left: {
         type: Sequelize.VIRTUAL,
         get() {

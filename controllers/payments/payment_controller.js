@@ -17,6 +17,28 @@ const { Op } = require('sequelize');
 const { computeExpectedFinal, retrieveCharge } = require('./tap');
 const { verifyTapSignature } = require('../../helpers/payments_helper');
 const TAP_BASE_URL = 'https://api.tap.company/v2/';
+const appleReceiptVerify = require('node-apple-receipt-verify');
+
+// Configure Apple receipt verification
+appleReceiptVerify.config({
+    secret: process.env.APPLE_SHARED_SECRET,
+    environment: process.env.NODE_ENV === 'production' ? ['production'] : ['sandbox'],
+    excludeOldTransactions: true // Only get latest renewal for subscriptions
+});
+
+async function validateAppleReceipt(receipt) {
+    try {
+        const products = await appleReceiptVerify.validate({ receipt });
+        return { success: true, products };
+    } catch (error) {
+        if (error instanceof appleReceiptVerify.EmptyError) {
+            throw { statusCode: 400, message: "Receipt contains no purchases" };
+        } else if (error instanceof appleReceiptVerify.ServiceUnavailableError) {
+            throw { statusCode: 503, message: "Apple validation service unavailable" };
+        }
+        throw { statusCode: 400, message: error.message || "Invalid receipt" };
+    }
+}
 
 async function createTapPaymentLink({ user, amount, description, redirectApiUrl, metadata }) {
     try {
@@ -65,7 +87,15 @@ async function createTapPaymentLink({ user, amount, description, redirectApiUrl,
 
 exports.subscribeToPackage = async (req, res, next) => {
     try {
-        const { package_id, pricing_id, coupon_code } = req.body;
+        const { package_id, pricing_id, coupon_code, payment_method, apple_receipt } = req.body;
+
+        if (!payment_method || !['tap', 'iap'].includes(payment_method)) {
+            throw { statusCode: 400, message: "Invalid payment_method. Must be 'tap' or 'iap'" };
+        }
+
+        if (payment_method === 'iap' && !apple_receipt) {
+            throw { statusCode: 400, message: "apple_receipt is required for IAP payment method" };
+        }
 
         // --- Validate package, pricing, user ---
         const package = await Package.findByPk(package_id);
@@ -108,33 +138,76 @@ exports.subscribeToPackage = async (req, res, next) => {
             appliedCoupon = coupon;
         }
 
-        // --- Create dynamic Tap payment link ---
+        if (payment_method === 'tap') {
+            // --- Create dynamic Tap payment link ---
+            const paymentLink = await createTapPaymentLink({
+                user,
+                amount: finalAmount,
+                currency: 'SAR',
+                description: `Fitness Package Subscription - ${package.name}${appliedCoupon ? ` (Coupon: ${coupon_code})` : ''}`,
+                redirectApiUrl: '/payments/complete-subscription',
+                metadata: {
+                    api: 'subscribeToPackage',
+                    user_id: req.userId,
+                    package_id,
+                    pricing_id,
+                    original_amount: pricing.price,
+                    discount_amount: discountAmount,
+                    coupon_code: coupon_code || null,
+                    coupon_id: appliedCoupon?.id || null
+                }
+            });
 
-        const paymentLink = await createTapPaymentLink({
-            user,
-            amount: finalAmount,
-            currency: 'SAR',
-            description: `Fitness Package Subscription - ${package.name}${appliedCoupon ? ` (Coupon: ${coupon_code})` : ''}`,
-            redirectApiUrl: '/payments/complete-subscription', // your callback API
-            metadata: {
-                api: 'subscribeToPackage', // identify which API should process this
+            if (!paymentLink.success) {
+                throw { statusCode: 500, message: "Failed to create payment link" };
+            }
+
+            return res.status(200).json({
+                success: true,
+                payment_url: paymentLink.url
+            });
+        } else {
+            // --- Validate Apple receipt ---
+            const { success, products } = await validateAppleReceipt(apple_receipt);
+
+            if (!success || !products.length) {
+                throw { statusCode: 400, message: "Invalid Apple receipt" };
+            }
+
+            // Find the relevant purchase in the receipt
+            const purchase = products.find(p => p.productId === package.apple_product_id);
+            if (!purchase) {
+                throw { statusCode: 400, message: "Receipt does not contain the requested package" };
+            }
+
+            // Create subscription immediately since payment is already verified
+            const startDate = new Date();
+            const endDate = new Date(startDate);
+            endDate.setDate(startDate.getDate() + pricing.number_of_days + 1);
+
+            const subscription = await Subscription.create({
                 user_id: req.userId,
                 package_id,
+                start_date: startDate,
+                end_date: endDate,
                 pricing_id,
-                original_amount: pricing.price,
-                discount_amount: discountAmount,
-                coupon_code: coupon_code || null,
-                coupon_id: appliedCoupon?.id || null
-            }
-        });
-        console.log("paymentLink");
-        console.log(paymentLink);
-        if (!paymentLink.success) throw { statusCode: 500, message: "Failed to create payment link" };
+                payment_method: 'iap',
+                apple_transaction_id: purchase.transactionId,
+                coupon_id: appliedCoupon?.id || null,
+                discount_applied: discountAmount || 0,
+                is_active: true
+            });
 
-        res.status(200).json({
-            success: true,
-            payment_url: paymentLink.url
-        });
+            if (appliedCoupon) {
+                await appliedCoupon.update({ used_count: (appliedCoupon.used_count || 0) + 1 });
+            }
+
+            return res.status(201).json({
+                success: true,
+                message: "Subscription created successfully",
+                subscription
+            });
+        }
 
     } catch (e) {
         res.status(e.statusCode || 500).json({ success: false, message: e.message || "Internal Server Error" });
