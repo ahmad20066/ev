@@ -736,6 +736,14 @@ exports.renewSubscription = async (req, res, next) => {
         next(e)
     }
 }
+exports.getExercises = async (req, res, next) => {
+    try {
+        const exercises = await Exercise.findAll({ where: { is_active: true } });
+        res.status(200).json(exercises);
+    } catch (e) {
+        next(e)
+    }
+}
 
 exports.getExercise = async (req, res, next) => {
     try {
