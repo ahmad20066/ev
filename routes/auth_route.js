@@ -12,8 +12,8 @@ router.post(
         body("password")
             .isLength({ min: 6 })
             .withMessage("Password must be at least 6 characters long"),
-        body("phone").notEmpty().withMessage("Phone number is required"),
-        body("phone").isNumeric().withMessage("Enter a valid phone number"),
+
+        body("phone").optional().isNumeric().withMessage("Enter a valid phone number"),
         body("role").isIn(["consumer", "admin", "kitchen_staff", "coach"]).withMessage("Invalid role"),
     ],
     (req, res, next) => {
