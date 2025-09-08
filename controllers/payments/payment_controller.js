@@ -139,7 +139,7 @@ exports.subscribeToPackage = async (req, res, next) => {
         }
 
         if (payment_method === 'tap') {
-            // --- Create dynamic Tap payment link ---
+            
             const paymentLink = await createTapPaymentLink({
                 user,
                 amount: finalAmount,
