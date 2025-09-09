@@ -979,6 +979,8 @@ exports.getPerformanceStats = async (req, res, next) => {
 exports.applyCouponToPackage = async (req, res, next) => {
     try {
         const { package_id, pricing_id, coupon_code } = req.body;
+        console.log("applyCouponToPackage")
+        console.log(package_id, pricing_id, coupon_code)
         if (!package_id || !pricing_id || !coupon_code) {
             return res.status(400).json({ message: 'package_id, pricing_id, and coupon_code are required.' });
         }

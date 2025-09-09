@@ -12,7 +12,6 @@ router.post(
         body("password")
             .isLength({ min: 6 })
             .withMessage("Password must be at least 6 characters long"),
-
         body("phone").optional().isNumeric().withMessage("Enter a valid phone number"),
         body("role").isIn(["consumer", "admin", "kitchen_staff", "coach"]).withMessage("Invalid role"),
     ],
@@ -33,8 +32,7 @@ router.post(
         body("gender").notEmpty().withMessage("Gender is required"),
         body("height").optional().isFloat().withMessage("Height must be a number"),
         body("weight").optional().isFloat().withMessage("Weight must be a number"),
-        body("activity_level").optional().isNumeric().withMessage("Activity level must be an id"),
-        body("health_goal").optional().isNumeric().withMessage("Health goal must be an id"),
+        
         body("dietary_preferences").optional().isString().withMessage("Dietary preferences must be a string"),
         body("fitness_level").optional().isString().withMessage("Fitness level must be a string"),
     ],
