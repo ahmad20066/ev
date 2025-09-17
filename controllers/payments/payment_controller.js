@@ -139,7 +139,7 @@ exports.subscribeToPackage = async (req, res, next) => {
         }
 
         if (payment_method === 'tap') {
-            
+
             const paymentLink = await createTapPaymentLink({
                 user,
                 amount: finalAmount,
@@ -167,13 +167,14 @@ exports.subscribeToPackage = async (req, res, next) => {
                 payment_url: paymentLink.url
             });
         } else {
+            print("111");
             // --- Validate Apple receipt ---
             const { success, products } = await validateAppleReceipt(apple_receipt);
 
             if (!success || !products.length) {
                 throw { statusCode: 400, message: "Invalid Apple receipt" };
             }
-
+            print(success);
             // Find the relevant purchase in the receipt
             const purchase = products.find(p => p.productId === package.apple_product_id);
             if (!purchase) {
