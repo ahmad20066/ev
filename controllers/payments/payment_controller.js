@@ -87,6 +87,8 @@ async function createTapPaymentLink({ user, amount, description, redirectApiUrl,
 
 exports.subscribeToPackage = async (req, res, next) => {
     try {
+        print("88888888888888888888888111111111111111999999---------------------@@@@@@@@@@@@@@@@");
+        print(req.body);
         const { package_id, pricing_id, coupon_code, payment_method, apple_receipt } = req.body;
 
         if (!payment_method || !['tap', 'iap'].includes(payment_method)) {
