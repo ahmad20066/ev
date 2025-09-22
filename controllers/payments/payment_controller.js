@@ -89,13 +89,13 @@ exports.subscribeToPackage = async (req, res, next) => {
     try {
         console.log("88888888888888888888888111111111111111999999---------------------@@@@@@@@@@@@@@@@");
         console.log(req.body);
-        const { package_id, pricing_id, coupon_code, payment_method, apple_receipt } = req.body;
+        const { package_id, pricing_id, coupon_code, payment_method, receipt } = req.body;
 
         if (!payment_method || !['tap', 'iap'].includes(payment_method)) {
             throw { statusCode: 400, message: "Invalid payment_method. Must be 'tap' or 'iap'" };
         }
 
-        if (payment_method === 'iap' && !apple_receipt) {
+        if (payment_method === 'iap' && !receipt) {
             throw { statusCode: 400, message: "apple_receipt is required for IAP payment method" };
         }
 
@@ -171,7 +171,7 @@ exports.subscribeToPackage = async (req, res, next) => {
         } else {
 
             // --- Validate Apple receipt ---
-            const { success, products } = await validateAppleReceipt(apple_receipt);
+            const { success, products } = await validateAppleReceipt(receipt);
 
             if (!success || !products.length) {
                 throw { statusCode: 400, message: "Invalid Apple receipt" };
