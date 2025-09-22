@@ -28,7 +28,11 @@ appleReceiptVerify.config({
 
 async function validateAppleReceipt(receipt) {
     try {
-        const products = await appleReceiptVerify.validate({ receipt });
+        const receiptBase64 = Buffer.from(receipt).toString("base64");
+
+        const products = await appleReceiptVerify.validate({
+            receipt: receiptBase64
+        });
         return { success: true, products };
     } catch (error) {
         if (error instanceof appleReceiptVerify.EmptyError) {
