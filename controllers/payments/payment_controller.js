@@ -43,6 +43,47 @@ async function validateAppleReceipt(receipt) {
         throw { statusCode: 400, message: error.message || "Invalid receipt" };
     }
 }
+// --- RevenueCat helpers ---
+const RC_API_BASE = "https://api.revenuecat.com/v1";
+
+// Pull full, canonical subscriber state from RevenueCat
+async function fetchRevenueCatSubscriber(appUserId, isSandbox = false) {
+    const headers = {
+        Authorization: `Bearer ${process.env.RC_SECRET_API_KEY}`, // RevenueCat Secret API Key
+        "X-Platform": "ios",
+    };
+    if (isSandbox) headers["X-Is-Sandbox"] = "true";
+
+    const url = `${RC_API_BASE}/subscribers/${encodeURIComponent(appUserId)}`;
+    const { data } = await axios.get(url, { headers });
+    return data; // { subscriber: { entitlements, subscriptions, ... } }
+}
+
+/**
+ * Decide if the user has an active entitlement.
+ * Returns { active, productId, expiration, transactionId }
+ */
+function resolveEntitlementState(subscriberPayload, entitlementKey) {
+    const ents = subscriberPayload?.subscriber?.entitlements || {};
+    const ent = ents?.[entitlementKey];
+
+    if (!ent) return { active: false };
+
+    const exp = ent.expires_date ? new Date(ent.expires_date) : null;
+    const active = !!ent.is_active || (exp && exp > new Date());
+
+    const productId = ent.product_identifier || null;
+
+    // Try to get a stable transaction id (for idempotency)
+    const subs = subscriberPayload?.subscriber?.subscriptions || {};
+    const subObj = productId ? subs[productId] : null;
+    const transactionId =
+        subObj?.original_purchase_transaction_id ||
+        subObj?.transaction_id ||
+        null;
+
+    return { active, productId, expiration: exp, transactionId };
+}
 
 async function createTapPaymentLink({ user, amount, description, redirectApiUrl, metadata }) {
     try {
@@ -86,26 +127,27 @@ async function createTapPaymentLink({ user, amount, description, redirectApiUrl,
         return { success: false, error: error.response?.data || error.message };
     }
 }
-
-
-
 exports.subscribeToPackage = async (req, res, next) => {
     try {
-        console.log("88888888888888888888888111111111111111999999---------------------@@@@@@@@@@@@@@@@");
-        console.log(req.body);
-        const { package_id, pricing_id, coupon_code, payment_method, apple_receipt } = req.body;
+        const {
+            package_id,
+            pricing_id,
+            coupon_code,
+            payment_method,
+
+            // NEW: from client after RevenueCat purchase
+            app_user_id,
+            expected_entitlement,   // optional if stored on package
+            environment             // optional: 'SANDBOX' | 'PRODUCTION'
+        } = req.body;
 
         if (!payment_method || !['tap', 'iap'].includes(payment_method)) {
             throw { statusCode: 400, message: "Invalid payment_method. Must be 'tap' or 'iap'" };
         }
 
-        if (payment_method === 'iap' && !apple_receipt) {
-            throw { statusCode: 400, message: "apple_receipt is required for IAP payment method" };
-        }
-
         // --- Validate package, pricing, user ---
-        const package = await Package.findByPk(package_id);
-        if (!package) throw { statusCode: 404, message: "Package not found" };
+        const pkg = await Package.findByPk(package_id);
+        if (!pkg) throw { statusCode: 404, message: "Package not found" };
 
         const pricing = await PricingModel.findOne({ where: { package_id, id: pricing_id } });
         if (!pricing) throw { statusCode: 404, message: "Pricing not found" };
@@ -118,7 +160,7 @@ exports.subscribeToPackage = async (req, res, next) => {
         });
         if (oldSubscription) throw { statusCode: 403, message: "You already have a subscription" };
 
-        // --- Calculate final amount with coupon ---
+        // --- Calculate final amount with coupon (shared with Tap) ---
         let finalAmount = pricing.price;
         let discountAmount = 0;
         let appliedCoupon = null;
@@ -132,8 +174,12 @@ exports.subscribeToPackage = async (req, res, next) => {
                 }
             });
             if (!coupon) throw { statusCode: 400, message: "Coupon not found or invalid" };
-            if (coupon.expiry_date < new Date()) throw { statusCode: 400, message: "Coupon expired" };
-            if (coupon.usage_limit && coupon.used_count >= coupon.usage_limit) throw { statusCode: 400, message: "Coupon usage limit reached" };
+            if (coupon.expiry_date && new Date(coupon.expiry_date) < new Date()) {
+                throw { statusCode: 400, message: "Coupon expired" };
+            }
+            if (coupon.usage_limit && coupon.used_count >= coupon.usage_limit) {
+                throw { statusCode: 400, message: "Coupon usage limit reached" };
+            }
 
             discountAmount = coupon.discount_type === 'percentage'
                 ? pricing.price * (coupon.discount_value / 100)
@@ -145,12 +191,12 @@ exports.subscribeToPackage = async (req, res, next) => {
         }
 
         if (payment_method === 'tap') {
-
+            // ---- Tap path unchanged ----
             const paymentLink = await createTapPaymentLink({
                 user,
                 amount: finalAmount,
                 currency: 'SAR',
-                description: `Fitness Package Subscription - ${package.name}${appliedCoupon ? ` (Coupon: ${coupon_code})` : ''}`,
+                description: `Fitness Package Subscription - ${pkg.name}${appliedCoupon ? ` (Coupon: ${coupon_code})` : ''}`,
                 redirectApiUrl: '/payments/complete-subscription',
                 metadata: {
                     api: 'subscribeToPackage',
@@ -172,54 +218,77 @@ exports.subscribeToPackage = async (req, res, next) => {
                 success: true,
                 payment_url: paymentLink.url
             });
-        } else {
-
-            // --- Validate Apple receipt ---
-            const { success, products } = await validateAppleReceipt(apple_receipt);
-
-            if (!success || !products.length) {
-                throw { statusCode: 400, message: "Invalid Apple receipt" };
-            }
-
-            // Find the relevant purchase in the receipt
-            const purchase = products.find(p => p.productId === package.apple_product_id);
-            if (!purchase) {
-                throw { statusCode: 400, message: "Receipt does not contain the requested package" };
-            }
-
-            // Create subscription immediately since payment is already verified
-            const startDate = new Date();
-            const endDate = new Date(startDate);
-            endDate.setDate(startDate.getDate() + pricing.number_of_days + 1);
-
-            const subscription = await Subscription.create({
-                user_id: req.userId,
-                package_id,
-                start_date: startDate,
-                end_date: endDate,
-                pricing_id,
-                payment_method: 'iap',
-                apple_transaction_id: purchase.transactionId,
-                coupon_id: appliedCoupon?.id || null,
-                discount_applied: discountAmount || 0,
-                is_active: true
-            });
-
-            if (appliedCoupon) {
-                await appliedCoupon.update({ used_count: (appliedCoupon.used_count || 0) + 1 });
-            }
-
-            return res.status(201).json({
-                success: true,
-                message: "Subscription created successfully",
-                subscription
-            });
         }
+
+        // ---- IAP via RevenueCat (verify BEFORE creating local subscription) ----
+        // 1) Basic checks for RC-based verification
+        if (!app_user_id) {
+            throw { statusCode: 400, message: "app_user_id is required for IAP" };
+        }
+
+        // Prefer an entitlement saved on the package, otherwise expect from client
+        const entitlementKey = pkg.entitlement_id || expected_entitlement;
+        if (!entitlementKey) {
+            throw { statusCode: 400, message: "Missing entitlement id (set Package.entitlement_id or send expected_entitlement)" };
+        }
+
+        // 2) Pull canonical state from RevenueCat
+        const isSandbox = environment === 'SANDBOX' || process.env.NODE_ENV !== 'production';
+        const rcPayload = await fetchRevenueCatSubscriber(String(app_user_id), isSandbox);
+        const { active, productId, expiration, transactionId } = resolveEntitlementState(rcPayload, entitlementKey);
+
+        if (!active) {
+            throw { statusCode: 400, message: "Entitlement not active in RevenueCat" };
+        }
+
+        // Optionally enforce product mapping: the RC product should match your package's product id
+        if (pkg.apple_product_id && productId && pkg.apple_product_id !== productId) {
+            throw { statusCode: 400, message: "Purchased product does not match requested package" };
+        }
+
+        // 3) Idempotency: if we already created a sub for this RC transaction, return it
+        if (transactionId) {
+            const existing = await Subscription.findOne({ where: { apple_transaction_id: transactionId } });
+            if (existing) {
+                return res.status(200).json({ success: true, message: "Already verified", subscription: existing });
+            }
+        }
+
+        // 4) Create the local subscription (your same timing logic)
+        const startDate = new Date();
+        const endDate = new Date(startDate);
+        endDate.setDate(startDate.getDate() + pricing.number_of_days + 1);
+
+        const subscription = await Subscription.create({
+            user_id: req.userId,
+            package_id,
+            start_date: startDate,
+            end_date: endDate,
+            pricing_id,
+            payment_method: 'iap',
+            apple_transaction_id: transactionId || null,
+            rc_product_id: productId || null,
+            rc_environment: environment || (rcPayload?.subscriber?.environment ?? null),
+            coupon_id: appliedCoupon?.id || null,
+            discount_applied: discountAmount || 0,
+            is_active: true
+        });
+
+        if (appliedCoupon) {
+            await appliedCoupon.update({ used_count: (appliedCoupon.used_count || 0) + 1 });
+        }
+
+        return res.status(201).json({
+            success: true,
+            message: "Subscription created successfully (RevenueCat verified)",
+            subscription
+        });
 
     } catch (e) {
         res.status(e.statusCode || 500).json({ success: false, message: e.message || "Internal Server Error" });
     }
 };
+
 
 exports.completeSubscription = async (req, res) => {
     try {
