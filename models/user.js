@@ -19,7 +19,6 @@ const User = sequelize.define("User", {
     googleId: {
         type: Sequelize.STRING,
         allowNull: true,
-        unique: true,
     },
     phone: {
         type: Sequelize.STRING,
