@@ -120,7 +120,7 @@ app.use("/home", isAuth, homeRouter);
 app.use("/kitchen", kitchenRouter);
 app.use("/info", infoRouter);
 
-app.use('/payments',  paymentsRoutes);
+app.use('/payments',isAuth,  paymentsRoutes);
 
 app.use(formatTimestamps);
 
