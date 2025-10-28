@@ -6,7 +6,7 @@ const Type = require('../../models/meals/type');
 
 exports.createMealPlan = async (req, res, next) => {
     try {
-        const { title, title_ar, calories, price_monthly, types, number_of_days } = req.body;
+        const { title, title_ar, calories, price_monthly, types, number_of_days, description, description_ar } = req.body;
         const image = req.file.path;
 
         const newMealPlan = await MealPlan.create({
@@ -15,7 +15,9 @@ exports.createMealPlan = async (req, res, next) => {
             calories,
             image,
             price_monthly,
-            number_of_days
+            number_of_days,
+            description,
+            description_ar
         });
         console.log(types)
         if (types && Array.isArray(types) && types.length > 0) {
@@ -101,7 +103,7 @@ exports.getMealPlanById = async (req, res, next) => {
 };
 exports.updateMealPlan = async (req, res, next) => {
     const { id } = req.params;
-    const { title, title_ar, calories, price_monthly, types, number_of_days } = req.body;
+    const { title, title_ar, calories, price_monthly, types, number_of_days, description, description_ar } = req.body;
     const image = req.file ? req.file.path : null;
 
     try {
@@ -118,6 +120,8 @@ exports.updateMealPlan = async (req, res, next) => {
         mealPlan.calories = calories || mealPlan.calories;
         mealPlan.price_monthly = price_monthly || mealPlan.price_monthly;
         mealPlan.number_of_days = number_of_days || mealPlan.number_of_days;
+        mealPlan.description = description || mealPlan.description;
+        mealPlan.description_ar = description_ar || mealPlan.description_ar;
         if (image) {
             mealPlan.image = image;
         }

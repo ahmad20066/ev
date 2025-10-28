@@ -415,8 +415,6 @@ exports.markExerciseDone = async (req, res, next) => {
         const statsPromises = stats.map((stat) => {
             return ExerciseStat.create({
                 exercise_completion_id: exerciseCompletion.id,
-                set: stat.set,
-                reps: stat.reps,
                 weight: stat.weight
             });
         });
@@ -597,7 +595,7 @@ exports.exerciseLeaderBoard = async (req, res, next) => {
             include: [
                 {
                     model: ExerciseStat,
-                    attributes: ['set', 'reps', 'weight'],
+                    attributes: ['weight'],
                     order: [['weight', 'DESC']],
                 },
                 {
@@ -624,8 +622,6 @@ exports.exerciseLeaderBoard = async (req, res, next) => {
 
                         },
                         stats: {
-                            set: topStat.set,
-                            reps: topStat.reps,
                             weight: topStat.weight,
                         }
                     };
@@ -913,8 +909,6 @@ exports.getPerformanceStats = async (req, res, next) => {
             where: { exercise_completion_id: { [Op.not]: null } },
             attributes: [
                 "exercise_id",
-                [sequelize.fn("SUM", sequelize.col("set")), "total_sets"],
-                [sequelize.fn("SUM", sequelize.col("reps")), "total_reps"],
                 [sequelize.fn("SUM", sequelize.col("weight")), "total_weight"],
             ],
             group: ["exercise_id", "exercise.name"],
@@ -922,8 +916,6 @@ exports.getPerformanceStats = async (req, res, next) => {
 
         const exerciseStatSummary = exerciseStats.map(stat => ({
             exercise: stat.exercise.name,
-            totalSets: stat.dataValues.total_sets,
-            totalReps: stat.dataValues.total_reps,
             totalWeight: stat.dataValues.total_weight,
         }));
 

@@ -22,7 +22,16 @@ const WorkoutExercise = sequelize.define('WorkoutExercise', {
         onDelete: 'CASCADE',
         primaryKey: true,
     },
-
+    sets : {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        defaultValue: 3,
+    },
+    reps : {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        defaultValue: 10,
+    },
 });
 
 Workout.belongsToMany(Exercise, { through: WorkoutExercise, as: 'exercises', foreignKey: 'workout_id' });

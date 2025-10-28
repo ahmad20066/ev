@@ -30,6 +30,14 @@ const MealPlan = sequelize.define('MealPlan', {
         type: DataTypes.INTEGER,
         allowNull: false,
         defaultValue: 30
+    },
+    description:{
+        type: DataTypes.TEXT,
+        allowNull: true
+    },
+    description_ar:{
+        type: DataTypes.TEXT,
+        allowNull: true
     }
 }, {
     tableName: "mealPlans",

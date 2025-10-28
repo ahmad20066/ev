@@ -54,4 +54,5 @@ router.get("/package-workouts", controller.getPackageWorkouts)
 router.get("/package-workouts/:id", controller.showPackageWorkout)
 router.post("/apply-coupon", controller.applyCouponToPackage)
 router.get("/exercises", controller.getExercises)
+router.get("/diary", hasSubscription, controller.getPerformanceStats)
 module.exports = router;

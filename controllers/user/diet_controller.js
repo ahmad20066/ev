@@ -19,15 +19,18 @@ const dayNames = ["sunday", "monday", "tuesday", "wednesday", "thursday", "frida
 
 exports.getMealPlans = async (req, res, next) => {
     try {
-        const mealPlans = await MealPlan.findAll({
-            where: { is_active: true },
-            include: {
-                model: Type,
-                as: "types",
+        const number_of_meals = req.query.number_of_meals;
+        const numMeals = parseInt(number_of_meals, 10);
 
-                through: { attributes: [] }
-            }
+        let mealPlans = await MealPlan.findAll({
+            where: { is_active: true },
+            include: { model: Type, as: "types", through: { attributes: [] } }
         });
+
+        if (!Number.isNaN(numMeals)) {
+            mealPlans = mealPlans.filter(mp => mp.types.length === numMeals);
+        }
+
         res.status(200).json(mealPlans);
     } catch (error) {
         error.statusCode = 500;
