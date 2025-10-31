@@ -364,15 +364,32 @@ exports.completeSubscription = async (req, res) => {
         }
         console.log('[DEBUG] Tap signature verified successfully');
 
-        // 2) Parse raw body
+        // 2) Parse body - handle both raw buffer and already-parsed JSON
         let parsed;
         try {
-            const bodyString = req.body.toString('utf8');
-            console.log('[DEBUG] Raw body string:', bodyString);
-            parsed = JSON.parse(bodyString);
+            // Check if body is already parsed (object) or raw (buffer)
+            if (Buffer.isBuffer(req.body)) {
+                // Body is raw buffer - parse it
+                const bodyString = req.body.toString('utf8');
+                console.log('[DEBUG] Raw body string (from buffer):', bodyString);
+                parsed = JSON.parse(bodyString);
+            } else if (typeof req.body === 'object' && req.body !== null) {
+                // Body is already parsed as JSON (might happen if middleware parsed it)
+                parsed = req.body;
+                console.log('[DEBUG] Body already parsed as object');
+            } else if (typeof req.body === 'string') {
+                // Body is a string - parse it
+                console.log('[DEBUG] Body is string:', req.body);
+                parsed = JSON.parse(req.body);
+            } else {
+                console.error('[ERROR] Unexpected body type:', typeof req.body);
+                return res.status(400).json({ success: false, message: 'Invalid body format' });
+            }
             console.log('[DEBUG] Parsed body:', JSON.stringify(parsed, null, 2));
         } catch (parseError) {
             console.error('[ERROR] JSON parse error:', parseError);
+            console.error('[ERROR] Body type:', typeof req.body);
+            console.error('[ERROR] Body value:', req.body);
             // Invalid JSON = bad request, don't retry
             return res.status(400).json({ success: false, message: 'Invalid JSON' });
         }

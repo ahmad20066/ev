@@ -1,9 +1,12 @@
 const crypto = require('crypto');
 
-const SIGNATURE_HEADER = 'x-tap-signature';
+// Tap Payments uses 'hashstring' header for webhook signatures
+const SIGNATURE_HEADER = 'hashstring';
+const ALTERNATIVE_HEADER = 'x-tap-signature'; // Some versions might use this
 
 function verifyTapSignature(req) {
-    const signature = req.header(SIGNATURE_HEADER);
+    // Try hashstring first (Tap's standard), then fallback to x-tap-signature
+    const signature = req.header(SIGNATURE_HEADER) || req.header(ALTERNATIVE_HEADER);
     const isTestMode = process.env.NODE_ENV !== 'production';
     
     // SECURITY: In production, signature is REQUIRED
@@ -28,13 +31,26 @@ function verifyTapSignature(req) {
         return false;
     }
 
-    const payload = req.body;
-    if (!payload || !Buffer.isBuffer(payload)) {
+    // Get raw body for signature verification
+    // Note: If body is already parsed, we need the raw string
+    let rawPayload;
+    if (Buffer.isBuffer(req.body)) {
+        // Body is raw buffer - use it directly
+        rawPayload = req.body;
+    } else if (typeof req.body === 'object' && req.body !== null) {
+        // Body was already parsed - need to stringify for verification
+        // However, this is not ideal - we should use raw body
+        // For now, stringify and use it
+        rawPayload = Buffer.from(JSON.stringify(req.body), 'utf8');
+        console.log('[WARNING] Body was already parsed - using stringified version for signature');
+    } else if (typeof req.body === 'string') {
+        rawPayload = Buffer.from(req.body, 'utf8');
+    } else {
         console.error('[SECURITY] Invalid payload for signature verification');
         return false;
     }
 
-    const computed = crypto.createHmac('sha256', secret).update(payload).digest('hex');
+    const computed = crypto.createHmac('sha256', secret).update(rawPayload).digest('hex');
 
     if (isTestMode) {
         console.log('[DEBUG] Signature verification (test mode):');
