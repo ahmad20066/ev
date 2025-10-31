@@ -109,6 +109,8 @@ async function createTapPaymentLink({ user, amount, description, redirectApiUrl,
             }
         };
 
+        console.log('[DEBUG] Creating Tap payment link with payload:', JSON.stringify(payload, null, 2));
+
         const response = await axios.post(
             `${TAP_BASE_URL}charges`,
             payload,
@@ -119,11 +121,38 @@ async function createTapPaymentLink({ user, amount, description, redirectApiUrl,
                 }
             }
         );
-        console.log(response);
 
-        return { success: true, url: response.data.transaction.url, charge_id: response.data.id };
+        console.log('[DEBUG] Tap API Response Status:', response.status);
+        console.log('[DEBUG] Tap API Response Data:', JSON.stringify(response.data, null, 2));
+        
+        // Check if response structure is correct
+        if (!response.data) {
+            console.error('[ERROR] No data in Tap response');
+            return { success: false, error: 'No data in Tap API response' };
+        }
+
+        if (!response.data.transaction) {
+            console.error('[ERROR] No transaction object in Tap response. Full response:', JSON.stringify(response.data, null, 2));
+            return { success: false, error: 'No transaction object in Tap API response', rawResponse: response.data };
+        }
+
+        if (!response.data.transaction.url) {
+            console.error('[ERROR] No transaction.url in Tap response. Transaction object:', JSON.stringify(response.data.transaction, null, 2));
+            return { success: false, error: 'No payment URL in Tap API response', rawResponse: response.data };
+        }
+
+        const paymentUrl = response.data.transaction.url;
+        const chargeId = response.data.id;
+
+        console.log('[DEBUG] Payment URL extracted:', paymentUrl);
+        console.log('[DEBUG] Charge ID:', chargeId);
+
+        return { success: true, url: paymentUrl, charge_id: chargeId };
     } catch (error) {
-        console.error(error.response?.data || error.message);
+        console.error('[ERROR] Tap payment link creation failed:');
+        console.error('[ERROR] Error message:', error.message);
+        console.error('[ERROR] Error response data:', error.response?.data);
+        console.error('[ERROR] Error response status:', error.response?.status);
         return { success: false, error: error.response?.data || error.message };
     }
 }
@@ -192,6 +221,10 @@ exports.subscribeToPackage = async (req, res, next) => {
 
         if (payment_method === 'tap') {
             // ---- Tap path unchanged ----
+            console.log('[DEBUG] subscribeToPackage - Creating Tap payment link');
+            console.log('[DEBUG] Final amount:', finalAmount);
+            console.log('[DEBUG] Package:', pkg.name);
+            
             const paymentLink = await createTapPaymentLink({
                 user,
                 amount: finalAmount,
@@ -210,9 +243,25 @@ exports.subscribeToPackage = async (req, res, next) => {
                 }
             });
 
+            console.log('[DEBUG] Payment link result:', JSON.stringify(paymentLink, null, 2));
+
             if (!paymentLink.success) {
-                throw { statusCode: 500, message: "Failed to create payment link" };
+                console.error('[ERROR] Payment link creation failed:', paymentLink.error);
+                throw { 
+                    statusCode: 500, 
+                    message: `Failed to create payment link: ${paymentLink.error || 'Unknown error'}` 
+                };
             }
+
+            if (!paymentLink.url) {
+                console.error('[ERROR] Payment link created but URL is missing:', paymentLink);
+                throw { 
+                    statusCode: 500, 
+                    message: "Payment link created but URL is missing" 
+                };
+            }
+
+            console.log('[DEBUG] Returning payment URL to client:', paymentLink.url);
 
             return res.status(200).json({
                 success: true,
@@ -285,6 +334,10 @@ exports.subscribeToPackage = async (req, res, next) => {
         });
 
     } catch (e) {
+        console.error('[ERROR] subscribeToPackage error:', e);
+        console.error('[ERROR] Error statusCode:', e.statusCode);
+        console.error('[ERROR] Error message:', e.message);
+        console.error('[ERROR] Error stack:', e.stack);
         res.status(e.statusCode || 500).json({ success: false, message: e.message || "Internal Server Error" });
     }
 };
@@ -294,36 +347,61 @@ exports.completeSubscription = async (req, res) => {
     try {
         // 1) Verify signature
         console.log("**************************completeSubscription**************************");
+        console.log('[DEBUG] completeSubscription - Request received');
+        console.log('[DEBUG] Request headers:', JSON.stringify(req.headers, null, 2));
+        console.log('[DEBUG] Request body type:', typeof req.body);
+        console.log('[DEBUG] Request body length:', req.body?.length || 'N/A');
+        
         if (!verifyTapSignature(req)) {
+            console.error('[ERROR] Invalid Tap webhook signature');
             return res.status(400).json({ success: false, message: 'Invalid webhook signature' });
         }
+        console.log('[DEBUG] Tap signature verified successfully');
 
         // 2) Parse raw body
         let parsed;
         try {
-            parsed = JSON.parse(req.body.toString('utf8'));
-        } catch {
+            const bodyString = req.body.toString('utf8');
+            console.log('[DEBUG] Raw body string:', bodyString);
+            parsed = JSON.parse(bodyString);
+            console.log('[DEBUG] Parsed body:', JSON.stringify(parsed, null, 2));
+        } catch (parseError) {
+            console.error('[ERROR] JSON parse error:', parseError);
             return res.status(400).json({ success: false, message: 'Invalid JSON' });
         }
 
         const { id: charge_id, metadata } = parsed;
+        console.log('[DEBUG] Charge ID:', charge_id);
+        console.log('[DEBUG] Metadata:', JSON.stringify(metadata, null, 2));
+        
         if (!charge_id || !metadata) {
+            console.error('[ERROR] Missing charge_id or metadata. charge_id:', charge_id, 'metadata:', metadata);
             return res.status(400).json({ success: false, message: 'Missing charge_id or metadata' });
         }
 
         const { user_id, package_id, pricing_id, discount_amount, original_amount, coupon_id } = metadata;
+        console.log('[DEBUG] Extracted metadata - user_id:', user_id, 'package_id:', package_id, 'pricing_id:', pricing_id);
 
         // 3) Idempotency
+        console.log('[DEBUG] Checking for existing subscription with charge_id:', charge_id);
         const existing = await Subscription.findOne({ where: { payment_charge_id: charge_id } });
         if (existing) {
+            console.log('[DEBUG] Subscription already exists (idempotent):', existing.id);
             return res.status(200).json({ success: true, message: 'Already processed', subscription: existing });
         }
+        console.log('[DEBUG] No existing subscription found, proceeding...');
 
         // 4) Retrieve & validate charge
+        console.log('[DEBUG] Retrieving charge from Tap API for charge_id:', charge_id);
         const charge = await retrieveCharge(charge_id);
+        console.log('[DEBUG] Charge retrieved. Status:', charge?.status);
+        console.log('[DEBUG] Full charge object:', JSON.stringify(charge, null, 2));
+        
         if (charge.status !== 'CAPTURED') {
+            console.error('[ERROR] Charge not captured. Status:', charge.status);
             return res.status(400).json({ success: false, message: `Charge not captured (status=${charge.status})` });
         }
+        console.log('[DEBUG] Charge is CAPTURED, proceeding with subscription creation');
 
         const expectedFinal = computeExpectedFinal(original_amount, discount_amount);
         const chargeAmount = Number(charge.amount);
@@ -367,12 +445,19 @@ exports.completeSubscription = async (req, res) => {
         });
 
         if (appliedCoupon) {
+            console.log('[DEBUG] Updating coupon usage count for coupon_id:', appliedCoupon.id);
             await appliedCoupon.update({ used_count: (appliedCoupon.used_count || 0) + 1 });
         }
 
+        console.log('[DEBUG] Subscription created successfully. ID:', subscription.id);
+        console.log('[DEBUG] Subscription details:', JSON.stringify(subscription.toJSON(), null, 2));
+        
         return res.status(201).json({ success: true, message: 'Subscription completed successfully', subscription });
     } catch (e) {
-        console.error(e);
+        console.error('[ERROR] completeSubscription error:');
+        console.error('[ERROR] Error message:', e.message);
+        console.error('[ERROR] Error stack:', e.stack);
+        console.error('[ERROR] Full error object:', e);
         return res.status(500).json({ success: false, message: e.message || 'Internal Server Error' });
     }
 };
