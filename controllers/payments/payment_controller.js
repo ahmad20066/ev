@@ -408,7 +408,13 @@ exports.completeSubscription = async (req, res) => {
         const { user_id, package_id, pricing_id, discount_amount, original_amount, coupon_id } = metadata;
         console.log('[DEBUG] Extracted metadata - user_id:', user_id, 'package_id:', package_id, 'pricing_id:', pricing_id);
 
-        // 3) Idempotency
+        // Security: Validate required metadata exists
+        if (!user_id || !package_id || !pricing_id) {
+            console.error('[ERROR] Missing required metadata fields');
+            return res.status(400).json({ success: false, message: 'Missing required metadata fields' });
+        }
+
+        // 3) Idempotency - Check if already processed
         console.log('[DEBUG] Checking for existing subscription with charge_id:', charge_id);
         const existing = await Subscription.findOne({ where: { payment_charge_id: charge_id } });
         if (existing) {
@@ -423,11 +429,28 @@ exports.completeSubscription = async (req, res) => {
         }
         console.log('[DEBUG] No existing subscription found, proceeding...');
 
-        // 4) Retrieve & validate charge
+        // 4) CRITICAL SECURITY: Retrieve & validate charge from Tap API
+        // This verifies the charge exists and was actually processed by Tap
         console.log('[DEBUG] Retrieving charge from Tap API for charge_id:', charge_id);
-        const charge = await retrieveCharge(charge_id);
-        console.log('[DEBUG] Charge retrieved. Status:', charge?.status);
-        console.log('[DEBUG] Full charge object:', JSON.stringify(charge, null, 2));
+        let charge;
+        try {
+            charge = await retrieveCharge(charge_id);
+            console.log('[DEBUG] Charge retrieved. Status:', charge?.status);
+            console.log('[DEBUG] Full charge object:', JSON.stringify(charge, null, 2));
+        } catch (chargeError) {
+            console.error('[ERROR] Failed to retrieve charge from Tap API:', chargeError);
+            // If we can't verify the charge with Tap, don't create subscription
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Unable to verify charge with Tap API' 
+            });
+        }
+
+        // Security: Verify charge ID matches
+        if (charge.id !== charge_id) {
+            console.error('[ERROR] Charge ID mismatch');
+            return res.status(400).json({ success: false, message: 'Charge ID mismatch' });
+        }
         
         if (charge.status !== 'CAPTURED') {
             console.log('[INFO] Charge not captured. Status:', charge.status);
@@ -454,19 +477,49 @@ exports.completeSubscription = async (req, res) => {
         if (chargeCurrency !== 'SAR') {
             return res.status(400).json({ success: false, message: 'Charge currency mismatch' });
         }
-        // Optional strict metadata round-trip checks:
+        // SECURITY: Verify metadata round-trip - ensures charge was created by us
         if (String(charge.metadata?.user_id) !== String(user_id)) {
+            console.error('[ERROR] Metadata mismatch (user_id). Charge:', charge.metadata?.user_id, 'Webhook:', user_id);
             return res.status(400).json({ success: false, message: 'Metadata mismatch (user_id)' });
         }
+        if (String(charge.metadata?.package_id) !== String(package_id)) {
+            console.error('[ERROR] Metadata mismatch (package_id)');
+            return res.status(400).json({ success: false, message: 'Metadata mismatch (package_id)' });
+        }
+        if (String(charge.metadata?.pricing_id) !== String(pricing_id)) {
+            console.error('[ERROR] Metadata mismatch (pricing_id)');
+            return res.status(400).json({ success: false, message: 'Metadata mismatch (pricing_id)' });
+        }
 
-        // 5) Your existing creation logic
+        // SECURITY: Verify charge was created with our API (api field in metadata)
+        if (charge.metadata?.api !== 'subscribeToPackage') {
+            console.error('[ERROR] Charge metadata API field mismatch');
+            return res.status(400).json({ success: false, message: 'Invalid charge source' });
+        }
+
+        // 5) Validate entities exist
         const user = await User.findByPk(user_id);
         const pkg = await Package.findByPk(package_id);
         const pricing = await PricingModel.findByPk(pricing_id);
         const appliedCoupon = coupon_id ? await Coupon.findByPk(coupon_id) : null;
 
         if (!user || !pkg || !pricing) {
+            console.error('[ERROR] User/Package/Pricing not found. user:', !!user, 'package:', !!pkg, 'pricing:', !!pricing);
             return res.status(404).json({ success: false, message: 'User/Package/Pricing not found' });
+        }
+
+        // SECURITY: Verify user doesn't already have an active subscription
+        // (prevent duplicate subscriptions even if someone tries to replay webhooks)
+        const activeSubscription = await Subscription.findOne({
+            where: { user_id, is_active: true }
+        });
+        if (activeSubscription && activeSubscription.payment_charge_id !== charge_id) {
+            console.error('[ERROR] User already has an active subscription');
+            return res.status(400).json({ 
+                success: false, 
+                message: 'User already has an active subscription',
+                existing_subscription_id: activeSubscription.id
+            });
         }
 
         const startDate = new Date();

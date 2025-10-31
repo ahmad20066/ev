@@ -1,6 +1,47 @@
 const express = require('express');
 const router = express.Router();
+const rateLimit = require('express-rate-limit');
 const { retrieveCharge } = require('../controllers/payments/tap');
+const payments = require('../controllers/payments/payment_controller');
+
+// Rate limiting for webhook endpoints (prevent abuse)
+// Tap webhooks should be infrequent - max 10 per minute per IP
+const webhookLimiter = rateLimit({
+    windowMs: 60 * 1000, // 1 minute
+    max: 10, // Max 10 webhook calls per minute per IP
+    message: {
+        error: 'Too many webhook requests. Please contact support if this persists.',
+    },
+    standardHeaders: true,
+    legacyHeaders: false,
+    skip: (req) => {
+        // In test mode, be more lenient with rate limiting
+        return process.env.NODE_ENV !== 'production';
+    }
+});
+
+// ---------- TAP WEBHOOK (SERVER-TO-SERVER) - NO AUTH NEEDED ----------
+// IMPORTANT: Webhooks use signature verification, not authentication headers
+// These must use RAW body so you can verify the signature and parse manually.
+// Security layers:
+// 1. Signature verification (HMAC-SHA256)
+// 2. Rate limiting (prevent abuse)
+// 3. Charge verification with Tap API (must verify charge exists)
+// 4. Metadata validation (ensure charge was created by our system)
+// 5. Idempotency checks (prevent duplicate processing)
+router.post(
+    '/complete-subscription',
+    webhookLimiter, // Rate limiting
+    express.raw({ type: 'application/json' }),
+    payments.completeSubscription
+);
+
+router.post(
+    '/complete-meal-subscription',
+    webhookLimiter, // Rate limiting
+    express.raw({ type: 'application/json' }),
+    payments.completeMealSubscription
+);
 
 // ---------- PUBLIC FRONTEND REDIRECT PAGES (NO AUTH) ----------
 // These routes are called by Tap after payment, so no authentication is required

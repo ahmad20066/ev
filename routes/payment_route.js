@@ -26,25 +26,10 @@ router.post(
     payments.subscribeToMealPlan
 );
 
-
-
-
-// ---------- TAP WEBHOOK (SERVER-TO-SERVER) ----------
-// IMPORTANT: These must use RAW body so you can verify the signature and parse manually.
-router.post(
-    '/complete-subscription',
-    express.raw({ type: 'application/json' }),
-    payments.completeSubscription
-);
-
-router.post(
-    '/complete-meal-subscription',
-    express.raw({ type: 'application/json' }),
-    payments.completeMealSubscription
-);
-
-
-// NOTE: Public redirect routes (payment-close, payment-success) have been moved to 
+// NOTE: Webhook routes (complete-subscription, complete-meal-subscription) have been moved to 
+// routes/payment_public_route.js to avoid requiring authentication (webhooks use signature verification)
+// 
+// NOTE: Public redirect routes (payment-close, payment-success) have also been moved to 
 // routes/payment_public_route.js to avoid requiring authentication
 
 module.exports = router;
