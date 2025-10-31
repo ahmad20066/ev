@@ -98,6 +98,9 @@ async function createTapPaymentLink({ user, amount, description, redirectApiUrl,
             source: {
                 id: "src_all"
             },
+            // Explicitly enable 3DS authentication
+            threeDSecure: true,
+            card_threeDSecure: true,
             metadata,
             description,
             post: {
