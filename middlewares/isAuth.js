@@ -5,7 +5,6 @@ module.exports = (req, res, next) => {
             return res.status(200).end();
         }
         const authHeader = req.headers.authorization
-        console.log(authHeader);
         if (!authHeader || !authHeader.startsWith("Bearer ")) {
             return res.status(401).json({
                 message: "unAuthenticated"
@@ -16,8 +15,6 @@ module.exports = (req, res, next) => {
         const userId = decodedToken.userId
         req.userId = userId
         req.role = decodedToken.role
-
-        console.log(req.role)
         next()
     } catch (e) {
         console.log(e)

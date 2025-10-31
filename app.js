@@ -120,6 +120,12 @@ app.use("/home", isAuth, homeRouter);
 app.use("/kitchen", kitchenRouter);
 app.use("/info", infoRouter);
 
+// Public payment redirect routes (no auth needed - called by Tap after payment)
+// MUST be registered BEFORE the authenticated routes so they match first
+const paymentsPublic = require('./routes/payment_public_route');
+app.use('/payments', paymentsPublic);
+
+// Payment routes that need auth (registered after public routes)
 app.use('/payments', isAuth, paymentsRoutes);
 
 app.use(formatTimestamps);

@@ -105,7 +105,7 @@ async function createTapPaymentLink({ user, amount, description, redirectApiUrl,
                 return_uri: `${process.env.BASE_URL}/payments/payment-success`
             },
             redirect: {
-                url: `${process.env.BASE_URL}/payments/payment-close`
+                url: `${process.env.BASE_URL}/payments/payment-close` // Public route, no auth required
             }
         };
 
