@@ -293,6 +293,7 @@ exports.subscribeToPackage = async (req, res, next) => {
 exports.completeSubscription = async (req, res) => {
     try {
         // 1) Verify signature
+        console.log("**************************completeSubscription**************************");
         if (!verifyTapSignature(req)) {
             return res.status(400).json({ success: false, message: 'Invalid webhook signature' });
         }
