@@ -344,6 +344,11 @@ exports.subscribeToPackage = async (req, res, next) => {
 
 
 exports.completeSubscription = async (req, res) => {
+    // Webhook response strategy:
+    // - 200 OK: Successfully processed (even if payment declined - we've handled it)
+    // - 400 Bad Request: Client errors (bad signature, invalid data) - don't retry
+    // - 500 Internal Server Error: Server errors (DB issues) - Tap should retry
+    
     try {
         // 1) Verify signature
         console.log("**************************completeSubscription**************************");
@@ -354,7 +359,8 @@ exports.completeSubscription = async (req, res) => {
         
         if (!verifyTapSignature(req)) {
             console.error('[ERROR] Invalid Tap webhook signature');
-            return res.status(400).json({ success: false, message: 'Invalid webhook signature' });
+            // Invalid signature = don't retry (likely configuration issue)
+            return res.status(401).json({ success: false, message: 'Invalid webhook signature' });
         }
         console.log('[DEBUG] Tap signature verified successfully');
 
@@ -367,16 +373,36 @@ exports.completeSubscription = async (req, res) => {
             console.log('[DEBUG] Parsed body:', JSON.stringify(parsed, null, 2));
         } catch (parseError) {
             console.error('[ERROR] JSON parse error:', parseError);
+            // Invalid JSON = bad request, don't retry
             return res.status(400).json({ success: false, message: 'Invalid JSON' });
         }
 
-        const { id: charge_id, metadata } = parsed;
+        const { id: charge_id, metadata, status } = parsed;
         console.log('[DEBUG] Charge ID:', charge_id);
+        console.log('[DEBUG] Charge Status from webhook:', status);
         console.log('[DEBUG] Metadata:', JSON.stringify(metadata, null, 2));
         
         if (!charge_id || !metadata) {
             console.error('[ERROR] Missing charge_id or metadata. charge_id:', charge_id, 'metadata:', metadata);
+            // Missing required data = bad request, don't retry
             return res.status(400).json({ success: false, message: 'Missing charge_id or metadata' });
+        }
+        
+        // Handle declined/cancelled payments early - webhook processed but payment failed
+        const chargeStatus = status || parsed.status;
+        if (chargeStatus === 'DECLINED' || chargeStatus === 'CANCELLED' || chargeStatus === 'FAILED') {
+            console.log('[INFO] Payment was declined/cancelled. Charge ID:', charge_id);
+            console.log('[INFO] Decline reason:', parsed.response?.message || parsed.response?.code || 'Unknown');
+            // Webhook processed successfully, but payment failed - return 200 OK (webhook handled)
+            // but clearly indicate payment_status = failed
+            return res.status(200).json({ 
+                success: false,
+                payment_status: 'failed',
+                charge_status: chargeStatus,
+                message: `Payment ${chargeStatus.toLowerCase()} - webhook received and logged`,
+                decline_reason: parsed.response?.message || parsed.response?.code || 'Unknown',
+                charge_id: charge_id
+            });
         }
 
         const { user_id, package_id, pricing_id, discount_amount, original_amount, coupon_id } = metadata;
@@ -387,7 +413,13 @@ exports.completeSubscription = async (req, res) => {
         const existing = await Subscription.findOne({ where: { payment_charge_id: charge_id } });
         if (existing) {
             console.log('[DEBUG] Subscription already exists (idempotent):', existing.id);
-            return res.status(200).json({ success: true, message: 'Already processed', subscription: existing });
+            return res.status(200).json({ 
+                success: true, 
+                payment_status: 'already_processed',
+                message: 'Webhook already processed (idempotent)',
+                subscription: existing,
+                charge_id: charge_id
+            });
         }
         console.log('[DEBUG] No existing subscription found, proceeding...');
 
@@ -398,8 +430,17 @@ exports.completeSubscription = async (req, res) => {
         console.log('[DEBUG] Full charge object:', JSON.stringify(charge, null, 2));
         
         if (charge.status !== 'CAPTURED') {
-            console.error('[ERROR] Charge not captured. Status:', charge.status);
-            return res.status(400).json({ success: false, message: `Charge not captured (status=${charge.status})` });
+            console.log('[INFO] Charge not captured. Status:', charge.status);
+            console.log('[INFO] Charge response:', JSON.stringify(charge.response, null, 2));
+            // Non-CAPTURED status - webhook processed but payment failed
+            return res.status(200).json({ 
+                success: false,
+                payment_status: 'failed',
+                charge_status: charge.status,
+                message: `Payment ${charge.status.toLowerCase()} - webhook processed`,
+                decline_reason: charge.response?.message || charge.response?.code || 'Unknown',
+                charge_id: charge_id
+            });
         }
         console.log('[DEBUG] Charge is CAPTURED, proceeding with subscription creation');
 
@@ -452,12 +493,23 @@ exports.completeSubscription = async (req, res) => {
         console.log('[DEBUG] Subscription created successfully. ID:', subscription.id);
         console.log('[DEBUG] Subscription details:', JSON.stringify(subscription.toJSON(), null, 2));
         
-        return res.status(201).json({ success: true, message: 'Subscription completed successfully', subscription });
+        // Payment successful (CAPTURED) and subscription created
+        return res.status(200).json({ 
+            success: true,
+            payment_status: 'success',
+            charge_status: 'CAPTURED',
+            message: 'Payment successful and subscription created',
+            subscription: subscription,
+            charge_id: charge_id
+        });
     } catch (e) {
         console.error('[ERROR] completeSubscription error:');
         console.error('[ERROR] Error message:', e.message);
         console.error('[ERROR] Error stack:', e.stack);
         console.error('[ERROR] Full error object:', e);
+        
+        // Server errors (DB issues, etc.) - return 500 so Tap retries
+        // This allows Tap to retry on transient failures (network, DB connection issues)
         return res.status(500).json({ success: false, message: e.message || 'Internal Server Error' });
     }
 };
