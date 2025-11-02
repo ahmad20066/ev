@@ -601,7 +601,13 @@ exports.subscribeToMealPlan = async (req, res, next) => {
             delivery_notes,
             coupon_code
         } = req.body;
-
+        console.log("**************************subscribeToMealPlan**************************");
+        console.log('[DEBUG] subscribeToMealPlan - Request received');
+        console.log('[DEBUG] Request headers:', JSON.stringify(req.headers, null, 2));
+        console.log('[DEBUG] Request body type:', typeof req.body);
+        console.log('[DEBUG] Request body length:', req.body?.length || 'N/A');
+        console.log('[DEBUG] Request body:', JSON.stringify(req.body, null, 2));
+        console.log('[DEBUG] Request userId:', req.userId);
         // --- Validate user and active subscription ---
         const user = await User.findByPk(req.userId);
         if (!user) throw { statusCode: 404, message: "User not found" };
@@ -697,25 +703,76 @@ exports.subscribeToMealPlan = async (req, res, next) => {
     }
 };
 exports.completeMealSubscription = async (req, res) => {
+    // Webhook response strategy:
+    // - 200 OK: Successfully processed (even if payment declined/cancelled/failed — we've handled it)
+    // - 400 Bad Request / 401 Unauthorized: Client errors (bad signature, invalid data) — don't retry
+    // - 500 Internal Server Error: Server errors (DB issues) — Tap should retry
+
     try {
         // 1) Verify signature
-        if (!verifyTapSignature(req)) {
-            return res.status(400).json({ success: false, message: 'Invalid webhook signature' });
-        }
+        console.log("**************************completeMealSubscription**************************");
+        console.log('[DEBUG] completeMealSubscription - Request received');
+        console.log('[DEBUG] Request headers:', JSON.stringify(req.headers, null, 2));
+        console.log('[DEBUG] Request body type:', typeof req.body);
+        console.log('[DEBUG] Request body length:', req.body?.length || 'N/A');
 
-        // 2) Parse raw body
+        if (!verifyTapSignature(req)) {
+            console.error('[ERROR] Invalid Tap webhook signature');
+            return res.status(401).json({ success: false, message: 'Invalid webhook signature' });
+        }
+        console.log('[DEBUG] Tap signature verified successfully');
+
+        // 2) Parse body - support raw buffer, string, and already-parsed JSON
         let parsed;
         try {
-            parsed = JSON.parse(req.body.toString('utf8'));
-        } catch {
+            if (Buffer.isBuffer(req.body)) {
+                const bodyString = req.body.toString('utf8');
+                console.log('[DEBUG] Raw body string (from buffer):', bodyString);
+                parsed = JSON.parse(bodyString);
+            } else if (typeof req.body === 'object' && req.body !== null) {
+                parsed = req.body;
+                console.log('[DEBUG] Body already parsed as object');
+            } else if (typeof req.body === 'string') {
+                console.log('[DEBUG] Body is string:', req.body);
+                parsed = JSON.parse(req.body);
+            } else {
+                console.error('[ERROR] Unexpected body type:', typeof req.body);
+                return res.status(400).json({ success: false, message: 'Invalid body format' });
+            }
+            console.log('[DEBUG] Parsed body:', JSON.stringify(parsed, null, 2));
+        } catch (parseError) {
+            console.error('[ERROR] JSON parse error:', parseError);
+            console.error('[ERROR] Body type:', typeof req.body);
+            console.error('[ERROR] Body value:', req.body);
             return res.status(400).json({ success: false, message: 'Invalid JSON' });
         }
 
-        const { id: charge_id, metadata } = parsed;
+        const { id: charge_id, metadata, status } = parsed;
+        console.log('[DEBUG] Charge ID:', charge_id);
+        console.log('[DEBUG] Charge Status from webhook:', status);
+        console.log('[DEBUG] Metadata:', JSON.stringify(metadata, null, 2));
+
         if (!charge_id || !metadata) {
+            console.error('[ERROR] Missing charge_id or metadata. charge_id:', charge_id, 'metadata:', metadata);
             return res.status(400).json({ success: false, message: 'Missing charge_id or metadata' });
         }
 
+        // Handle declined/cancelled/failed payments early — processed, but payment failed => 200 OK
+        const chargeStatus = status || parsed.status;
+        if (chargeStatus === 'DECLINED' || chargeStatus === 'CANCELLED' || chargeStatus === 'FAILED') {
+            console.log('[INFO] Payment was not successful. Charge ID:', charge_id);
+            console.log('[INFO] Decline reason:', parsed.response?.message || parsed.response?.code || 'Unknown');
+            return res.status(200).json({
+                success: false,
+                payment_status: 'failed',
+                charge_status: chargeStatus,
+                message: `Payment ${chargeStatus.toLowerCase()} - webhook received and logged`,
+                decline_reason: parsed.response?.message || parsed.response?.code || 'Unknown',
+                charge_id
+            });
+        }
+
+        // Extract expected metadata
         const {
             user_id,
             meal_plan_id,
@@ -728,48 +785,124 @@ exports.completeMealSubscription = async (req, res) => {
             postal_code,
             delivery_notes,
             original_amount,
-            discount_amount = 0,
+            discount_amount,
             coupon_id
         } = metadata;
 
-        // 3) Idempotency
-        const existingByCharge = await MealSubscription.findOne({ where: { payment_charge_id: charge_id } });
-        if (existingByCharge) {
-            return res.status(200).json({ success: true, message: 'Meal subscription already completed (idempotent).', subscription: existingByCharge });
+        console.log('[DEBUG] Extracted metadata - user_id:', user_id, 'meal_plan_id:', meal_plan_id, 'delivery_time_id:', delivery_time_id);
+
+        // Security: Validate required metadata exists
+        if (!user_id || !meal_plan_id || !delivery_time_id || original_amount == null) {
+            console.error('[ERROR] Missing required metadata fields');
+            return res.status(400).json({ success: false, message: 'Missing required metadata fields' });
         }
 
-        // 4) Retrieve & validate charge
-        const charge = await retrieveCharge(charge_id);
+        // 3) Idempotency - by charge_id
+        console.log('[DEBUG] Checking for existing meal subscription with charge_id:', charge_id);
+        const existing = await MealSubscription.findOne({ where: { payment_charge_id: charge_id } });
+        if (existing) {
+            console.log('[DEBUG] Meal subscription already exists (idempotent):', existing.id);
+            return res.status(200).json({
+                success: true,
+                payment_status: 'already_processed',
+                message: 'Webhook already processed (idempotent)',
+                subscription: existing,
+                charge_id
+            });
+        }
+        console.log('[DEBUG] No existing meal subscription found, proceeding...');
+
+        // 4) Retrieve & validate charge from Tap API
+        console.log('[DEBUG] Retrieving charge from Tap API for charge_id:', charge_id);
+        let charge;
+        try {
+            charge = await retrieveCharge(charge_id);
+            console.log('[DEBUG] Charge retrieved. Status:', charge?.status);
+            console.log('[DEBUG] Full charge object:', JSON.stringify(charge, null, 2));
+        } catch (chargeError) {
+            console.error('[ERROR] Failed to retrieve charge from Tap API:', chargeError);
+            return res.status(400).json({ success: false, message: 'Unable to verify charge with Tap API' });
+        }
+
+        // Security: Verify charge ID matches
+        if (charge.id !== charge_id) {
+            console.error('[ERROR] Charge ID mismatch');
+            return res.status(400).json({ success: false, message: 'Charge ID mismatch' });
+        }
+
+        // Return 200 with failed status if not captured (same behavior as packages)
         if (charge.status !== 'CAPTURED') {
-            return res.status(400).json({ success: false, message: `Charge not captured (status=${charge.status})` });
+            console.log('[INFO] Charge not captured. Status:', charge.status);
+            console.log('[INFO] Charge response:', JSON.stringify(charge.response, null, 2));
+            return res.status(200).json({
+                success: false,
+                payment_status: 'failed',
+                charge_status: charge.status,
+                message: `Payment ${charge.status.toLowerCase()} - webhook processed`,
+                decline_reason: charge.response?.message || charge.response?.code || 'Unknown',
+                charge_id
+            });
         }
+        console.log('[DEBUG] Charge is CAPTURED, proceeding with meal subscription creation');
 
+        // Amount/currency checks
         const expectedFinal = computeExpectedFinal(original_amount, discount_amount);
         const chargeAmount = Number(charge.amount);
         const chargeCurrency = String(charge.currency || '').toUpperCase();
 
         if (Number.isNaN(chargeAmount) || chargeAmount !== expectedFinal) {
+            console.error('[ERROR] Charge amount mismatch. expected:', expectedFinal, 'actual:', chargeAmount);
             return res.status(400).json({ success: false, message: 'Charge amount mismatch' });
         }
         if (chargeCurrency !== 'SAR') {
+            console.error('[ERROR] Charge currency mismatch. expected: SAR actual:', chargeCurrency);
             return res.status(400).json({ success: false, message: 'Charge currency mismatch' });
         }
+
+        // SECURITY: Verify metadata round-trip (ensures charge was created by us)
         if (String(charge.metadata?.user_id) !== String(user_id)) {
+            console.error('[ERROR] Metadata mismatch (user_id). Charge:', charge.metadata?.user_id, 'Webhook:', user_id);
             return res.status(400).json({ success: false, message: 'Metadata mismatch (user_id)' });
         }
+        if (String(charge.metadata?.meal_plan_id) !== String(meal_plan_id)) {
+            console.error('[ERROR] Metadata mismatch (meal_plan_id)');
+            return res.status(400).json({ success: false, message: 'Metadata mismatch (meal_plan_id)' });
+        }
+        if (String(charge.metadata?.delivery_time_id) !== String(delivery_time_id)) {
+            console.error('[ERROR] Metadata mismatch (delivery_time_id)');
+            return res.status(400).json({ success: false, message: 'Metadata mismatch (delivery_time_id)' });
+        }
 
-        // 5) Creation logic
+        // SECURITY: Verify charge was created by the correct API path in your system
+        if (charge.metadata?.api !== 'subscribeToMealPlan') {
+            console.error('[ERROR] Charge metadata API field mismatch');
+            return res.status(400).json({ success: false, message: 'Invalid charge source' });
+        }
+
+        // 5) Validate entities exist
         const user = await User.findByPk(user_id);
-        if (!user) return res.status(404).json({ success: false, message: 'User not found' });
-
         const mealPlan = await MealPlan.findByPk(meal_plan_id, { include: [{ model: Type, as: 'types' }] });
-        if (!mealPlan) return res.status(404).json({ success: false, message: 'Meal Plan not found' });
-
         const deliveryTime = await DeliveryTime.findByPk(delivery_time_id);
-        if (!deliveryTime) return res.status(404).json({ success: false, message: 'Delivery time not found' });
-
         const appliedCoupon = coupon_id ? await Coupon.findByPk(coupon_id) : null;
 
+        if (!user || !mealPlan || !deliveryTime) {
+            console.error('[ERROR] User/MealPlan/DeliveryTime not found. user:', !!user, 'mealPlan:', !!mealPlan, 'deliveryTime:', !!deliveryTime);
+            return res.status(404).json({ success: false, message: 'User/MealPlan/DeliveryTime not found' });
+        }
+
+        // SECURITY: Optional — block duplicate active meal subscriptions per user
+        const activeMealSubscription = await MealSubscription.findOne({ where: { user_id, is_active: true } });
+        if (activeMealSubscription && activeMealSubscription.payment_charge_id !== charge_id) {
+            console.error('[ERROR] User already has an active meal subscription');
+            return res.status(400).json({
+                success: false,
+                message: 'User already has an active meal subscription',
+                existing_subscription_id: activeMealSubscription.id
+            });
+        }
+
+        // Create/update address
+        console.log('[DEBUG] Creating address for user:', user_id);
         const address = await Address.create({
             user_id,
             address_label,
@@ -781,10 +914,13 @@ exports.completeMealSubscription = async (req, res) => {
             delivery_notes
         });
 
+        // Dates (align with your existing logic — add +1 day if needed to include the last day)
         const startDate = new Date();
         const endDate = new Date(startDate);
-        endDate.setDate(startDate.getDate() + Number(mealPlan.number_of_days));
+        endDate.setDate(startDate.getDate() + Number(mealPlan.number_of_days) + 1); // align with package logic (+1)
 
+        // Create subscription
+        console.log('[DEBUG] Creating MealSubscription record');
         const subscription = await MealSubscription.create({
             user_id,
             meal_plan_id,
@@ -799,10 +935,12 @@ exports.completeMealSubscription = async (req, res) => {
             is_active: true
         });
 
+        // Pre-generate user meal selections for each day in range based on plan types
         const planTypeIds = (mealPlan.types || []).map((t) => t.id);
         const selections = [];
         let cursor = new Date(startDate);
 
+        console.log('[DEBUG] Generating meal selections from', startDate.toISOString(), 'to', endDate.toISOString());
         while (cursor <= endDate) {
             const currentDateStr = cursor.toISOString().split('T')[0];
             const dayName = cursor.toLocaleString('en-US', { weekday: 'long' }).toLowerCase();
@@ -841,20 +979,35 @@ exports.completeMealSubscription = async (req, res) => {
         }
 
         if (selections.length) {
+            console.log('[DEBUG] Bulk inserting user meal selections:', selections.length);
             await UserMealSelection.bulkCreate(selections, { ignoreDuplicates: true });
+        } else {
+            console.log('[DEBUG] No selections generated for the given date range/types');
         }
 
         if (appliedCoupon) {
+            console.log('[DEBUG] Updating coupon usage count for coupon_id:', appliedCoupon.id);
             await appliedCoupon.update({ used_count: (appliedCoupon.used_count || 0) + 1 });
         }
 
-        return res.status(201).json({
+        console.log('[DEBUG] Meal subscription created successfully. ID:', subscription.id);
+        console.log('[DEBUG] Meal subscription details:', JSON.stringify(subscription.toJSON(), null, 2));
+
+        // Payment successful (CAPTURED) and subscription created
+        return res.status(200).json({
             success: true,
-            message: 'Meal Subscription completed successfully',
-            subscription
+            payment_status: 'success',
+            charge_status: 'CAPTURED',
+            message: 'Payment successful and meal subscription created',
+            subscription,
+            charge_id
         });
-    } catch (error) {
-        console.error(error);
-        return res.status(500).json({ success: false, message: error.message || 'Internal Server Error' });
+    } catch (e) {
+        console.error('[ERROR] completeMealSubscription error:');
+        console.error('[ERROR] Error message:', e.message);
+        console.error('[ERROR] Error stack:', e.stack);
+        console.error('[ERROR] Full error object:', e);
+        // Server errors — return 500 so Tap retries on transient failures
+        return res.status(500).json({ success: false, message: e.message || 'Internal Server Error' });
     }
 };
