@@ -61,6 +61,10 @@ const MealSubscription = sequelize.define("MealSubscription", {
             return diffDays;
         }
     },
+    payment_charge_id: {
+        type: Sequelize.STRING,
+        allowNull: true
+    }
 }, {
     defaultScope: {
         include: [
