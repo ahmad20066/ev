@@ -680,7 +680,7 @@ exports.subscribeToMealPlan = async (req, res, next) => {
                 postal_code,
                 delivery_notes,
                 // Pricing details
-                original_amount: Number(mealPlan.price),
+                original_amount: Number(mealPlan.price_monthly),
                 discount_amount: discountAmount,
                 // Coupon details
                 coupon_code: appliedCoupon ? coupon_code : null,
