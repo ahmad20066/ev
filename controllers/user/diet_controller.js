@@ -17,6 +17,146 @@ const sequelize = require("../../models");
 const Coupon = require("../../models/fitness/coupon");
 const dayNames = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
 
+exports.getMealPlanDetails = async (req, res, next) => {
+    try {
+        const { id } = req.params;
+        
+        // Get meal plan with types
+        const mealPlan = await MealPlan.findByPk(id, {
+            include: [{
+                model: Type,
+                as: "types",
+                through: { attributes: [] }
+            }]
+        });
+
+        if (!mealPlan) {
+            const error = new Error("Meal Plan not found");
+            error.statusCode = 404;
+            throw error;
+        }
+
+        // Get plan type IDs
+        const planTypeIds = mealPlan.types.map(t => t.id);
+
+        // Get statistics
+        const [
+            totalSubscribers,
+            totalOrders,
+            deliveredOrders,
+            totalMeals
+        ] = await Promise.all([
+            // Total active subscribers
+            MealSubscription.count({
+                where: {
+                    meal_plan_id: id,
+                    is_active: true
+                }
+            }),
+            // Total orders for this meal plan
+            Order.count({
+                include: [{
+                    model: MealSubscription,
+                    as: "subscription",
+                    where: {
+                        meal_plan_id: id
+                    },
+                    attributes: []
+                }]
+            }),
+            // Delivered orders
+            Order.count({
+                where: {
+                    status: "delivered"
+                },
+                include: [{
+                    model: MealSubscription,
+                    as: "subscription",
+                    where: {
+                        meal_plan_id: id
+                    },
+                    attributes: []
+                }]
+            }),
+            // Total meals available for this plan's types
+            Meal.count({
+                include: [{
+                    model: Type,
+                    as: "types",
+                    where: {
+                        id: { [Op.in]: planTypeIds }
+                    },
+                    through: { attributes: [] },
+                    required: true
+                }]
+            })
+        ]);
+
+        // Get order status breakdown
+        const orderStatusBreakdown = await Order.findAll({
+            include: [{
+                model: MealSubscription,
+                as: "subscription",
+                where: {
+                    meal_plan_id: id
+                },
+                attributes: []
+            }],
+            attributes: [
+                'status',
+                [sequelize.fn('COUNT', sequelize.col('Order.id')), 'count']
+            ],
+            group: ['status'],
+            raw: true
+        });
+
+        // Format order status breakdown
+        const statusBreakdown = {
+            listed: 0,
+            pending: 0,
+            done: 0,
+            out_for_delivery: 0,
+            delivered: 0
+        };
+
+        orderStatusBreakdown.forEach(item => {
+            if (statusBreakdown.hasOwnProperty(item.status)) {
+                statusBreakdown[item.status] = parseInt(item.count) || 0;
+            }
+        });
+
+        // Calculate delivery success rate
+        const deliverySuccessRate = totalOrders > 0
+            ? ((deliveredOrders / totalOrders) * 100).toFixed(1)
+            : 0;
+
+        // Build response
+        const mealPlanData = mealPlan.toJSON();
+        const response = {
+            ...mealPlanData,
+            statistics: {
+                totalSubscribers,
+                totalOrders,
+                deliveredOrders,
+                deliverySuccessRate: parseFloat(deliverySuccessRate),
+                totalMeals
+            },
+            orderStatus: {
+                breakdown: statusBreakdown,
+                total: totalOrders,
+                delivered: deliveredOrders
+            }
+        };
+
+        res.status(200).json(response);
+    } catch (e) {
+        if (!e.statusCode) {
+            e.statusCode = 500;
+        }
+        next(e);
+    }
+};
+
 exports.getMealPlans = async (req, res, next) => {
     try {
         const number_of_meals = req.query.number_of_meals;

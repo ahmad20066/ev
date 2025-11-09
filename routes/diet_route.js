@@ -4,6 +4,7 @@ const router = express.Router();
 const controller = require("../controllers/user/diet_controller")
 const isAuth = require("../middlewares/isAuth")
 router.get("/meal-plans", isAuth, controller.getMealPlans)
+router.get("/meal-plans/:id/details", isAuth, controller.getMealPlanDetails)
 router.get("/subscriptions", isAuth, controller.getMealSubscriptions)
 router.post("/subscribe", isAuth, [
     body("meal_plan_id")
