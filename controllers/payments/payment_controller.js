@@ -591,6 +591,7 @@ exports.subscribeToMealPlan = async (req, res, next) => {
     try {
         const {
             meal_plan_id,
+            subscription_duration,
             delivery_time_id,
             address_label,
             street,
@@ -617,16 +618,31 @@ exports.subscribeToMealPlan = async (req, res, next) => {
         });
         if (oldSub) throw { statusCode: 400, message: "You are already subscribed" };
 
-        // --- Validate plan and delivery time ---
+        // --- Validate plan, duration, and delivery time ---
         const mealPlan = await MealPlan.findByPk(meal_plan_id);
         if (!mealPlan) throw { statusCode: 404, message: "Meal Plan not found" };
+
+        // Validate subscription duration
+        if (!subscription_duration || ![21, 26].includes(Number(subscription_duration))) {
+            throw { statusCode: 400, message: "subscription_duration must be 21 or 26 days" };
+        }
+        const duration = Number(subscription_duration);
+
+        // Get price based on duration
+        let basePrice;
+        if (duration === 21) {
+            basePrice = mealPlan.price_21_days;
+            if (!basePrice) throw { statusCode: 400, message: "21-day pricing not available for this meal plan" };
+        } else if (duration === 26) {
+            basePrice = mealPlan.price_26_days;
+            if (!basePrice) throw { statusCode: 400, message: "26-day pricing not available for this meal plan" };
+        }
 
         const deliveryTime = await DeliveryTime.findByPk(delivery_time_id);
         if (!deliveryTime) throw { statusCode: 404, message: "Delivery time not found" };
 
         // --- Compute amount (with optional coupon) ---
-        // Assumes your MealPlan has a `price` field. Adjust if your schema uses another field.
-        let finalAmount = Number(mealPlan.price_monthly);
+        let finalAmount = Number(basePrice);
         if (Number.isNaN(finalAmount)) throw { statusCode: 400, message: "Meal plan price is invalid" };
 
         let discountAmount = 0;
@@ -670,6 +686,7 @@ exports.subscribeToMealPlan = async (req, res, next) => {
                 api: "subscribeToMealPlan",
                 user_id: req.userId,
                 meal_plan_id,
+                subscription_duration: duration,
                 delivery_time_id,
                 // Address details to be created on completion
                 address_label,
@@ -680,7 +697,7 @@ exports.subscribeToMealPlan = async (req, res, next) => {
                 postal_code,
                 delivery_notes,
                 // Pricing details
-                original_amount: Number(mealPlan.price_monthly),
+                original_amount: Number(basePrice),
                 discount_amount: discountAmount,
                 // Coupon details
                 coupon_code: appliedCoupon ? coupon_code : null,
@@ -776,6 +793,7 @@ exports.completeMealSubscription = async (req, res) => {
         const {
             user_id,
             meal_plan_id,
+            subscription_duration,
             delivery_time_id,
             address_label,
             street,
@@ -917,7 +935,8 @@ exports.completeMealSubscription = async (req, res) => {
         // Dates (align with your existing logic — add +1 day if needed to include the last day)
         const startDate = new Date();
         const endDate = new Date(startDate);
-        endDate.setDate(startDate.getDate() + Number(mealPlan.number_of_days) + 1); // align with package logic (+1)
+        const durationDays = subscription_duration ? Number(subscription_duration) : Number(mealPlan.number_of_days);
+        endDate.setDate(startDate.getDate() + durationDays + 1); // align with package logic (+1)
 
         // Create subscription
         console.log('[DEBUG] Creating MealSubscription record');
@@ -930,6 +949,7 @@ exports.completeMealSubscription = async (req, res) => {
             delivery_time_id,
             address_id: address.id,
             payment_charge_id: charge_id,
+            subscription_duration: durationDays,
             coupon_id: appliedCoupon?.id || null,
             discount_applied: Number(discount_amount) || 0,
             is_active: true

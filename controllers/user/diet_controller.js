@@ -42,6 +42,7 @@ exports.subscribeToMealPlan = async (req, res, next) => {
     try {
         const {
             meal_plan_id,
+            subscription_duration,
             delivery_time_id,
             address_label,
             street,
@@ -51,6 +52,14 @@ exports.subscribeToMealPlan = async (req, res, next) => {
             postal_code,
             delivery_notes
         } = req.body;
+
+        // Validate subscription duration
+        if (!subscription_duration || ![21, 26].includes(Number(subscription_duration))) {
+            const e = new Error("subscription_duration must be 21 or 26 days");
+            e.statusCode = 400;
+            throw e;
+        }
+        const duration = Number(subscription_duration);
 
         const oldSub = await MealSubscription.findOne({
             where: { user_id: req.userId, is_active: true }
@@ -68,6 +77,18 @@ exports.subscribeToMealPlan = async (req, res, next) => {
         if (!mealPlan) {
             const e = new Error("Meal Plan not found");
             e.statusCode = 404;
+            throw e;
+        }
+
+        // Validate pricing for selected duration
+        if (duration === 21 && !mealPlan.price_21_days) {
+            const e = new Error("21-day pricing not available for this meal plan");
+            e.statusCode = 400;
+            throw e;
+        }
+        if (duration === 26 && !mealPlan.price_26_days) {
+            const e = new Error("26-day pricing not available for this meal plan");
+            e.statusCode = 400;
             throw e;
         }
 
@@ -90,7 +111,7 @@ exports.subscribeToMealPlan = async (req, res, next) => {
 
         const startDate = new Date();
         const endDate = new Date();
-        endDate.setDate(startDate.getDate() + mealPlan.number_of_days);
+        endDate.setDate(startDate.getDate() + duration);
 
         const subscription = await MealSubscription.create({
             user_id: req.userId,
@@ -100,6 +121,7 @@ exports.subscribeToMealPlan = async (req, res, next) => {
             type: "monthly",
             delivery_time_id,
             address_id: address.id,
+            subscription_duration: duration,
             is_active: true
         });
 
@@ -554,15 +576,41 @@ exports.getAllTypes = async (req, res, next) => {
 };
 exports.applyCouponToMealPlan = async (req, res, next) => {
     try {
-        const { meal_plan_id, coupon_code } = req.body;
+        const { meal_plan_id, coupon_code, subscription_duration } = req.body;
         if (!meal_plan_id || !coupon_code) {
             return res.status(400).json({ message: 'meal_plan_id and coupon_code are required.' });
         }
+        
+        // Validate subscription duration if provided
+        let duration = null;
+        if (subscription_duration) {
+            if (![21, 26].includes(Number(subscription_duration))) {
+                return res.status(400).json({ message: 'subscription_duration must be 21 or 26 days.' });
+            }
+            duration = Number(subscription_duration);
+        }
+        
         const mealPlan = await MealPlan.findByPk(meal_plan_id);
         if (!mealPlan) {
             return res.status(404).json({ message: 'Meal plan not found.' });
         }
-        const price = mealPlan.price_monthly;
+        
+        // Use appropriate price based on duration, fallback to price_monthly
+        let price;
+        if (duration === 21) {
+            price = mealPlan.price_21_days;
+            if (!price) {
+                return res.status(400).json({ message: '21-day pricing not available for this meal plan.' });
+            }
+        } else if (duration === 26) {
+            price = mealPlan.price_26_days;
+            if (!price) {
+                return res.status(400).json({ message: '26-day pricing not available for this meal plan.' });
+            }
+        } else {
+            price = mealPlan.price_monthly;
+        }
+        
         const coupon = await Coupon.findOne({
             where: {
                 code: coupon_code,
@@ -592,7 +640,8 @@ exports.applyCouponToMealPlan = async (req, res, next) => {
             discount: discountAmount,
             new_total: price - discountAmount,
             coupon_id: coupon.id,
-            meal_plan_id: mealPlan.id
+            meal_plan_id: mealPlan.id,
+            subscription_duration: duration
         });
     } catch (error) {
         next(error);

@@ -64,6 +64,20 @@ const MealSubscription = sequelize.define("MealSubscription", {
     payment_charge_id: {
         type: Sequelize.STRING,
         allowNull: true
+    },
+    subscription_duration: {
+        type: Sequelize.INTEGER,
+        allowNull: true,
+        comment: 'Subscription duration in days (21 or 26)'
+    },
+    coupon_id: {
+        type: Sequelize.INTEGER,
+        allowNull: true
+    },
+    discount_applied: {
+        type: Sequelize.DECIMAL(10, 2),
+        allowNull: true,
+        defaultValue: 0
     }
 }, {
     defaultScope: {

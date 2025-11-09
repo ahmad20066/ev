@@ -22,6 +22,14 @@ const MealPlan = sequelize.define('MealPlan', {
         type: DataTypes.INTEGER,
         allowNull: false
     },
+    price_21_days: {
+        type: DataTypes.INTEGER,
+        allowNull: true
+    },
+    price_26_days: {
+        type: DataTypes.INTEGER,
+        allowNull: true
+    },
     is_active: {
         type: DataTypes.BOOLEAN,
         defaultValue: true
