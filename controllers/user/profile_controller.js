@@ -15,6 +15,7 @@ const Survey = require("../../models/survey/survey");
 const User = require("../../models/user");
 const WeightRecord = require("../../models/weight_record");
 const DeliveryTime = require("../../models/meals/delivery_time");
+const MealPlan = require("../../models/meals/meal_plan");
 exports.cancelSubscription = async (req, res, next) => {
     try {
         const { id, type } = req.body;
