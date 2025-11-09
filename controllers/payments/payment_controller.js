@@ -932,7 +932,7 @@ exports.completeMealSubscription = async (req, res) => {
             delivery_notes
         });
 
-        // Dates (align with your existing logic — add +1 day if needed to include the last day)
+        // Dates - subscription period is always 1 month, regardless of meal delivery days
         const startDate = new Date();
         const endDate = new Date(startDate);
         
@@ -943,7 +943,8 @@ exports.completeMealSubscription = async (req, res) => {
         }
         const durationDays = Number(subscription_duration);
         
-        endDate.setDate(startDate.getDate() + durationDays + 1); // align with package logic (+1)
+        // Set end date to 1 month from start date
+        endDate.setMonth(startDate.getMonth() + 1);
 
         // Create subscription
         console.log('[DEBUG] Creating MealSubscription record');

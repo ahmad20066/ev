@@ -110,8 +110,9 @@ exports.subscribeToMealPlan = async (req, res, next) => {
         });
 
         const startDate = new Date();
-        const endDate = new Date();
-        endDate.setDate(startDate.getDate() + duration);
+        const endDate = new Date(startDate);
+        // Subscription period is always 1 month, regardless of meal delivery days
+        endDate.setMonth(startDate.getMonth() + 1);
 
         const subscription = await MealSubscription.create({
             user_id: req.userId,
@@ -562,9 +563,8 @@ exports.renewSubscription = async (req, res, next) => {
         const oldEnd = new Date(subscription.end_date);
         const newEnd = new Date(oldEnd);
         
-        // Use subscription_duration if available, otherwise default to 30 days
-        const renewalDays = subscription.subscription_duration || 30;
-        newEnd.setDate(oldEnd.getDate() + renewalDays);
+        // Renewal period is always 1 month
+        newEnd.setMonth(oldEnd.getMonth() + 1);
         subscription.end_date = newEnd;
         await subscription.save();
         const selections = [];
