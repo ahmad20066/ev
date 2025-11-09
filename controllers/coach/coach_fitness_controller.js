@@ -184,7 +184,12 @@ const copyWorkoutExercises = async (fromId, toId, t) => {
     await Promise.all(
         list.map((e) =>
             WorkoutExercise.create(
-                { workout_id: toId, exercise_id: e.exercise_id },
+                { 
+                    workout_id: toId, 
+                    exercise_id: e.exercise_id,
+                    sets: e.sets || 3,
+                    reps: e.reps || 10
+                },
                 { transaction: t },
             ),
         ),
@@ -193,11 +198,27 @@ const copyWorkoutExercises = async (fromId, toId, t) => {
 exports.createWorkoutTemplate = async (req, res, next) => {
     const t = await sequelize.transaction();
     try {
-        const {
+        let {
             title, title_ar, description, description_ar,
             duration, exercises, difficulty_level, calories_burned,
             motivational_message, motivational_message_ar
         } = req.body;
+
+        // Parse exercises if it's a string (common with form data)
+        if (exercises && typeof exercises === 'string') {
+            try {
+                exercises = JSON.parse(exercises);
+            } catch (e) {
+                await t.rollback();
+                return res.status(400).json({ message: 'Invalid exercises format', message_ar: 'تنسيق التمارين غير صحيح' });
+            }
+        }
+
+        // Ensure exercises is an array
+        if (exercises && !Array.isArray(exercises)) {
+            await t.rollback();
+            return res.status(400).json({ message: 'Exercises must be an array', message_ar: 'يجب أن تكون التمارين مصفوفة' });
+        }
 
         const coach = req.userId;
         const image = req.file ? req.file.path : null;
@@ -221,14 +242,24 @@ exports.createWorkoutTemplate = async (req, res, next) => {
             is_template: true
         }, { transaction: t });
 
-        await Promise.all(
-            exercises.map(e =>
-                WorkoutExercise.create(
-                    { workout_id: workout.id, exercise_id: e.exercise_id },
-                    { transaction: t }
-                )
-            )
-        );
+        if (exercises && Array.isArray(exercises) && exercises.length > 0) {
+            await Promise.all(
+                exercises.map(e => {
+                    const exercise_id = e.exercise_id || e;
+                    const sets = e.sets || 3;
+                    const reps = e.reps || 10;
+                    return WorkoutExercise.create(
+                        { 
+                            workout_id: workout.id, 
+                            exercise_id,
+                            sets,
+                            reps
+                        },
+                        { transaction: t }
+                    );
+                })
+            );
+        }
 
         await t.commit();
         res.status(201).json({
@@ -319,11 +350,27 @@ exports.updateWorkoutTemplate = async (req, res, next) => {
     const t = await sequelize.transaction();
     try {
         const { id } = req.params;
-        const {
+        let {
             title, title_ar, description, description_ar,
             duration, exercises, difficulty_level, calories_burned,
             motivational_message, motivational_message_ar
         } = req.body;
+
+        // Parse exercises if it's a string (common with form data)
+        if (exercises && typeof exercises === 'string') {
+            try {
+                exercises = JSON.parse(exercises);
+            } catch (e) {
+                await t.rollback();
+                return res.status(400).json({ message: 'Invalid exercises format', message_ar: 'تنسيق التمارين غير صحيح' });
+            }
+        }
+
+        // Ensure exercises is an array
+        if (exercises && !Array.isArray(exercises)) {
+            await t.rollback();
+            return res.status(400).json({ message: 'Exercises must be an array', message_ar: 'يجب أن تكون التمارين مصفوفة' });
+        }
 
         const workout = await Workout.findByPk(id, { transaction: t });
         if (!workout || !workout.is_template) {
@@ -348,11 +395,19 @@ exports.updateWorkoutTemplate = async (req, res, next) => {
 
         await workout.save({ transaction: t });
 
-        if (exercises) {
+        if (exercises && Array.isArray(exercises) && exercises.length > 0) {
             await WorkoutExercise.destroy({ where: { workout_id: id }, transaction: t });
-            await Promise.all(exercises.map(e =>
-                WorkoutExercise.create({ workout_id: id, exercise_id: e.exercise_id }, { transaction: t })
-            ));
+            await Promise.all(exercises.map(e => {
+                const exercise_id = e.exercise_id || e;
+                const sets = e.sets || 3;
+                const reps = e.reps || 10;
+                return WorkoutExercise.create({ 
+                    workout_id: id, 
+                    exercise_id,
+                    sets,
+                    reps
+                }, { transaction: t });
+            }));
         }
 
         await t.commit();
