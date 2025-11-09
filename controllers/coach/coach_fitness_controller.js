@@ -30,14 +30,32 @@ exports.createWorkout = async (req, res, next) => {
         const coach = req.userId;
         const image = req.file.path;
 
+        // Parse exercises if it's a string (common with form data)
+        if (exercises && typeof exercises === 'string') {
+            try {
+                exercises = JSON.parse(exercises);
+            } catch (e) {
+                await t.rollback();
+                return res.status(400).json({ message: 'Invalid exercises format', message_ar: 'تنسيق التمارين غير صحيح' });
+            }
+        }
+
+        // Ensure exercises is an array
+        if (exercises && !Array.isArray(exercises)) {
+            await t.rollback();
+            return res.status(400).json({ message: 'Exercises must be an array', message_ar: 'يجب أن تكون التمارين مصفوفة' });
+        }
+
         let user;
         if (user_id) {
             user = await User.findByPk(user_id);
             if (!user) {
+                await t.rollback();
                 return res.status(404).json({ message: "User not found", message_ar: "لم يتم العثور على المستخدم" });
             }
             const subscription = await Subscription.findOne({ where: { user_id, is_active: true } });
             if (!subscription) {
+                await t.rollback();
                 return res.status(400).json({ message: "No Active subscription for this user", message_ar: "لا يوجد اشتراك نشط لهذا المستخدم" });
             }
             package_id = subscription.package_id;
@@ -45,12 +63,13 @@ exports.createWorkout = async (req, res, next) => {
 
         let pkg = await Package.findByPk(package_id);
         if (!pkg) {
-
+            await t.rollback();
             return res.status(404).json({ message: "Package not found", message_ar: "لم يتم العثور على الحزمة" });
         }
 
         const type = pkg.type;
         if (type === "personalized" && !user_id) {
+            await t.rollback();
             return res.status(422).json({ message: "Personalized workouts require a user id", message_ar: "التمارين الشخصية تتطلب معرف المستخدم" });
         }
         if (type === "group" && user_id) {
@@ -82,9 +101,19 @@ exports.createWorkout = async (req, res, next) => {
             is_template: false,
         }, { transaction: t });
 
-        await Promise.all(exercises.map(async (exercise) => {
-            await WorkoutExercise.create({ workout_id: workout.id, exercise_id: exercise.exercise_id }, { transaction: t });
-        }));
+        if (exercises && Array.isArray(exercises) && exercises.length > 0) {
+            await Promise.all(exercises.map(async (exercise) => {
+                const exercise_id = exercise.exercise_id || exercise;
+                const sets = exercise.sets || 3;
+                const reps = exercise.reps || 10;
+                await WorkoutExercise.create({ 
+                    workout_id: workout.id, 
+                    exercise_id,
+                    sets,
+                    reps
+                }, { transaction: t });
+            }));
+        }
 
         const template = await Workout.create({
             title,
@@ -105,9 +134,19 @@ exports.createWorkout = async (req, res, next) => {
             is_template: true,
         }, { transaction: t });
 
-        await Promise.all(exercises.map(async (exercise) => {
-            await WorkoutExercise.create({ workout_id: template.id, exercise_id: exercise.exercise_id }, { transaction: t });
-        }));
+        if (exercises && Array.isArray(exercises) && exercises.length > 0) {
+            await Promise.all(exercises.map(async (exercise) => {
+                const exercise_id = exercise.exercise_id || exercise;
+                const sets = exercise.sets || 3;
+                const reps = exercise.reps || 10;
+                await WorkoutExercise.create({ 
+                    workout_id: template.id, 
+                    exercise_id,
+                    sets,
+                    reps
+                }, { transaction: t });
+            }));
+        }
         if (type == "personalized") {
             const requests = await WorkoutRequest.findAll({
                 where: {
@@ -387,7 +426,21 @@ exports.getWorkout = async (req, res, next) => {
 exports.updateWorkout = async (req, res, next) => {
     try {
         const workoutId = req.params.id;
-        const { title, type, description, duration, difficulty_level, calories_burned, date, exercises, package_id } = req.body;
+        let { title, type, description, duration, difficulty_level, calories_burned, date, exercises, package_id } = req.body;
+
+        // Parse exercises if it's a string (common with form data)
+        if (exercises && typeof exercises === 'string') {
+            try {
+                exercises = JSON.parse(exercises);
+            } catch (e) {
+                return res.status(400).json({ message: 'Invalid exercises format', message_ar: 'تنسيق التمارين غير صحيح' });
+            }
+        }
+
+        // Ensure exercises is an array
+        if (exercises && !Array.isArray(exercises)) {
+            return res.status(400).json({ message: 'Exercises must be an array', message_ar: 'يجب أن تكون التمارين مصفوفة' });
+        }
 
         const workout = await Workout.findByPk(workoutId);
 
@@ -406,13 +459,13 @@ exports.updateWorkout = async (req, res, next) => {
 
         await workout.save();
 
-        if (exercises && exercises.length > 0) {
+        if (exercises && Array.isArray(exercises) && exercises.length > 0) {
             const existingAssociations = await WorkoutExercise.findAll({
                 where: { workout_id: workoutId },
             });
 
             const existingExerciseIds = existingAssociations.map(assoc => assoc.exercise_id);
-            const newExerciseIds = exercises.map(ex => ex.exercise_id);
+            const newExerciseIds = exercises.map(ex => ex.exercise_id || ex);
             const exerciseIdsToRemove = existingExerciseIds.filter(id => !newExerciseIds.includes(id));
 
             await WorkoutExercise.destroy({
@@ -423,20 +476,26 @@ exports.updateWorkout = async (req, res, next) => {
             });
 
             await Promise.all(exercises.map(async (exercise) => {
-                const { exercise_id } = exercise;
+                const exercise_id = exercise.exercise_id || exercise;
+                const sets = exercise.sets || 3;
+                const reps = exercise.reps || 10;
 
                 const existingExercise = await WorkoutExercise.findOne({
                     where: { workout_id: workoutId, exercise_id },
                 });
 
                 if (existingExercise) {
-
-                    await existingExercise.destroy();
+                    // Update existing exercise with new sets/reps
+                    existingExercise.sets = sets;
+                    existingExercise.reps = reps;
+                    await existingExercise.save();
                 } else {
+                    // Create new exercise association
                     await WorkoutExercise.create({
                         workout_id: workoutId,
                         exercise_id,
-
+                        sets,
+                        reps,
                     });
                 }
             }));
@@ -446,7 +505,6 @@ exports.updateWorkout = async (req, res, next) => {
             include: [{
                 model: Exercise,
                 as: 'exercises',
-
             }],
         });
 
