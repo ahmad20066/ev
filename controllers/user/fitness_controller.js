@@ -7,6 +7,7 @@ const WorkoutAttendance = require('../../models/fitness/workout_attendance');
 const ExerciseCompletion = require('../../models/fitness/exercise_completion');
 const WorkoutExercise = require("../../models/fitness/workout_exercise");
 const WorkoutCompletion = require('../../models/fitness/workout_completion');
+const sequelize = require('../../models');
 const { Op, Sequelize } = require('sequelize');
 const Answer = require('../../models/survey/answer');
 const Survey = require('../../models/survey/survey');
@@ -18,7 +19,6 @@ const WorkoutRating = require('../../models/fitness/workout_rating');
 const Choice = require('../../models/survey/choice');
 const Renewal = require('../../models/fitness/renewal');
 const { duration } = require('moment');
-const sequelize = require('../../models');
 const WeightRecord = require('../../models/weight_record');
 const Coupon = require('../../models/fitness/coupon');
 exports.getWorkoutsByDate = async (req, res, next) => {
@@ -844,6 +844,157 @@ exports.showPackageWorkout = async (req, res, next) => {
         next(e)
     }
 }
+exports.getPackageDetails = async (req, res, next) => {
+    try {
+        const { id } = req.params;
+        
+        // Get package with pricings
+        const package = await Package.findByPk(id, {
+            include: [{
+                model: PricingModel,
+                as: "pricings",
+                where: {
+                    is_active: true
+                },
+                required: false
+            }]
+        });
+
+        if (!package) {
+            const error = new Error("Package not found");
+            error.statusCode = 404;
+            throw error;
+        }
+
+        // Get statistics
+        const [
+            totalSubscribers,
+            totalWorkouts,
+            workoutRatings,
+            totalWorkoutAttendances,
+            totalWorkoutCompletions
+        ] = await Promise.all([
+            // Total active subscribers
+            Subscription.count({
+                where: {
+                    package_id: id,
+                    is_active: true
+                }
+            }),
+            // Total active workouts
+            Workout.count({
+                where: {
+                    package_id: id,
+                    is_active: true
+                }
+            }),
+            // All workout ratings for this package's workouts - using raw query
+            sequelize.query(`
+                SELECT wr.rating, wr.message, wr.createdAt
+                FROM WorkoutRatings wr
+                INNER JOIN workouts w ON w.id = wr.workout_id
+                WHERE w.package_id = :packageId
+                ORDER BY wr.createdAt DESC
+                LIMIT 10
+            `, {
+                replacements: { packageId: id },
+                type: sequelize.QueryTypes.SELECT
+            }),
+            // Total workout attendances
+            WorkoutAttendance.count({
+                include: [{
+                    model: Workout,
+                    as: "workout",
+                    where: {
+                        package_id: id
+                    },
+                    attributes: []
+                }]
+            }),
+            // Total workout completions
+            WorkoutCompletion.count({
+                include: [{
+                    model: Workout,
+                    as: "workout",
+                    where: {
+                        package_id: id
+                    },
+                    attributes: []
+                }]
+            })
+        ]);
+
+        // Calculate average rating - using raw query
+        const ratings = await sequelize.query(`
+            SELECT wr.rating
+            FROM WorkoutRatings wr
+            INNER JOIN workouts w ON w.id = wr.workout_id
+            WHERE w.package_id = :packageId
+        `, {
+            replacements: { packageId: id },
+            type: sequelize.QueryTypes.SELECT
+        });
+
+        const averageRating = ratings.length > 0
+            ? ratings.reduce((sum, r) => sum + parseFloat(r.rating || 0), 0) / ratings.length
+            : 0;
+
+        // Calculate rating distribution
+        const ratingDistribution = {
+            5: 0,
+            4: 0,
+            3: 0,
+            2: 0,
+            1: 0
+        };
+
+        ratings.forEach(rating => {
+            const ratingValue = Math.round(parseFloat(rating.rating || 0));
+            if (ratingValue >= 1 && ratingValue <= 5) {
+                ratingDistribution[ratingValue]++;
+            }
+        });
+
+        // Calculate completion rate
+        const completionRate = totalWorkoutAttendances > 0
+            ? ((totalWorkoutCompletions / totalWorkoutAttendances) * 100).toFixed(1)
+            : 0;
+
+        // Format recent reviews
+        const recentReviews = workoutRatings.map(rating => ({
+            rating: parseFloat(rating.rating),
+            message: rating.message || null,
+            createdAt: rating.createdAt
+        }));
+
+        // Build response
+        const packageData = package.toJSON();
+        const response = {
+            ...packageData,
+            statistics: {
+                totalSubscribers,
+                totalWorkouts,
+                averageRating: parseFloat(averageRating.toFixed(2)),
+                totalReviews: ratings.length,
+                completionRate: parseFloat(completionRate)
+            },
+            ratings: {
+                average: parseFloat(averageRating.toFixed(2)),
+                count: ratings.length,
+                distribution: ratingDistribution,
+                recent: recentReviews
+            }
+        };
+
+        res.status(200).json(response);
+    } catch (e) {
+        if (!e.statusCode) {
+            e.statusCode = 500;
+        }
+        next(e);
+    }
+};
+
 exports.getAllPackages = async (req, res, next) => {
     try {
         const packages = await Package.findAll({
