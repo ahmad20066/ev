@@ -92,22 +92,16 @@ exports.getMealPlanDetails = async (req, res, next) => {
             })
         ]);
 
-        // Get order status breakdown
-        const orderStatusBreakdown = await Order.findAll({
-            include: [{
-                model: MealSubscription,
-                as: "subscription",
-                where: {
-                    meal_plan_id: id
-                },
-                attributes: []
-            }],
-            attributes: [
-                'status',
-                [sequelize.fn('COUNT', sequelize.col('Order.id')), 'count']
-            ],
-            group: ['status'],
-            raw: true
+        // Get order status breakdown - using raw query to avoid GROUP BY issues
+        const orderStatusBreakdown = await sequelize.query(`
+            SELECT o.status, COUNT(o.id) as count
+            FROM orders o
+            INNER JOIN MealSubscriptions ms ON o.meal_subscription_id = ms.id
+            WHERE ms.meal_plan_id = :mealPlanId
+            GROUP BY o.status
+        `, {
+            replacements: { mealPlanId: id },
+            type: sequelize.QueryTypes.SELECT
         });
 
         // Format order status breakdown
