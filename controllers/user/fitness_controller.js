@@ -903,20 +903,27 @@ exports.getPerformanceStats = async (req, res, next) => {
             where: { user_id: userId },
         });
 
-        // 5. Exercise Stats (Sets, Reps, Weight)
-        const exerciseStats = await ExerciseStat.findAll({
-            include: [{ model: Exercise, as: "exercise", attributes: ["name"] }],
-            where: { exercise_completion_id: { [Op.not]: null } },
-            attributes: [
-                "exercise_id",
-                [sequelize.fn("SUM", sequelize.col("weight")), "total_weight"],
-            ],
-            group: ["exercise_id", "exercise.name"],
+        // 5. Exercise Stats (Sets, Reps, Weight) - Group by exercise and sum weights
+        // Use raw query to avoid Sequelize association issues with GROUP BY
+        // Exercise table name is explicitly 'exercises', others are pluralized by Sequelize
+        const exerciseStats = await sequelize.query(`
+            SELECT 
+                ec.exercise_id,
+                e.name as exercise_name,
+                SUM(CAST(es.weight AS DECIMAL(10,2))) as total_weight
+            FROM ExerciseCompletions ec
+            INNER JOIN ExerciseStats es ON es.exercise_completion_id = ec.id
+            INNER JOIN exercises e ON e.id = ec.exercise_id
+            WHERE ec.user_id = :userId
+            GROUP BY ec.exercise_id, e.name
+        `, {
+            replacements: { userId },
+            type: sequelize.QueryTypes.SELECT
         });
 
         const exerciseStatSummary = exerciseStats.map(stat => ({
-            exercise: stat.exercise.name,
-            totalWeight: stat.dataValues.total_weight,
+            exercise: stat.exercise_name || "Unknown",
+            totalWeight: parseFloat(stat.total_weight) || 0,
         }));
 
         // 6. Recent Activity (Last 5 Workouts and Exercises)
