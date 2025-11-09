@@ -90,7 +90,39 @@ exports.getMealSubscriptions = async (req, res, next) => {
             }
             ]
         })
-        res.status(200).json(subscriptions)
+        
+        // Transform subscriptions to include calculated fields
+        const transformedSubscriptions = subscriptions.map(sub => {
+            const subscriptionData = sub.toJSON();
+            
+            // Calculate display type and amount_paid based on subscription_duration
+            let displayType = 'Monthly';
+            let amountPaid = 0;
+            
+            if (subscriptionData.subscription_duration === 21) {
+                displayType = '21 Days';
+                amountPaid = subscriptionData.meal_plan?.price_21_days || 0;
+            } else if (subscriptionData.subscription_duration === 26) {
+                displayType = '26 Days';
+                amountPaid = subscriptionData.meal_plan?.price_26_days || 0;
+            } else {
+                // Fallback for old subscriptions without subscription_duration
+                displayType = 'Monthly';
+                amountPaid = subscriptionData.meal_plan?.price_monthly || 0;
+            }
+            
+            // Calculate final amount after discount
+            const finalAmount = amountPaid - (Number(subscriptionData.discount_applied) || 0);
+            
+            return {
+                ...subscriptionData,
+                display_type: displayType,
+                amount_paid: finalAmount,
+                original_price: amountPaid
+            };
+        });
+        
+        res.status(200).json(transformedSubscriptions)
     } catch (e) {
         next(e)
     }

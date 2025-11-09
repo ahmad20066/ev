@@ -95,12 +95,49 @@ exports.getSubscriptions = async (req, res, next) => {
         const mealSubscriptions = await MealSubscription.findAll({
             where: {
                 user_id: userId
+            },
+            include: [
+                {
+                    model: MealPlan,
+                    as: "meal_plan"
+                }
+            ]
+        });
+
+        // Transform meal subscriptions to include calculated fields
+        const transformedMealSubscriptions = mealSubscriptions.map(sub => {
+            const subscriptionData = sub.toJSON();
+            
+            // Calculate display type and amount_paid based on subscription_duration
+            let displayType = 'Monthly';
+            let amountPaid = 0;
+            
+            if (subscriptionData.subscription_duration === 21) {
+                displayType = '21 Days';
+                amountPaid = subscriptionData.meal_plan?.price_21_days || 0;
+            } else if (subscriptionData.subscription_duration === 26) {
+                displayType = '26 Days';
+                amountPaid = subscriptionData.meal_plan?.price_26_days || 0;
+            } else {
+                // Fallback for old subscriptions without subscription_duration
+                displayType = 'Monthly';
+                amountPaid = subscriptionData.meal_plan?.price_monthly || 0;
             }
+            
+            // Calculate final amount after discount
+            const finalAmount = amountPaid - (Number(subscriptionData.discount_applied) || 0);
+            
+            return {
+                ...subscriptionData,
+                display_type: displayType,
+                amount_paid: finalAmount,
+                original_price: amountPaid
+            };
         });
 
         res.status(200).json({
             fitnessSubscriptions: fitnessSubscriptions.length > 0 ? fitnessSubscriptions : null,
-            dietSubscriptions: mealSubscriptions.length > 0 ? mealSubscriptions : null
+            dietSubscriptions: transformedMealSubscriptions.length > 0 ? transformedMealSubscriptions : null
         });
     } catch (e) {
         next(e);
@@ -137,6 +174,12 @@ exports.getSubscription = async (req, res, next) => {
                 user_id: userId,
                 is_active: true,
             },
+            include: [
+                {
+                    model: MealPlan,
+                    as: "meal_plan"
+                }
+            ]
         });
 
         let surveyCompleted = false;
@@ -162,9 +205,41 @@ exports.getSubscription = async (req, res, next) => {
             }
         }
 
+        // Transform diet subscription to include calculated fields
+        let transformedDietSubscription = null;
+        if (dietSubscription) {
+            const subscriptionData = dietSubscription.toJSON();
+            
+            // Calculate display type and amount_paid based on subscription_duration
+            let displayType = 'Monthly';
+            let amountPaid = 0;
+            
+            if (subscriptionData.subscription_duration === 21) {
+                displayType = '21 Days';
+                amountPaid = subscriptionData.meal_plan?.price_21_days || 0;
+            } else if (subscriptionData.subscription_duration === 26) {
+                displayType = '26 Days';
+                amountPaid = subscriptionData.meal_plan?.price_26_days || 0;
+            } else {
+                // Fallback for old subscriptions without subscription_duration
+                displayType = 'Monthly';
+                amountPaid = subscriptionData.meal_plan?.price_monthly || 0;
+            }
+            
+            // Calculate final amount after discount
+            const finalAmount = amountPaid - (Number(subscriptionData.discount_applied) || 0);
+            
+            transformedDietSubscription = {
+                ...subscriptionData,
+                display_type: displayType,
+                amount_paid: finalAmount,
+                original_price: amountPaid
+            };
+        }
+
         res.status(200).json({
             fitnessSubscription: fitnessSubscription ? { ...fitnessSubscription.toJSON(), surveyCompleted } : null,
-            dietSubscription: dietSubscription || null
+            dietSubscription: transformedDietSubscription
         });
     } catch (e) {
         next(e);

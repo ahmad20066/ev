@@ -129,6 +129,13 @@ exports.subscribeToMealPlan = async (req, res, next) => {
 
         const selections = [];
         let current = new Date(startDate);
+        
+        // Define excluded days based on subscription duration
+        const excludedDays = duration === 21 
+            ? ['friday', 'saturday'] 
+            : duration === 26 
+                ? ['friday'] 
+                : [];
 
         while (current <= endDate) {
             const currentDateStr = current.toISOString().split("T")[0];
@@ -136,35 +143,37 @@ exports.subscribeToMealPlan = async (req, res, next) => {
                 .toLocaleString("en-US", { weekday: "long" })
                 .toLowerCase();
 
-
-            const mealDays = await MealDay.findAll({
-                where: { date: currentDateStr },
-                include: [
-                    {
-                        model: Meal,
-                        as: "meal",
-                        required: true,
-                        include: [
-                            {
-                                model: Type,
-                                as: "types",
-                                where: { id: { [Op.in]: planTypeIds } },
-                                through: { attributes: [] },
-                                required: true
-                            }
-                        ]
-                    }
-                ]
-            });
-
-            for (const mealDay of mealDays) {
-                selections.push({
-                    user_id: req.userId,
-                    meal_subscription_id: subscription.id,
-                    meal_id: mealDay.meal_id,
-                    date: currentDateStr,
-                    day: dayName
+            // Skip excluded days
+            if (!excludedDays.includes(dayName)) {
+                const mealDays = await MealDay.findAll({
+                    where: { date: currentDateStr },
+                    include: [
+                        {
+                            model: Meal,
+                            as: "meal",
+                            required: true,
+                            include: [
+                                {
+                                    model: Type,
+                                    as: "types",
+                                    where: { id: { [Op.in]: planTypeIds } },
+                                    through: { attributes: [] },
+                                    required: true
+                                }
+                            ]
+                        }
+                    ]
                 });
+
+                for (const mealDay of mealDays) {
+                    selections.push({
+                        user_id: req.userId,
+                        meal_subscription_id: subscription.id,
+                        meal_id: mealDay.meal_id,
+                        date: currentDateStr,
+                        day: dayName
+                    });
+                }
             }
 
             current.setDate(current.getDate() + 1);
@@ -211,12 +220,35 @@ exports.getMealSubscriptions = async (req, res, next) => {
         })
         const currentDate = new Date();
         const subscriptionsWithDaysLeft = subscriptions.map(subscription => {
-            const endDate = new Date(subscription.end_date);
+            const subscriptionData = subscription.toJSON();
+            const endDate = new Date(subscriptionData.end_date);
             const remainingDays = Math.ceil((endDate - currentDate) / (1000 * 60 * 60 * 24));
 
+            // Calculate display type and amount_paid based on subscription_duration
+            let displayType = 'Monthly';
+            let amountPaid = 0;
+            
+            if (subscriptionData.subscription_duration === 21) {
+                displayType = '21 Days';
+                amountPaid = subscriptionData.meal_plan?.price_21_days || 0;
+            } else if (subscriptionData.subscription_duration === 26) {
+                displayType = '26 Days';
+                amountPaid = subscriptionData.meal_plan?.price_26_days || 0;
+            } else {
+                // Fallback for old subscriptions without subscription_duration
+                displayType = 'Monthly';
+                amountPaid = subscriptionData.meal_plan?.price_monthly || 0;
+            }
+            
+            // Calculate final amount after discount
+            const finalAmount = amountPaid - (Number(subscriptionData.discount_applied) || 0);
+
             return {
-                ...subscription.toJSON(),
+                ...subscriptionData,
                 remaining_days: remainingDays > 0 ? remainingDays : 0,
+                display_type: displayType,
+                amount_paid: finalAmount,
+                original_price: amountPaid
             };
         });
         res.status(200).json(subscriptionsWithDaysLeft)
@@ -529,7 +561,10 @@ exports.renewSubscription = async (req, res, next) => {
         subscription.is_active = true;
         const oldEnd = new Date(subscription.end_date);
         const newEnd = new Date(oldEnd);
-        newEnd.setDate(oldEnd.getDate() + 30);
+        
+        // Use subscription_duration if available, otherwise default to 30 days
+        const renewalDays = subscription.subscription_duration || 30;
+        newEnd.setDate(oldEnd.getDate() + renewalDays);
         subscription.end_date = newEnd;
         await subscription.save();
         const selections = [];
@@ -538,18 +573,28 @@ exports.renewSubscription = async (req, res, next) => {
         while (current <= newEnd) {
             const dayIndex = current.getDay();
             const dayName = dayNames[dayIndex];
-            for (const t of subscription.meal_plan.types) {
-                const meal = await Meal.findOne({
-                    include: [{ model: Type, as: "types", where: { id: t.id } }]
-                });
-                if (meal) {
-                    selections.push({
-                        user_id: subscription.user_id,
-                        meal_subscription_id: subscription.id,
-                        meal_id: meal.id,
-                        date: current.toISOString().split("T")[0],
-                        day: dayName
+            
+            // Skip excluded days based on subscription_duration
+            const excludedDays = subscription.subscription_duration === 21 
+                ? ['friday', 'saturday'] 
+                : subscription.subscription_duration === 26 
+                    ? ['friday'] 
+                    : [];
+            
+            if (!excludedDays.includes(dayName)) {
+                for (const t of subscription.meal_plan.types) {
+                    const meal = await Meal.findOne({
+                        include: [{ model: Type, as: "types", where: { id: t.id } }]
                     });
+                    if (meal) {
+                        selections.push({
+                            user_id: subscription.user_id,
+                            meal_subscription_id: subscription.id,
+                            meal_id: meal.id,
+                            date: current.toISOString().split("T")[0],
+                            day: dayName
+                        });
+                    }
                 }
             }
             current.setDate(current.getDate() + 1);

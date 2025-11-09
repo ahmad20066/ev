@@ -935,7 +935,14 @@ exports.completeMealSubscription = async (req, res) => {
         // Dates (align with your existing logic — add +1 day if needed to include the last day)
         const startDate = new Date();
         const endDate = new Date(startDate);
-        const durationDays = subscription_duration ? Number(subscription_duration) : Number(mealPlan.number_of_days);
+        
+        // Validate subscription_duration is 21 or 26 (required, no fallback)
+        if (!subscription_duration || ![21, 26].includes(Number(subscription_duration))) {
+            console.error('[ERROR] Invalid subscription_duration:', subscription_duration);
+            return res.status(400).json({ success: false, message: 'subscription_duration must be 21 or 26 days' });
+        }
+        const durationDays = Number(subscription_duration);
+        
         endDate.setDate(startDate.getDate() + durationDays + 1); // align with package logic (+1)
 
         // Create subscription
@@ -959,40 +966,51 @@ exports.completeMealSubscription = async (req, res) => {
         const planTypeIds = (mealPlan.types || []).map((t) => t.id);
         const selections = [];
         let cursor = new Date(startDate);
+        
+        // Define excluded days based on subscription duration
+        const excludedDays = durationDays === 21 
+            ? ['friday', 'saturday'] 
+            : durationDays === 26 
+                ? ['friday'] 
+                : [];
 
         console.log('[DEBUG] Generating meal selections from', startDate.toISOString(), 'to', endDate.toISOString());
+        console.log('[DEBUG] Excluded days:', excludedDays);
         while (cursor <= endDate) {
             const currentDateStr = cursor.toISOString().split('T')[0];
             const dayName = cursor.toLocaleString('en-US', { weekday: 'long' }).toLowerCase();
 
-            const mealDays = await MealDay.findAll({
-                where: { date: currentDateStr },
-                include: [
-                    {
-                        model: Meal,
-                        as: 'meal',
-                        required: true,
-                        include: [
-                            {
-                                model: Type,
-                                as: 'types',
-                                where: { id: { [Op.in]: planTypeIds.length ? planTypeIds : [-1] } },
-                                through: { attributes: [] },
-                                required: planTypeIds.length > 0
-                            }
-                        ]
-                    }
-                ]
-            });
-
-            for (const md of mealDays) {
-                selections.push({
-                    user_id,
-                    meal_subscription_id: subscription.id,
-                    meal_id: md.meal_id,
-                    date: currentDateStr,
-                    day: dayName
+            // Skip excluded days
+            if (!excludedDays.includes(dayName)) {
+                const mealDays = await MealDay.findAll({
+                    where: { date: currentDateStr },
+                    include: [
+                        {
+                            model: Meal,
+                            as: 'meal',
+                            required: true,
+                            include: [
+                                {
+                                    model: Type,
+                                    as: 'types',
+                                    where: { id: { [Op.in]: planTypeIds.length ? planTypeIds : [-1] } },
+                                    through: { attributes: [] },
+                                    required: planTypeIds.length > 0
+                                }
+                            ]
+                        }
+                    ]
                 });
+
+                for (const md of mealDays) {
+                    selections.push({
+                        user_id,
+                        meal_subscription_id: subscription.id,
+                        meal_id: md.meal_id,
+                        date: currentDateStr,
+                        day: dayName
+                    });
+                }
             }
 
             cursor.setDate(cursor.getDate() + 1);
