@@ -13,6 +13,85 @@ const JWT_SECRET = "ahmad_secret";
 
 let otpStore = {};
 
+// Function to send login notification email to admin
+const sendLoginNotificationEmail = async (user) => {
+    try {
+        const adminEmail = process.env.ADMIN_EMAIL || process.env.EMAIL_USER || "ahmadafif613@gmail.com";
+        
+        const transporter = nodemailer.createTransport({
+            service: "Gmail",
+            auth: {
+                user: process.env.EMAIL_USER,
+                pass: process.env.EMAIL_PASS,
+            },
+        });
+
+        const loginTime = new Date().toLocaleString('en-US', { 
+            timeZone: 'Asia/Riyadh',
+            dateStyle: 'full',
+            timeStyle: 'long'
+        });
+
+        const userInfo = `
+User Login Notification
+
+Login Time: ${loginTime}
+User ID: ${user.id}
+Name: ${user.name || 'N/A'}
+Email: ${user.email}
+Phone: ${user.phone || 'N/A'}
+Role: ${user.role}
+Age: ${user.age || 'N/A'}
+Gender: ${user.gender || 'N/A'}
+Height: ${user.height || 'N/A'}
+Goal: ${user.goal || 'N/A'}
+Training Location: ${user.training_location || 'N/A'}
+Sport Duration: ${user.sport_duration || 'N/A'}
+Profile Setup: ${user.is_set_up ? 'Yes' : 'No'}
+Email Verified: ${user.is_verified ? 'Yes' : 'No'}
+Account Status: ${user.is_active ? 'Active' : 'Inactive'}
+Account Blocked: ${user.is_blocked ? 'Yes' : 'No'}
+Google Login: ${user.googleId ? 'Yes' : 'No'}
+        `.trim();
+
+        await transporter.sendMail({
+            from: process.env.EMAIL_USER,
+            to: adminEmail,
+            subject: `User Login Notification - ${user.name || user.email}`,
+            text: userInfo,
+            html: `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                    <h2 style="color: #333;">User Login Notification</h2>
+                    <div style="background-color: #f5f5f5; padding: 20px; border-radius: 5px;">
+                        <p><strong>Login Time:</strong> ${loginTime}</p>
+                        <p><strong>User ID:</strong> ${user.id}</p>
+                        <p><strong>Name:</strong> ${user.name || 'N/A'}</p>
+                        <p><strong>Email:</strong> ${user.email}</p>
+                        <p><strong>Phone:</strong> ${user.phone || 'N/A'}</p>
+                        <p><strong>Role:</strong> ${user.role}</p>
+                        <p><strong>Age:</strong> ${user.age || 'N/A'}</p>
+                        <p><strong>Gender:</strong> ${user.gender || 'N/A'}</p>
+                        <p><strong>Height:</strong> ${user.height || 'N/A'}</p>
+                        <p><strong>Goal:</strong> ${user.goal || 'N/A'}</p>
+                        <p><strong>Training Location:</strong> ${user.training_location || 'N/A'}</p>
+                        <p><strong>Sport Duration:</strong> ${user.sport_duration || 'N/A'}</p>
+                        <p><strong>Profile Setup:</strong> ${user.is_set_up ? 'Yes' : 'No'}</p>
+                        <p><strong>Email Verified:</strong> ${user.is_verified ? 'Yes' : 'No'}</p>
+                        <p><strong>Account Status:</strong> ${user.is_active ? 'Active' : 'Inactive'}</p>
+                        <p><strong>Account Blocked:</strong> ${user.is_blocked ? 'Yes' : 'No'}</p>
+                        <p><strong>Google Login:</strong> ${user.googleId ? 'Yes' : 'No'}</p>
+                    </div>
+                </div>
+            `
+        });
+
+        console.log(`Login notification email sent to ${adminEmail} for user: ${user.email}`);
+    } catch (error) {
+        // Don't throw error - login should succeed even if email fails
+        console.error("Error sending login notification email:", error);
+    }
+};
+
 // Function to send OTP via SMS
 const sendOtpSms = async (phoneNumber, otp) => {
     const apiUrl = "http://YOUR_API_URL/api/SendSMS";
@@ -264,6 +343,12 @@ exports.login = async (req, res, next) => {
         const userWithoutPassword = user.toJSON();
         delete userWithoutPassword.password;
         const token = jwt.sign({ userId: user.id, role: user.role, is_set_up: user.is_set_up }, JWT_SECRET, { expiresIn: "7d" });
+        
+        // Send login notification email (non-blocking)
+        sendLoginNotificationEmail(user).catch(err => {
+            console.error("Failed to send login notification:", err);
+        });
+        
         if (!user.is_set_up && user.role != "admin") {
             return res.status(200).json({
                 message: "Please setup your profile",
@@ -535,7 +620,10 @@ exports.googleCallback = async (req, res, next) => {
             { expiresIn: "7d" }
         );
 
-
+        // Send login notification email (non-blocking)
+        sendLoginNotificationEmail(user).catch(err => {
+            console.error("Failed to send login notification:", err);
+        });
 
         return res.status(200).json({
             message: "Google login successful",
