@@ -222,15 +222,23 @@ exports.subscribeToPackage = async (req, res, next) => {
             appliedCoupon = coupon;
         }
 
+        // Calculate tax (15% VAT)
+        const taxRate = 0.15;
+        const subtotal = finalAmount;
+        const taxAmount = +(subtotal * taxRate).toFixed(2);
+        const totalWithTax = +(subtotal + taxAmount).toFixed(2);
+
         if (payment_method === 'tap') {
             // ---- Tap path unchanged ----
             console.log('[DEBUG] subscribeToPackage - Creating Tap payment link');
-            console.log('[DEBUG] Final amount:', finalAmount);
+            console.log('[DEBUG] Subtotal:', subtotal);
+            console.log('[DEBUG] Tax (15%):', taxAmount);
+            console.log('[DEBUG] Total with tax:', totalWithTax);
             console.log('[DEBUG] Package:', pkg.name);
             
             const paymentLink = await createTapPaymentLink({
                 user,
-                amount: finalAmount,
+                amount: totalWithTax,
                 currency: 'SAR',
                 description: `Fitness Package Subscription - ${pkg.name}${appliedCoupon ? ` (Coupon: ${coupon_code})` : ''}`,
                 redirectApiUrl: '/payments/complete-subscription',
@@ -241,6 +249,9 @@ exports.subscribeToPackage = async (req, res, next) => {
                     pricing_id,
                     original_amount: pricing.price,
                     discount_amount: discountAmount,
+                    subtotal: subtotal,
+                    tax_amount: taxAmount,
+                    total_amount: totalWithTax,
                     coupon_code: coupon_code || null,
                     coupon_id: appliedCoupon?.id || null
                 }
@@ -425,7 +436,7 @@ exports.completeSubscription = async (req, res) => {
             });
         }
 
-        const { user_id, package_id, pricing_id, discount_amount, original_amount, coupon_id } = metadata;
+        const { user_id, package_id, pricing_id, discount_amount, original_amount, subtotal, tax_amount, total_amount, coupon_id } = metadata;
         console.log('[DEBUG] Extracted metadata - user_id:', user_id, 'package_id:', package_id, 'pricing_id:', pricing_id);
 
         // Security: Validate required metadata exists
@@ -487,11 +498,13 @@ exports.completeSubscription = async (req, res) => {
         }
         console.log('[DEBUG] Charge is CAPTURED, proceeding with subscription creation');
 
-        const expectedFinal = computeExpectedFinal(original_amount, discount_amount);
+        // Use total_amount from metadata (includes tax) if available, otherwise compute from original_amount and discount_amount (backward compatibility)
+        const expectedFinal = total_amount ? Number(total_amount) : computeExpectedFinal(original_amount, discount_amount);
         const chargeAmount = Number(charge.amount);
         const chargeCurrency = String(charge.currency || '').toUpperCase();
 
         if (Number.isNaN(chargeAmount) || chargeAmount !== expectedFinal) {
+            console.error('[ERROR] Charge amount mismatch. expected:', expectedFinal, 'actual:', chargeAmount);
             return res.status(400).json({ success: false, message: 'Charge amount mismatch' });
         }
         if (chargeCurrency !== 'SAR') {
@@ -676,10 +689,16 @@ exports.subscribeToMealPlan = async (req, res, next) => {
             appliedCoupon = coupon;
         }
 
+        // Calculate tax (15% VAT)
+        const taxRate = 0.15;
+        const subtotal = finalAmount;
+        const taxAmount = +(subtotal * taxRate).toFixed(2);
+        const totalWithTax = +(subtotal + taxAmount).toFixed(2);
+
         // --- Create Tap payment link (defer creation of Address/Subscription to the webhook) ---
         const paymentLink = await createTapPaymentLink({
             user,
-            amount: finalAmount,
+            amount: totalWithTax,
             description: `Meal Plan Subscription - ${mealPlan.name}${appliedCoupon ? ` (Coupon: ${coupon_code})` : ""}`,
             redirectApiUrl: "/payments/complete-meal-subscription",
             metadata: {
@@ -699,6 +718,9 @@ exports.subscribeToMealPlan = async (req, res, next) => {
                 // Pricing details
                 original_amount: Number(basePrice),
                 discount_amount: discountAmount,
+                subtotal: subtotal,
+                tax_amount: taxAmount,
+                total_amount: totalWithTax,
                 // Coupon details
                 coupon_code: appliedCoupon ? coupon_code : null,
                 coupon_id: appliedCoupon ? appliedCoupon.id : null
@@ -804,6 +826,9 @@ exports.completeMealSubscription = async (req, res) => {
             delivery_notes,
             original_amount,
             discount_amount,
+            subtotal,
+            tax_amount,
+            total_amount,
             coupon_id
         } = metadata;
 
@@ -864,7 +889,8 @@ exports.completeMealSubscription = async (req, res) => {
         console.log('[DEBUG] Charge is CAPTURED, proceeding with meal subscription creation');
 
         // Amount/currency checks
-        const expectedFinal = computeExpectedFinal(original_amount, discount_amount);
+        // Use total_amount from metadata (includes tax) if available, otherwise compute from original_amount and discount_amount (backward compatibility)
+        const expectedFinal = total_amount ? Number(total_amount) : computeExpectedFinal(original_amount, discount_amount);
         const chargeAmount = Number(charge.amount);
         const chargeCurrency = String(charge.currency || '').toUpperCase();
 

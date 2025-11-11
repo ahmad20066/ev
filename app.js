@@ -109,7 +109,7 @@ const paymentsRoutes = require('./routes/payment_route');
 
 // Define routes
 app.use("/auth", authRouter);
-app.use("/admin", adminRouter);
+app.use("/admin",isAuth, isAdmin, adminRouter);
 app.use("/coach", isAuth, isCoach, coachRouter);
 app.use("/diet", dietRouter);
 app.use("/fitness", isAuth, fitnessRouter);
