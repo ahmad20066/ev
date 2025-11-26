@@ -1,4 +1,6 @@
 const { Op } = require("sequelize");
+const fs = require("fs");
+const path = require("path");
 const Address = require("../../models/meals/address");
 const Ingredient = require("../../models/meals/ingredient");
 const Meal = require("../../models/meals/meal");
@@ -281,8 +283,8 @@ exports.updateProfile = async (req, res, next) => {
         const userId = req.userId;
         const { name, email, phone, age } = req.body;
 
-        if (!name && !email && !phone && !age) {
-            const error = new Error("You must provide at least one field to update: name, email,age, or phone.");
+        if (!name && !email && !phone && !age && !req.file) {
+            const error = new Error("You must provide at least one field to update: name, email, age, phone, or profile_image.");
             error.statusCode = 400;
             throw error;
         }
@@ -295,11 +297,42 @@ exports.updateProfile = async (req, res, next) => {
             throw error;
         }
 
+        // Store old profile image path if it exists
+        const oldProfileImage = user.profile_image;
+
         const updatedData = {};
         if (name) updatedData.name = name;
         if (email) updatedData.email = email;
         if (phone) updatedData.phone = phone;
         if (age) updatedData.age = age;
+        
+        // Handle profile image upload
+        if (req.file) {
+            updatedData.profile_image = req.file.path;
+            
+            // Delete old profile image file if it exists
+            if (oldProfileImage) {
+                try {
+                    // Extract the file path from the URL (remove BASE_URL if present)
+                    const BASE_URL = process.env.BASE_URL || '';
+                    let filePath = oldProfileImage;
+                    if (BASE_URL && oldProfileImage.startsWith(BASE_URL)) {
+                        filePath = oldProfileImage.replace(BASE_URL + '/', '');
+                    }
+                    
+                    const fullPath = path.join(__dirname, '../../', filePath);
+                    
+                    // Check if file exists before deleting
+                    if (fs.existsSync(fullPath)) {
+                        fs.unlinkSync(fullPath);
+                        console.log(`Deleted old profile image: ${fullPath}`);
+                    }
+                } catch (fileError) {
+                    // Log error but don't fail the update if file deletion fails
+                    console.error("Error deleting old profile image:", fileError);
+                }
+            }
+        }
 
         await user.update(updatedData);
 

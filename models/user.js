@@ -105,6 +105,10 @@ const User = sequelize.define("User", {
     fcm_token: {
         type: Sequelize.TEXT,
         allowNull: true
+    },
+    profile_image: {
+        type: Sequelize.STRING,
+        allowNull: true
     }
 }, {
     defaultScope: {
