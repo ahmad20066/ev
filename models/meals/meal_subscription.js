@@ -67,8 +67,11 @@ const MealSubscription = sequelize.define("MealSubscription", {
     },
     subscription_duration: {
         type: Sequelize.INTEGER,
-        allowNull: true,
-        comment: 'Subscription duration in days (21 or 26)'
+        allowNull: false,
+        comment: 'Subscription duration in days (21 or 26)',
+        validate: {
+            isIn: [[21, 26]]
+        }
     },
     coupon_id: {
         type: Sequelize.INTEGER,

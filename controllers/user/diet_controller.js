@@ -268,9 +268,7 @@ exports.subscribeToMealPlan = async (req, res, next) => {
         // Define excluded days based on subscription duration
         const excludedDays = duration === 21 
             ? ['friday', 'saturday'] 
-            : duration === 26 
-                ? ['friday'] 
-                : [];
+            : ['friday']; // 26 days
 
         while (current <= endDate) {
             const currentDateStr = current.toISOString().split("T")[0];
@@ -360,7 +358,7 @@ exports.getMealSubscriptions = async (req, res, next) => {
             const remainingDays = Math.ceil((endDate - currentDate) / (1000 * 60 * 60 * 24));
 
             // Calculate display type and amount_paid based on subscription_duration
-            let displayType = 'Monthly';
+            let displayType = '26 Days';
             let amountPaid = 0;
             
             if (subscriptionData.subscription_duration === 21) {
@@ -369,10 +367,6 @@ exports.getMealSubscriptions = async (req, res, next) => {
             } else if (subscriptionData.subscription_duration === 26) {
                 displayType = '26 Days';
                 amountPaid = subscriptionData.meal_plan?.price_26_days || 0;
-            } else {
-                // Fallback for old subscriptions without subscription_duration
-                displayType = 'Monthly';
-                amountPaid = subscriptionData.meal_plan?.price_monthly || 0;
             }
             
             // Calculate final amount after discount
@@ -711,9 +705,7 @@ exports.renewSubscription = async (req, res, next) => {
             // Skip excluded days based on subscription_duration
             const excludedDays = subscription.subscription_duration === 21 
                 ? ['friday', 'saturday'] 
-                : subscription.subscription_duration === 26 
-                    ? ['friday'] 
-                    : [];
+                : ['friday']; // 26 days
             
             if (!excludedDays.includes(dayName)) {
                 for (const t of subscription.meal_plan.types) {
@@ -774,20 +766,18 @@ exports.applyCouponToMealPlan = async (req, res, next) => {
             return res.status(404).json({ message: 'Meal plan not found.' });
         }
         
-        // Use appropriate price based on duration, fallback to price_monthly
+        // Use appropriate price based on duration
         let price;
         if (duration === 21) {
             price = mealPlan.price_21_days;
             if (!price) {
                 return res.status(400).json({ message: '21-day pricing not available for this meal plan.' });
             }
-        } else if (duration === 26) {
+        } else {
             price = mealPlan.price_26_days;
             if (!price) {
                 return res.status(400).json({ message: '26-day pricing not available for this meal plan.' });
             }
-        } else {
-            price = mealPlan.price_monthly;
         }
         
         const coupon = await Coupon.findOne({

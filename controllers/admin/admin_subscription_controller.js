@@ -96,7 +96,7 @@ exports.getMealSubscriptions = async (req, res, next) => {
             const subscriptionData = sub.toJSON();
             
             // Calculate display type and amount_paid based on subscription_duration
-            let displayType = 'Monthly';
+            let displayType = '26 Days';
             let amountPaid = 0;
             
             if (subscriptionData.subscription_duration === 21) {
@@ -105,10 +105,6 @@ exports.getMealSubscriptions = async (req, res, next) => {
             } else if (subscriptionData.subscription_duration === 26) {
                 displayType = '26 Days';
                 amountPaid = subscriptionData.meal_plan?.price_26_days || 0;
-            } else {
-                // Fallback for old subscriptions without subscription_duration
-                displayType = 'Monthly';
-                amountPaid = subscriptionData.meal_plan?.price_monthly || 0;
             }
             
             // Calculate final amount after discount

@@ -636,8 +636,8 @@ exports.subscribeToMealPlan = async (req, res, next) => {
         if (!mealPlan) throw { statusCode: 404, message: "Meal Plan not found" };
 
         // Validate subscription duration
-        if (!subscription_duration ) {
-            throw { statusCode: 400, message: "subscription_duration should be valid" };
+        if (!subscription_duration || ![21, 26].includes(Number(subscription_duration))) {
+            throw { statusCode: 400, message: "subscription_duration must be 21 or 26 days" };
         }
         const duration = Number(subscription_duration);
 
@@ -646,10 +646,7 @@ exports.subscribeToMealPlan = async (req, res, next) => {
         if (duration === 21) {
             basePrice = mealPlan.price_21_days;
             if (!basePrice) throw { statusCode: 400, message: "21-day pricing not available for this meal plan" };
-        } else if (duration === 26) {
-            basePrice = mealPlan.price_26_days;
-            if (!basePrice) throw { statusCode: 400, message: "26-day pricing not available for this meal plan" };
-        }else if (duration === 30) {
+        } else {
             basePrice = mealPlan.price_26_days;
             if (!basePrice) throw { statusCode: 400, message: "26-day pricing not available for this meal plan" };
         }
@@ -1000,9 +997,7 @@ exports.completeMealSubscription = async (req, res) => {
         // Define excluded days based on subscription duration
         const excludedDays = durationDays === 21 
             ? ['friday', 'saturday'] 
-            : durationDays === 26 
-                ? ['friday'] 
-                : [];
+            : ['friday']; // 26 days
 
         console.log('[DEBUG] Generating meal selections from', startDate.toISOString(), 'to', endDate.toISOString());
         console.log('[DEBUG] Excluded days:', excludedDays);
