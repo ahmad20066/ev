@@ -636,7 +636,7 @@ exports.subscribeToMealPlan = async (req, res, next) => {
         if (!mealPlan) throw { statusCode: 404, message: "Meal Plan not found" };
 
         // Validate subscription duration
-        if (!subscription_duration || ![21, 26].includes(Number(subscription_duration))) {
+        if (!subscription_duration || ![21, 26, 30].includes(Number(subscription_duration))) {
             throw { statusCode: 400, message: "subscription_duration must be 21 or 26 days" };
         }
         const duration = Number(subscription_duration);
