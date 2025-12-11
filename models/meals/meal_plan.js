@@ -37,7 +37,7 @@ const MealPlan = sequelize.define('MealPlan', {
     number_of_days: {
         type: DataTypes.INTEGER,
         allowNull: false,
-        defaultValue: 30
+        defaultValue: 26,
     },
     description:{
         type: DataTypes.TEXT,
