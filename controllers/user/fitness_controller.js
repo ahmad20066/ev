@@ -412,14 +412,14 @@ exports.markExerciseDone = async (req, res, next) => {
             workout_id
         });
 
-        const statsPromises = stats.map((stat) => {
-            return ExerciseStat.create({
+        if (stats?.length) {
+            const setsData = stats.map((stat, index) => ({
                 exercise_completion_id: exerciseCompletion.id,
+                set_number: index + 1,
                 weight: stat.weight
-            });
-        });
-
-        await Promise.all(statsPromises);
+            }));
+            await ExerciseStat.bulkCreate(setsData);
+        }
 
         res.status(201).json({
             message: "Exercise Completed and Stats Recorded",

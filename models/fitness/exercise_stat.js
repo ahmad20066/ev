@@ -12,6 +12,10 @@ const ExerciseStat = sequelize.define("ExerciseStat", {
         },
         allowNull: false
     },
+    set_number: {
+        type: Sequelize.INTEGER,
+        allowNull: false
+    },
     weight: {
         type: Sequelize.STRING,
         allowNull: true
