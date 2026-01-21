@@ -57,9 +57,14 @@ const corsOptions = {
         // allow requests with no origin (Postman, mobile apps)
         if (!origin) return callback(null, true);
 
+        // Log for debugging
+        console.log('CORS check - Origin:', origin);
+        console.log('CORS check - Allowed origins:', allowedOrigins);
+
         if (allowedOrigins.includes(origin)) {
             callback(null, true);
         } else {
+            console.error('CORS blocked - Origin not allowed:', origin);
             callback(new Error('Not allowed by CORS'));
         }
     },
@@ -152,6 +157,14 @@ app.use(formatTimestamps);
 
 app.use((error, req, res, next) => {
     console.error('Error:', error);
+
+    // Handle CORS errors - must set CORS headers even for errors
+    if (error.message === 'Not allowed by CORS') {
+        return res.status(403).json({
+            error: 'CORS policy: Origin not allowed',
+            message: error.message
+        });
+    }
 
     if (error.type === 'entity.too.large') {
         return res.status(413).json({
