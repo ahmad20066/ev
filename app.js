@@ -45,6 +45,22 @@ const authLimiter = rateLimit({
 
 app.use(express.static('public'));
 
+// Request logging middleware (for debugging)
+app.use((req, res, next) => {
+    console.log(`${new Date().toISOString()} - ${req.method} ${req.originalUrl}`);
+    console.log('Origin:', req.headers.origin);
+    console.log('Content-Type:', req.headers['content-type']);
+    console.log('Authorization:', req.headers.authorization ? 'Present' : 'Missing');
+    
+    // Handle OPTIONS preflight requests
+    if (req.method === 'OPTIONS') {
+        console.log('Handling OPTIONS preflight request');
+        return res.status(200).end();
+    }
+    
+    next();
+});
+
 // Body parsing with size limits
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
@@ -114,7 +130,10 @@ app.use('/payments', isAuth, paymentsRoutes);
 app.use(formatTimestamps);
 
 app.use((error, req, res, next) => {
-    console.error('Error:', error);
+    console.error('Error Handler - Full Error:', error);
+    console.error('Error Stack:', error.stack);
+    console.error('Request URL:', req.originalUrl);
+    console.error('Request Method:', req.method);
 
     if (error.type === 'entity.too.large') {
         return res.status(413).json({
@@ -142,6 +161,17 @@ app.use('*', (req, res) => {
 const cancelExpiredSubscriptions = require("./schedulers/subscriptions_scheduler");
 cancelExpiredSubscriptions();
 
+// Handle unhandled promise rejections
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+});
+
+// Handle uncaught exceptions
+process.on('uncaughtException', (error) => {
+    console.error('Uncaught Exception:', error);
+    process.exit(1);
+});
+
 sequelize
     .sync({
         // force: true,
@@ -151,7 +181,7 @@ sequelize
         const PORT = process.env.PORT || 8080;
         server.listen(PORT, () => {
             console.log(`Server listening on port ${PORT}`);
-
+            console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
         });
 
         io.on("connection", (socket) => {
