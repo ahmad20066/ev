@@ -2,7 +2,6 @@ const express = require("express");
 const app = express();
 require('dotenv').config();
 const sequelize = require("./models/index");
-const cors = require("cors");
 const path = require("path");
 const http = require("http");
 const socketIo = require("socket.io");
@@ -39,43 +38,10 @@ const authLimiter = rateLimit({
         retryAfter: '15 minutes'
     },
     skipSuccessfulRequests: true,
-    skip: (req) => req.method === 'OPTIONS', // Skip OPTIONS requests
 });
 
 // Apply rate limiting
 // app.use(generalLimiter);
-
-// CORS configuration
-const allowedOrigins = [
-    'http://localhost:3000',
-    'http://dashboard.evolvevw.com',
-    'https://dashboard.evolvevw.com'
-];
-
-const corsOptions = {
-    origin: function (origin, callback) {
-        // allow requests with no origin (Postman, mobile apps)
-        if (!origin) return callback(null, true);
-
-        // Log for debugging
-        console.log('CORS check - Origin:', origin);
-        console.log('CORS check - Allowed origins:', allowedOrigins);
-
-        if (allowedOrigins.includes(origin)) {
-            callback(null, true);
-        } else {
-            console.error('CORS blocked - Origin not allowed:', origin);
-            callback(new Error('Not allowed by CORS'));
-        }
-    },
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-};
-
-// CORS must be at the top, before other middleware
-app.use(cors(corsOptions));
-app.options('*', cors(corsOptions)); // Handle preflight OPTIONS requests
 
 app.use(express.static('public'));
 
@@ -90,19 +56,11 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // app.use(sqlInjectionProtection); // SQL injection protection
 
 // Static files
-app.use('/uploads', (req, res, next) => {
-    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
-    next();
-}, cors(), express.static(path.join(__dirname, 'uploads')));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Socket.io setup
 const server = http.createServer(app);
-const io = socketIo(server, {
-    cors: {
-        origin: ["http://localhost:3000", 'http://dashboard.evolvevw.com', 'https://dashboard.evolvevw.com'],
-        credentials: true,
-    },
-});
+const io = socketIo(server);
 
 app.use((req, res, next) => {
     req.io = io;
@@ -157,14 +115,6 @@ app.use(formatTimestamps);
 
 app.use((error, req, res, next) => {
     console.error('Error:', error);
-
-    // Handle CORS errors - must set CORS headers even for errors
-    if (error.message === 'Not allowed by CORS') {
-        return res.status(403).json({
-            error: 'CORS policy: Origin not allowed',
-            message: error.message
-        });
-    }
 
     if (error.type === 'entity.too.large') {
         return res.status(413).json({
