@@ -39,20 +39,40 @@ const authLimiter = rateLimit({
         retryAfter: '15 minutes'
     },
     skipSuccessfulRequests: true,
+    skip: (req) => req.method === 'OPTIONS', // Skip OPTIONS requests
 });
 
 // Apply rate limiting
 // app.use(generalLimiter);
 
 // CORS configuration
+const allowedOrigins = [
+    'http://localhost:3000',
+    'http://dashboard.evolvevw.com',
+    'https://dashboard.evolvevw.com'
+];
+
 const corsOptions = {
-    origin: "*",  // Allow all origins
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
+    origin: function (origin, callback) {
+        // allow requests with no origin (Postman, mobile apps)
+        if (!origin) return callback(null, true);
+
+        if (allowedOrigins.includes(origin)) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
 };
-app.use(express.static('public'));
+
+// CORS must be at the top, before other middleware
 app.use(cors(corsOptions));
+app.options('*', cors(corsOptions)); // Handle preflight OPTIONS requests
+
+app.use(express.static('public'));
 
 // Body parsing with size limits
 app.use(express.json({ limit: '10mb' }));
